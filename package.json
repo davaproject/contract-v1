@@ -1,0 +1,63 @@
+{
+  "name": "contract-v1",
+  "version": "1.0.0",
+  "description": "Dava Contract",
+  "main": "index.js",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "coverage": "npx hardhat coverage",
+    "size": "yarn compile && npx hardhat size-contracts",
+    "clean": "npx hardhat clean",
+    "test": "npx hardhat test",
+    "test:full": "FULL_TEST=true npx hardhat test --logs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davaproject/contract-v1.git"
+  },
+  "keywords": [
+    "avatar",
+    "NFT",
+    "contract"
+  ],
+  "author": {
+    "name": "ggomma",
+    "email": "ggomma@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/davaproject/contract-v1/issues"
+  },
+  "homepage": "https://davaproject.com",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.6",
+    "@nomiclabs/hardhat-waffle": "^2.0.0",
+    "@typechain/ethers-v5": "^7.1.0",
+    "@typechain/hardhat": "^2.3.0",
+    "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.9.1",
+    "chai": "^4.3.4",
+    "dotenv": "^10.0.0",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.4.6",
+    "hardhat": "^2.6.4",
+    "hardhat-contract-sizer": "^2.1.0",
+    "hardhat-deploy": "^0.9.1",
+    "hardhat-gas-reporter": "^1.0.4",
+    "hardhat-tracer": "^1.0.0-alpha.6",
+    "pre-push": "^0.1.1",
+    "solidity-coverage": "^0.7.17",
+    "ts-generator": "^0.1.1",
+    "ts-node": "^10.2.1",
+    "typechain": "^5.1.2",
+    "typescript": "^4.4.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.1"
+  },
+  "pre-push": [
+    "test"
+  ]
+}
