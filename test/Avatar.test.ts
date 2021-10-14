@@ -1308,16 +1308,19 @@ describe('Avatar', async () => {
 
             return equipped;
           },
-          process: avatarContract.connect(avatarOwner).equipAssets(avatarId, [
-            {
-              assetContract: childContracts[0].address,
-              tokenId: childTokenIds[0],
-            },
-            {
-              assetContract: childContracts[1].address,
-              tokenId: childTokenIds[1],
-            },
-          ]),
+          //@ts-ignore
+          process: avatarContract
+            .connect(avatarOwner)
+            ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
+              {
+                assetContract: childContracts[0].address,
+                tokenId: childTokenIds[0],
+              },
+              {
+                assetContract: childContracts[1].address,
+                tokenId: childTokenIds[1],
+              },
+            ]),
           expectedBefore: [false, false],
           expectedAfter: [true, true],
         });
@@ -1326,16 +1329,19 @@ describe('Avatar', async () => {
 
     describe('unEquipAssets', async () => {
       beforeEach(async () => {
-        await avatarContract.connect(avatarOwner).equipAssets(avatarId, [
-          {
-            assetContract: childContracts[0].address,
-            tokenId: childTokenIds[0],
-          },
-          {
-            assetContract: childContracts[1].address,
-            tokenId: childTokenIds[1],
-          },
-        ]);
+        //@ts-ignore
+        await avatarContract
+          .connect(avatarOwner)
+          ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
+            {
+              assetContract: childContracts[0].address,
+              tokenId: childTokenIds[0],
+            },
+            {
+              assetContract: childContracts[1].address,
+              tokenId: childTokenIds[1],
+            },
+          ]);
       });
 
       it('should unEquip multiple assets at once', async () => {
@@ -1418,9 +1424,10 @@ describe('Avatar', async () => {
       expect(approvedUser).not.to.equal(notAuthorizedUser.address);
 
       await expect(
+        //@ts-ignore
         avatarContract
           .connect(notAuthorizedUser)
-          .equipAssets(avatarId, [
+          ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
             { assetContract: childContract.address, tokenId: childTokenId },
           ])
       ).to.be.revertedWith(AvatarError.NOT_AUTHORIZED);
@@ -1430,9 +1437,10 @@ describe('Avatar', async () => {
       const newToken = await childContract.totalSupply();
 
       await expect(
+        //@ts-ignore
         avatarContract
           .connect(avatarOwner)
-          .equipAssets(avatarId, [
+          ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
             { assetContract: childContract.address, tokenId: newToken },
           ])
       ).to.be.revertedWith(ERC721Error.NON_EXISTENT_TOKEN);
@@ -1443,9 +1451,10 @@ describe('Avatar', async () => {
         await checkChange({
           status: () =>
             avatarContract.equipped(avatarId, childContract.address),
+          //@ts-ignore
           process: avatarContract
             .connect(avatarOwner)
-            .equipAssets(avatarId, [
+            ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
               { assetContract: childContract.address, tokenId: childTokenId },
             ]),
           expectedBefore: false,
@@ -1457,9 +1466,10 @@ describe('Avatar', async () => {
         await checkBigNumberChange({
           status: () =>
             avatarContract.equippedAsset(avatarId, childContract.address),
+          //@ts-ignore
           process: avatarContract
             .connect(avatarOwner)
-            .equipAssets(avatarId, [
+            ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
               { assetContract: childContract.address, tokenId: childTokenId },
             ]),
           change: childTokenId,
@@ -1469,9 +1479,10 @@ describe('Avatar', async () => {
 
     it("should emit 'EquipAsset' event", async () => {
       await expect(
+        //@ts-ignore
         avatarContract
           .connect(avatarOwner)
-          .equipAssets(avatarId, [
+          ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
             { assetContract: childContract.address, tokenId: childTokenId },
           ])
       )
@@ -1516,9 +1527,10 @@ describe('Avatar', async () => {
         childContractOwner: deployer,
       });
 
+      //@ts-ignore
       await avatarContract
         .connect(avatarOwner)
-        .equipAssets(avatarId, [
+        ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
           { assetContract: childContract.address, tokenId: childTokenId },
         ]);
     });

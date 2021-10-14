@@ -426,6 +426,35 @@ contract Avatar is ERC721Enumerable, ERC721Holder, Operable {
         }
     }
 
+    function equipAssets(
+        uint256 _avatarId,
+        AssetForEquip[] calldata _assetsForEquip,
+        address _unequippedAssetReceiver
+    ) external onlyAuthorized(_avatarId) {
+        for (uint256 i = 0; i < _assetsForEquip.length; i += 1) {
+            address assetContract = _assetsForEquip[i].assetContract;
+            if (equipped[_avatarId][assetContract]) {
+                uint256 equippedTokenId = equippedAsset[_avatarId][
+                    assetContract
+                ];
+                ERC721(assetContract).transferFrom(
+                    address(this),
+                    _unequippedAssetReceiver,
+                    equippedTokenId
+                );
+                emit UnEquipAsset(_avatarId, assetContract, equippedTokenId);
+                emit TransferChild(
+                    _avatarId,
+                    _unequippedAssetReceiver,
+                    assetContract,
+                    equippedTokenId
+                );
+            }
+
+            equipAsset(_avatarId, assetContract, _assetsForEquip[i].tokenId);
+        }
+    }
+
     function equipAsset(
         uint256 _avatarId,
         address _assetContract,

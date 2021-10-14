@@ -159,9 +159,10 @@ describe('Metadata', async () => {
           childContract,
           childContractOwner: deployer,
         });
+        //@ts-ignore
         await avatarContract
           .connect(avatarOwner)
-          .equipAssets(avatarId, [
+          ['equipAssets(uint256,(address,uint256)[])'](avatarId, [
             { assetContract: childContract.address, tokenId: childTokenId },
           ]);
 
