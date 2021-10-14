@@ -349,7 +349,7 @@ contract Avatar is ERC721Enumerable, ERC721Holder, Operable {
     mapping(uint256 => mapping(address => uint256)) public equippedAsset;
     mapping(uint256 => mapping(address => bool)) public equipped;
 
-    EnumerableSet.AddressSet registeredAssetContracts;
+    EnumerableSet.AddressSet _registeredAssetContracts;
 
     ILayerHouse public layerHouse;
     IAssetHouse public assetHouse;
@@ -387,7 +387,15 @@ contract Avatar is ERC721Enumerable, ERC721Holder, Operable {
         view
         returns (bool)
     {
-        return registeredAssetContracts.contains(_contractAddress);
+        return _registeredAssetContracts.contains(_contractAddress);
+    }
+
+    function registeredAssetContracts()
+        external
+        view
+        returns (address[] memory)
+    {
+        return _registeredAssetContracts.values();
     }
 
     function _registerAssetContract(address _assetContract) internal onlyOwner {
@@ -395,7 +403,7 @@ contract Avatar is ERC721Enumerable, ERC721Holder, Operable {
             !isRegisteredContract(_assetContract),
             ALREADY_REGISTERED_CONTRACT
         );
-        registeredAssetContracts.add(_assetContract);
+        _registeredAssetContracts.add(_assetContract);
 
         emit RegisterAssetContract(_assetContract);
     }
@@ -563,7 +571,7 @@ contract Avatar is ERC721Enumerable, ERC721Holder, Operable {
         returns (string memory)
     {
         require(_exists(_avatarId), NON_EXISTENT_AVATAR);
-        uint256 assetAmount = registeredAssetContracts.length();
+        uint256 assetAmount = _registeredAssetContracts.length();
 
         string memory metadata = string(
             abi.encodePacked(
@@ -576,7 +584,7 @@ contract Avatar is ERC721Enumerable, ERC721Holder, Operable {
         uint256 equippedAmount = 0;
         uint256 tokenId;
         for (uint256 i = 0; i < assetAmount; i += 1) {
-            address assetContract = registeredAssetContracts.at(i);
+            address assetContract = _registeredAssetContracts.at(i);
             if (equipped[_avatarId][assetContract]) {
                 equippedAmount += 1;
                 tokenId = equippedAsset[_avatarId][assetContract];
