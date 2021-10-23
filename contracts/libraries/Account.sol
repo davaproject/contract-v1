@@ -2,12 +2,12 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Transaction, IAccount} from "../interfaces/IAccount.sol";
 
-contract Account is IERC1271, Ownable, IAccount {
+abstract contract Account is Context, IERC1271, IAccount {
     using ECDSA for bytes32;
 
     uint256 private _nonce;
@@ -21,6 +21,14 @@ contract Account is IERC1271, Ownable, IAccount {
     );
 
     constructor() {}
+
+    modifier onlyOwner() {
+        require(
+            owner() == _msgSender() || address(this) == _msgSender(),
+            "Acocunt: only owner can call"
+        );
+        _;
+    }
 
     function execute(Transaction calldata transaction)
         public
@@ -71,4 +79,6 @@ contract Account is IERC1271, Ownable, IAccount {
             transaction.data
         );
     }
+
+    function owner() public view virtual override returns (address);
 }

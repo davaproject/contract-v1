@@ -14,4 +14,6 @@ interface IAccount {
     function execute(Transaction calldata transaction) external payable;
 
     function batchExecute(Transaction[] calldata transactions) external payable;
+
+    function owner() external view returns (address);
 }
