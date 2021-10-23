@@ -38,10 +38,10 @@ const config: HardhatUserConfig = {
       },
       blockGasLimit: 12450000,
     },
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: [`0x${process.env.PRIV_KEY}`],
-    },
+    // rinkeby: {
+    //   url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
+    //   accounts: [`0x${process.env.PRIV_KEY}`],
+    // },
     // ropsten: {
     //   url: `https://ropsten.infura.io/v3/${process.env.INFURA_KEY}`,
     //   accounts: [`0x${process.env.PRIV_KEY}`],
