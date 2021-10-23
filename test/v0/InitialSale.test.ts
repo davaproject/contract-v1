@@ -13,7 +13,7 @@ import {
   AssetHouse__factory,
   InitialSale,
   InitialSale__factory,
-} from '../types';
+} from '../../types';
 import { solidity } from 'ethereum-waffle';
 
 chai.use(solidity);

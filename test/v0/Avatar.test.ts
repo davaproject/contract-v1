@@ -11,7 +11,7 @@ import {
   AssetHouse,
   AssetHouse__factory,
   TestAsset,
-} from '../types';
+} from '../../types';
 import { solidity } from 'ethereum-waffle';
 import { testOnlyOwner, testOnlyOperator } from './module/only';
 import {

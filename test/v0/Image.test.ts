@@ -13,7 +13,7 @@ import {
   AssetHouse__factory,
   LayerHouse,
   LayerHouse__factory,
-} from '../types';
+} from '../../types';
 import { solidity } from 'ethereum-waffle';
 import { getChild, mintAvatar } from './module/unit';
 import { AvatarError } from './module/errors';

@@ -7,7 +7,7 @@ import {
   RandomBox__factory,
   TestRandomBox,
   TestRandomBox__factory,
-} from '../types';
+} from '../../types';
 import { solidity } from 'ethereum-waffle';
 import { OperableError, RandomBoxError } from './module/errors';
 import { checkChange } from './module/compare';

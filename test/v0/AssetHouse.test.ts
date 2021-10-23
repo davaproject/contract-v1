@@ -2,7 +2,7 @@ import chai from 'chai';
 
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { TestAssetHouse, TestAssetHouse__factory } from '../types';
+import { TestAssetHouse, TestAssetHouse__factory } from '../../types';
 import { solidity } from 'ethereum-waffle';
 import { OperableError, AssetHouseError } from './module/errors';
 import {

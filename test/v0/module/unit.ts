@@ -3,7 +3,7 @@ import chai from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract } from 'ethers';
 import { solidity } from 'ethereum-waffle';
-import { AssetHouse, TestAsset, TestAvatar } from '../../types';
+import { AssetHouse, TestAsset, TestAvatar } from '../../../types';
 
 chai.use(solidity);
 const { expect } = chai;

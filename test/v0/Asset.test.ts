@@ -11,7 +11,7 @@ import {
   AssetHouse__factory,
   LayerHouse__factory,
   LayerHouse,
-} from '../types';
+} from '../../types';
 import { solidity } from 'ethereum-waffle';
 import { checkBigNumberChange, checkChange } from './module/compare';
 import { BigNumber } from '@ethersproject/bignumber';
