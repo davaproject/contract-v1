@@ -18,7 +18,7 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
 
     mapping(bytes32 => EnumerableSet.AddressSet) private _assets;
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
-    mapping(uint256 => address) private _linkedAvatars;
+    address private _masterCopy;
 
     event AssetRegistered(address asset);
     event AssetDeregistered(address asset);
@@ -27,7 +27,9 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
     constructor(address avatarController_)
         ERC721("Dava", "DAVA")
         UpgradeableBeacon(avatarController_)
-    {}
+    {
+        _masterCopy = avatarController_;
+    }
 
     function mint(address to, uint256 id) public override onlyOwner {
         _mint(to, id);
@@ -56,9 +58,12 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
         return _assets[assetType].contains(asset);
     }
 
-    function getAvatar(uint256 id) public view override returns (address) {
-        require(_exists(id), "Dava: NFT does not exist");
-        return _linkedAvatars[id];
+    function getAvatar(uint256 tokenId) public view override returns (address) {
+        return
+            _masterCopy.predictDeterministicAddress(
+                bytes32(tokenId),
+                address(this)
+            );
     }
 
     function getAllAssets(bytes32 assetType)
@@ -90,13 +95,12 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
             _exists(tokenId),
             "ERC721Metadata: URI query for nonexistent token"
         );
-        return IAvatar(_linkedAvatars[tokenId]).getPFP();
+        return IAvatar(getAvatar(tokenId)).getPFP();
     }
 
     function _mint(address to, uint256 id) internal override {
-        address avatar = implementation().cloneDeterministic(bytes32(id));
+        address avatar = _masterCopy.cloneDeterministic(bytes32(id));
         IAvatar(avatar).initialize(id);
-        _linkedAvatars[id] = avatar;
         super._mint(to, id);
     }
 }
