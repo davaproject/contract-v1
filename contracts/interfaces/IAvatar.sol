@@ -12,7 +12,7 @@ interface IAvatar {
 
     function setName(string memory name_) external;
 
-    function putOn(address assetAddr, uint256 id) external;
+    function putOn(Asset memory asset_) external;
 
     function takeOff(bytes32 assetType) external;
 
@@ -22,7 +22,7 @@ interface IAvatar {
 
     function dava() external view returns (address);
 
-    function asset(bytes32 assetType) external view returns (address, uint256);
+    function asset(bytes32 assetType) external view returns (Asset memory);
 
     function allAssets() external view returns (Asset[] memory assets);
 
