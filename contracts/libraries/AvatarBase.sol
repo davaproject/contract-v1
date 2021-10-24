@@ -10,13 +10,8 @@ import {Account} from "./Account.sol";
 import {BeaconProxy} from "./BeaconProxy.sol";
 import {IAsset} from "../interfaces/IAsset.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
-import {IAvatar} from "../interfaces/IAvatar.sol";
+import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
-
-struct Asset {
-    address assetAddr;
-    uint256 id;
-}
 
 struct Props {
     uint256 davaId;
@@ -107,6 +102,16 @@ abstract contract AvatarBase is
     {
         Asset memory asset_ = _props().assets[assetType];
         return (asset_.assetAddr, asset_.id);
+    }
+
+    function allAssets() public view virtual override returns (Asset[] memory assets) {
+        bytes32[] memory allAssetTypes = IDava(dava())
+            .getAllSupportedAssetTypes();
+        assets = new Asset[](allAssetTypes.length);
+        for (uint256 i = 0; i < assets.length; i += 1) {
+            (address assetAddr, uint256 id) = asset(allAssetTypes[i]);
+            assets[i] = Asset(assetAddr, id);
+        }
     }
 
     function getPFP() external view virtual override returns (string memory);

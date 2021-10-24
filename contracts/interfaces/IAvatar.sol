@@ -2,6 +2,11 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
+struct Asset {
+    address assetAddr;
+    uint256 id;
+}
+
 interface IAvatar {
     function initialize(uint256 davaId_) external;
 
@@ -17,7 +22,9 @@ interface IAvatar {
 
     function dava() external view returns (address);
 
-    function getPFP() external view returns (string memory);
-
     function asset(bytes32 assetType) external view returns (address, uint256);
+
+    function allAssets() external view returns (Asset[] memory assets);
+
+    function getPFP() external view returns (string memory);
 }
