@@ -2,12 +2,12 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
 import {Account} from "./Account.sol";
+import {BeaconProxy} from "./BeaconProxy.sol";
 import {IAsset} from "../interfaces/IAsset.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
@@ -43,7 +43,7 @@ abstract contract AvatarBase is
     event TakeOff(bytes32 indexed assetType, address asset, uint256 id);
 
     // Dummy constructor for compilation
-    constructor() BeaconProxy(address(0), "") {}
+    constructor() {}
 
     function initialize(uint256 davaId_) public override initializer {
         _upgradeBeaconToAndCall(_msgSender(), "", false);
@@ -99,7 +99,12 @@ abstract contract AvatarBase is
         return StorageSlot.getAddressSlot(DAVA_CONTRACT_SLOT).value;
     }
 
-    function asset(bytes32 assetType) public view override returns (address, uint256) {
+    function asset(bytes32 assetType)
+        public
+        view
+        override
+        returns (address, uint256)
+    {
         Asset memory asset_ = _props().assets[assetType];
         return (asset_.assetAddr, asset_.id);
     }
