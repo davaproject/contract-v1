@@ -20,6 +20,8 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
     address private _masterCopy;
 
+    uint256 public constant MAX_SUPPLY = 10000;
+
     event AssetRegistered(address asset);
     event AssetDeregistered(address asset);
 
@@ -32,6 +34,7 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
     }
 
     function mint(address to, uint256 id) public override onlyOwner {
+        require(id < MAX_SUPPLY, "Dava: Invalid id");
         _mint(to, id);
     }
 
