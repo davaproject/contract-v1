@@ -11,14 +11,16 @@ import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
 
 struct AssetInfo {
+    mapping(uint256 => string) titles;
     mapping(uint256 => address) creators;
+    mapping(uint256 => string) descriptions;
     mapping(uint256 => string) svgs;
     mapping(uint256 => uint256) maxSupply;
+    mapping(uint256 => OnchainMetadata.OnchainTrait[]) attributes;
 }
 
 abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
     using Address for address;
-    using OnchainMetadata for string;
 
     AssetInfo private _info;
     uint256 public override numberOfAssets;
@@ -26,13 +28,17 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
     constructor(string memory uri_) ERC1155(uri_) Ownable() {}
 
     function create(
+        string calldata title_,
         address creator_,
-        string memory uri_,
+        string calldata description_,
+        string calldata uri_,
         uint256 maxSupply_
     ) external override onlyOwner {
         uint256 tokenId = numberOfAssets;
         require(_info.creators[tokenId] == address(0), "Already created");
+        _info.titles[tokenId] = title_;
         _info.creators[tokenId] = creator_;
+        _info.descriptions[tokenId] = description_;
         _info.svgs[tokenId] = uri_;
         _info.maxSupply[tokenId] = maxSupply_;
         numberOfAssets = tokenId + 1;
@@ -65,7 +71,14 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
     // viewers
 
     function uri(uint256 tokenId) public view override returns (string memory) {
-        return _info.svgs[tokenId].toMetadata();
+        return
+            OnchainMetadata.toMetadata(
+                _info.titles[tokenId],
+                _info.creators[tokenId],
+                _info.descriptions[tokenId],
+                _info.svgs[tokenId],
+                _info.attributes[tokenId]
+            );
     }
 
     function image(uint256 tokenId)

@@ -17,16 +17,19 @@ contract AvatarV1 is AvatarBase {
 
     function getPFP() external view override returns (string memory) {
         Asset[] memory assets = allAssets();
-        OnchainMetadata.OnchainSVG[]
-            memory onchainSVGs = new OnchainMetadata.OnchainSVG[](
-                assets.length
-            );
-        for (uint256 i = 0; i < onchainSVGs.length; i += 1) {
-            onchainSVGs[i].svg = IAsset(assets[i].assetAddr).image(
-                assets[i].id
-            );
-            onchainSVGs[i].zIndex = IAsset(assets[i].assetAddr).zIndex();
+        string[] memory svgs = new string[](assets.length);
+        // OnchainMetadata.OnchainSVG[]
+        //     memory onchainSVGs = new OnchainMetadata.OnchainSVG[](
+        //         assets.length
+        //     );
+        for (uint256 i = 0; i < assets.length; i += 1) {
+            svgs[i] = IAsset(assets[i].assetAddr).image(assets[i].id);
+            // onchainSVGs[i].svg = IAsset(assets[i].assetAddr).image(
+            //     assets[i].id
+            // );
+            // onchainSVGs[i].zIndex = IAsset(assets[i].assetAddr).zIndex();
         }
-        return onchainSVGs.compileImages();
+        // return onchainSVGs.compileImages();
+        return OnchainMetadata.compileImages(svgs);
     }
 }

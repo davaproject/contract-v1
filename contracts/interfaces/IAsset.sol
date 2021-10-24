@@ -4,8 +4,10 @@ pragma abicoder v2;
 
 interface IAsset {
     function create(
+        string calldata title_,
         address creator_,
-        string memory uri_,
+        string calldata description_,
+        string calldata uri_,
         uint256 maxNum_
     ) external;
 
