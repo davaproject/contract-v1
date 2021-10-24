@@ -2,11 +2,10 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {Account} from "./Account.sol";
-import {BeaconProxy} from "./BeaconProxy.sol";
+import {MinimalProxy} from "./MinimalProxy.sol";
 import {IAsset} from "../interfaces/IAsset.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
@@ -18,26 +17,15 @@ struct Props {
     mapping(bytes32 => Asset) assets; // TODO: Asset[] vs Asset
 }
 
-abstract contract AvatarBase is BeaconProxy, Initializable, Account, IAvatar {
+abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     // For the slot allocation
     using StorageSlot for StorageSlot.AddressSlot;
-
-    bytes32 private constant DAVA_CONTRACT_SLOT =
-        bytes32(uint256(keccak256("dava.contract")) - 1);
-    bytes32 private constant PROPS_SLOT =
-        bytes32(uint256(keccak256("dava.props.v1")) - 1);
 
     event PutOn(bytes32 indexed assetType, address asset, uint256 id);
     event TakeOff(bytes32 indexed assetType, address asset, uint256 id);
 
     // Dummy constructor for compilation
     constructor() {}
-
-    function initialize(uint256 davaId_) public override initializer {
-        _upgradeBeaconToAndCall(_msgSender(), "", false);
-        StorageSlot.getAddressSlot(DAVA_CONTRACT_SLOT).value = _msgSender();
-        _props().davaId = davaId_;
-    }
 
     function setName(string memory name_) public virtual override onlyOwner {
         _props().name = name_;
@@ -128,11 +116,4 @@ abstract contract AvatarBase is BeaconProxy, Initializable, Account, IAvatar {
     function version() public pure virtual override returns (string memory);
 
     function getPFP() external view virtual override returns (string memory);
-
-    function _props() internal pure virtual returns (Props storage r) {
-        bytes32 slot = PROPS_SLOT;
-        assembly {
-            r.slot := slot
-        }
-    }
 }

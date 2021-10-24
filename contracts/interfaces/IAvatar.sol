@@ -8,8 +8,6 @@ struct Asset {
 }
 
 interface IAvatar {
-    function initialize(uint256 davaId_) external;
-
     function setName(string memory name_) external;
 
     function putOn(Asset memory asset_) external;
