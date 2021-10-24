@@ -5,6 +5,7 @@ pragma abicoder v2;
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
 import {Account} from "./Account.sol";
 import {BeaconProxy} from "./BeaconProxy.sol";
@@ -22,6 +23,7 @@ struct Props {
 abstract contract AvatarBase is
     BeaconProxy,
     ERC165,
+    ERC721Holder,
     Initializable,
     Account,
     IAvatar
@@ -104,7 +106,13 @@ abstract contract AvatarBase is
         return (asset_.assetAddr, asset_.id);
     }
 
-    function allAssets() public view virtual override returns (Asset[] memory assets) {
+    function allAssets()
+        public
+        view
+        virtual
+        override
+        returns (Asset[] memory assets)
+    {
         bytes32[] memory allAssetTypes = IDava(dava())
             .getAllSupportedAssetTypes();
         assets = new Asset[](allAssetTypes.length);
