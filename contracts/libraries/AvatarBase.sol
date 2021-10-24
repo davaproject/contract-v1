@@ -4,9 +4,7 @@ pragma abicoder v2;
 
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
-import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
+import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {Account} from "./Account.sol";
 import {BeaconProxy} from "./BeaconProxy.sol";
 import {IAsset} from "../interfaces/IAsset.sol";
@@ -20,14 +18,7 @@ struct Props {
     mapping(bytes32 => Asset) assets; // TODO: Asset[] vs Asset
 }
 
-abstract contract AvatarBase is
-    BeaconProxy,
-    ERC165,
-    ERC721Holder,
-    Initializable,
-    Account,
-    IAvatar
-{
+abstract contract AvatarBase is BeaconProxy, Initializable, Account, IAvatar {
     // For the slot allocation
     using StorageSlot for StorageSlot.AddressSlot;
 
@@ -52,41 +43,32 @@ abstract contract AvatarBase is
         _props().name = name_;
     }
 
-    function putOn(address assetAddr, uint256 id)
-        public
-        virtual
-        override
-        onlyOwner
-    {
+    function putOn(Asset memory asset_) public virtual override onlyOwner {
         require(
-            IDava(dava()).isDavaAsset(assetAddr),
+            IDava(dava()).isDavaAsset(asset_.assetAddr),
             "Avatar: not a registered asset."
         );
         require(
-            IERC721(assetAddr).ownerOf(id) == address(this),
-            "Avatar: not an owner."
+            IERC1155(asset_.assetAddr).balanceOf(address(this), asset_.id) > 0,
+            "Avatar: does not have the asset."
         );
-        bytes32 assetType = IAsset(assetAddr).assetType();
-        _props().assets[assetType] = Asset(assetAddr, id);
-        emit PutOn(assetType, assetAddr, id);
+        bytes32 assetType = IAsset(asset_.assetAddr).assetType();
+        _props().assets[assetType] = asset_;
+        emit PutOn(assetType, asset_.assetAddr, asset_.id);
     }
 
-    function takeOff(bytes32 assetType) public virtual override {
+    function takeOff(bytes32 assetType) public virtual override onlyOwner {
         Asset memory target = _props().assets[assetType];
-        require(
-            msg.sender == owner() || msg.sender == target.assetAddr,
-            "Avatar: not permitted."
-        );
         require(target.assetAddr != address(0), "Avatar: nothing to take off");
         emit TakeOff(assetType, target.assetAddr, target.id);
         delete _props().assets[assetType];
     }
 
+    // add batchExecution()
+
     function name() public view virtual override returns (string memory) {
         return _props().name;
     }
-
-    function version() public pure virtual override returns (string memory);
 
     function owner() public view override returns (address) {
         return IDava(dava()).ownerOf(_props().davaId);
@@ -100,10 +82,21 @@ abstract contract AvatarBase is
         public
         view
         override
-        returns (address, uint256)
+        returns (Asset memory)
     {
+        // Try to retrieve from the storage
         Asset memory asset_ = _props().assets[assetType];
-        return (asset_.assetAddr, asset_.id);
+        // Check the balance
+        bool owning = IERC1155(asset_.assetAddr).balanceOf(
+            address(this),
+            asset_.id
+        ) > 0;
+        // return the asset only when the Avatar owns the asset or return a null asset.
+        if (owning) {
+            return asset_;
+        } else {
+            return Asset(address(0), 0);
+        }
     }
 
     function allAssets()
@@ -113,28 +106,28 @@ abstract contract AvatarBase is
         override
         returns (Asset[] memory assets)
     {
-        bytes32[] memory allAssetTypes = IDava(dava())
-            .getAllSupportedAssetTypes();
-        assets = new Asset[](allAssetTypes.length);
+        bytes32[] memory allTypes = IDava(dava()).getAllSupportedAssetTypes();
+        assets = new Asset[](allTypes.length);
         for (uint256 i = 0; i < assets.length; i += 1) {
-            (address assetAddr, uint256 id) = asset(allAssetTypes[i]);
-            assets[i] = Asset(assetAddr, id);
+            assets[i] = asset(allTypes[i]);
         }
     }
-
-    function getPFP() external view virtual override returns (string memory);
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override
+        virtual
+        override(Account)
         returns (bool)
     {
         return
             interfaceId == type(IAvatar).interfaceId ||
-            interfaceId == type(IAccount).interfaceId ||
             super.supportsInterface(interfaceId);
     }
+
+    function version() public pure virtual override returns (string memory);
+
+    function getPFP() external view virtual override returns (string memory);
 
     function _props() internal pure virtual returns (Props storage r) {
         bytes32 slot = PROPS_SLOT;
