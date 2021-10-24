@@ -24,4 +24,8 @@ contract EyesNFT is AssetBase, Ownable {
     function assetType() public pure virtual override returns (bytes32) {
         return keccak256("Eyes(string leftEye,string rightEye)");
     }
+
+    function zIndex() public pure virtual override returns (uint256) {
+        return 1;
+    }
 }

@@ -28,4 +28,6 @@ abstract contract AssetBase is ERC721Enumerable, IAsset {
     }
 
     function assetType() public pure virtual override returns (bytes32);
+
+    function zIndex() public view virtual override returns (uint256);
 }

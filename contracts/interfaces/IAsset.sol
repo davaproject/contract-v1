@@ -4,4 +4,6 @@ pragma abicoder v2;
 
 interface IAsset {
     function assetType() external view returns (bytes32);
+
+    function zIndex() external view returns (uint256);
 }
