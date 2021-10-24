@@ -7,8 +7,9 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {IAsset} from "./interfaces/IAsset.sol";
+import {MinimalProxy} from "./libraries/MinimalProxy.sol";
 import {IAvatar} from "./interfaces/IAvatar.sol";
+import {IAsset} from "./interfaces/IAsset.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
 contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
@@ -18,7 +19,7 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
 
     mapping(bytes32 => EnumerableSet.AddressSet) private _assets;
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
-    address private _masterCopy;
+    address private _minimalProxy;
 
     uint256 public constant MAX_SUPPLY = 10000;
 
@@ -26,11 +27,11 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
     event AssetDeregistered(address asset);
 
     // DAO contract owns this registry
-    constructor(address avatarController_)
+    constructor(address minimalProxy_)
         ERC721("Dava", "DAVA")
-        UpgradeableBeacon(avatarController_)
+        UpgradeableBeacon(minimalProxy_)
     {
-        _masterCopy = avatarController_;
+        _minimalProxy = minimalProxy_;
     }
 
     function mint(address to, uint256 id) public override onlyOwner {
@@ -67,7 +68,7 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
 
     function getAvatar(uint256 tokenId) public view override returns (address) {
         return
-            _masterCopy.predictDeterministicAddress(
+            _minimalProxy.predictDeterministicAddress(
                 bytes32(tokenId),
                 address(this)
             );
@@ -106,8 +107,8 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
     }
 
     function _mint(address to, uint256 id) internal override {
-        address avatar = _masterCopy.cloneDeterministic(bytes32(id));
-        IAvatar(avatar).initialize(id);
+        address avatar = _minimalProxy.cloneDeterministic(bytes32(id));
+        MinimalProxy(payable(avatar)).initialize(id);
         super._mint(to, id);
     }
 }
