@@ -2,10 +2,10 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {Address} from "./Address.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 library OnchainMetadata {
-    using Address for address;
+    using Strings for uint256;
 
     string private constant SVG_START_LINE =
         '<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">';
@@ -34,7 +34,7 @@ library OnchainMetadata {
             '{"name":"',
             name,
             '","creator":"',
-            creator.toString(),
+            uint256(uint160(creator)).toHexString(20),
             '","description":"',
             description,
             '","attributes":['
