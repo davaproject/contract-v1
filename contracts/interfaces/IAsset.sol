@@ -3,7 +3,11 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 interface IAsset {
-    function create(string memory uri_, uint256 maxNum_) external;
+    function create(
+        address creator_,
+        string memory uri_,
+        uint256 maxNum_
+    ) external;
 
     function numberOfAssets() external view returns (uint256);
 

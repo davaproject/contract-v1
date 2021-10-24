@@ -25,14 +25,14 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
 
     constructor(string memory uri_) ERC1155(uri_) Ownable() {}
 
-    function create(string memory svg_, uint256 maxSupply_)
-        external
-        override
-        onlyOwner
-    {
+    function create(
+        address creator_,
+        string memory svg_,
+        uint256 maxSupply_
+    ) external override onlyOwner {
         uint256 tokenId = numberOfAssets;
         require(_info.creators[tokenId] == address(0), "Already created");
-        _info.creators[tokenId] = msg.sender;
+        _info.creators[tokenId] = creator_;
         _info.svgs[tokenId] = svg_;
         _info.maxSupply[tokenId] = maxSupply_;
         numberOfAssets = tokenId + 1;
