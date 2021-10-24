@@ -54,6 +54,10 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
         bytes32 assetType = IAsset(asset).assetType();
         require(_assets[assetType].contains(asset), "Dava: Not registered");
         _assets[assetType].remove(asset);
+
+        if (_assets[assetType].length() == 0) {
+            _supportedAssetTypes.remove(assetType);
+        }
     }
 
     function isDavaAsset(address asset) public view override returns (bool) {
