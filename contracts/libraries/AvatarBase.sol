@@ -11,21 +11,13 @@ import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
 
-struct Props {
-    uint256 davaId;
-    string name;
-    mapping(bytes32 => Asset) assets; // TODO: Asset[] vs Asset
-}
-
 abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
-    // For the slot allocation
-    using StorageSlot for StorageSlot.AddressSlot;
-
     event PutOn(bytes32 indexed assetType, address asset, uint256 id);
     event TakeOff(bytes32 indexed assetType, address asset, uint256 id);
 
-    // Dummy constructor for compilation
-    constructor() {}
+    // DO NOT DECLARE state variables in the proxy contract.
+    // If you wanna access to the existing state variables, use _props().
+    // If you want to add new variables, design a new struct and allocate a slot for it.
 
     function setName(string memory name_) public virtual override onlyOwner {
         _props().name = name_;
