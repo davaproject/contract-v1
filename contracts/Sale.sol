@@ -3,12 +3,7 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-interface Dava {
-    function mint(address to, uint256 id) external;
-
-    function totalSupply() external view returns (uint256);
-}
+import "./interfaces/IDava.sol";
 
 contract Sale is EIP712, Ownable {
     bytes32 public constant TYPE_HASH =
@@ -34,7 +29,7 @@ contract Sale is EIP712, Ownable {
     mapping(address => uint256) public preSaleMintAmountOf;
     mapping(address => uint256) public publicSaleMintAmountOf;
 
-    Dava public dava;
+    IDava public dava;
 
     struct Whitelist {
         uint256 ticketAmount;
@@ -54,7 +49,7 @@ contract Sale is EIP712, Ownable {
     event WithdrawFunds(address indexed receiver, uint256 amount);
     event SoldOut();
 
-    constructor(Dava dava_) EIP712("AvatarSale", "V1") {
+    constructor(IDava dava_) EIP712("AvatarSale", "V1") {
         dava = dava_;
     }
 
