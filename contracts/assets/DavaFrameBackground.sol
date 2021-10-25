@@ -3,21 +3,21 @@ pragma solidity >=0.8.0;
 
 import "../libraries/AssetBase.sol";
 
-contract DavaHelmetAddOn is AssetBase {
+contract DavaFrameBackground is AssetBase {
     constructor(
         string memory backgroundImgUri_,
         string memory foregroundImgUri_
     ) AssetBase(backgroundImgUri_, foregroundImgUri_, "") {}
 
     function name() public pure virtual override returns (string memory) {
-        return "helmet-addon";
+        return "frame-background";
     }
 
     function assetType() public pure virtual override returns (bytes32) {
-        return keccak256("HelmetAddOn");
+        return keccak256("FrameBackground");
     }
 
     function zIndex() public pure virtual override returns (uint256) {
-        return 60000;
+        return 5000;
     }
 }
