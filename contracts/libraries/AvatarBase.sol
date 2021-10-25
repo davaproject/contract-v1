@@ -23,7 +23,29 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         _props().name = name_;
     }
 
-    function putOn(Asset memory asset_) public virtual override onlyOwner {
+    function putOn(Asset[] calldata assets)
+        external
+        virtual
+        override
+        onlyOwner
+    {
+        for (uint256 i = 0; i < assets.length; i += 1) {
+            _putOn(assets[i]);
+        }
+    }
+
+    function takeOff(bytes32[] calldata assetTypes)
+        external
+        virtual
+        override
+        onlyOwner
+    {
+        for (uint256 i = 0; i < assetTypes.length; i += 1) {
+            _takeOff(assetTypes[i]);
+        }
+    }
+
+    function _putOn(Asset memory asset_) private {
         require(
             IDava(dava()).isDavaAsset(asset_.assetAddr),
             "Avatar: not a registered asset."
@@ -37,7 +59,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         emit PutOn(assetType, asset_.assetAddr, asset_.id);
     }
 
-    function takeOff(bytes32 assetType) public virtual override onlyOwner {
+    function _takeOff(bytes32 assetType) private {
         Asset memory target = _props().assets[assetType];
         require(target.assetAddr != address(0), "Avatar: nothing to take off");
         emit TakeOff(assetType, target.assetAddr, target.id);
