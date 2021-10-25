@@ -75,7 +75,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         if (owning) {
             return asset_;
         } else {
-            return Asset(address(0), 0);
+            return Asset(asset_.assetAddr, 0);
         }
     }
 
