@@ -31,6 +31,9 @@ abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
     AssetInfo private _info;
     uint256 public override numberOfAssets;
 
+    uint256 public maxTotalAssetSupply = 0;
+    uint256 public totalAssetSupply = 0;
+
     constructor(
         string memory backgroundImgUri_,
         string memory foregroundImgUri_,
@@ -73,6 +76,7 @@ abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
         }
 
         numberOfAssets = tokenId + 1;
+        maxTotalAssetSupply += maxSupply_;
     }
 
     function mint(
@@ -82,6 +86,8 @@ abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
         bytes memory data
     ) public onlyRole(MINTER_ROLE) {
         require(totalSupply(id) + amount <= maxSupply(id), "Out of stock.");
+
+        totalAssetSupply += amount;
         return super._mint(account, id, amount, data);
     }
 
@@ -95,6 +101,8 @@ abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
             uint256 id = ids[i];
             uint256 amount = amounts[i];
             require(totalSupply(id) + amount <= maxSupply(id), "Out of stock.");
+
+            totalAssetSupply += amount;
         }
         return super._mintBatch(to, ids, amounts, data);
     }
