@@ -107,7 +107,7 @@ contract Sale is EIP712, Ownable {
                 MAX_MINT_PER_ACCOUNT - publicSaleMintAmountOf[msg.sender],
             "Sale: can not purchase more than MAX_MINT_PER_ACCOUNT"
         );
-        checkEthAmount(purchaseAmount, msg.value);
+        _checkEthAmount(purchaseAmount, msg.value);
 
         publicSaleMintAmountOf[msg.sender] += purchaseAmount;
         totalPublicSaleAmount += purchaseAmount;
@@ -139,7 +139,7 @@ contract Sale is EIP712, Ownable {
                     preSaleMintAmountOf[msg.sender],
             "Sale: exceeds assigned amount"
         );
-        checkEthAmount(purchaseAmount, msg.value);
+        _checkEthAmount(purchaseAmount, msg.value);
 
         bytes32 digest = _hashTypedDataV4(
             keccak256(
@@ -180,7 +180,7 @@ contract Sale is EIP712, Ownable {
             totalAllocatedAmount + totalPreSaleAmount + totalPublicSaleAmount;
     }
 
-    function checkEthAmount(uint256 purchaseAmount, uint256 paidEth)
+    function _checkEthAmount(uint256 purchaseAmount, uint256 paidEth)
         private
         pure
     {
