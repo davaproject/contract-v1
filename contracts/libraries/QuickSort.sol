@@ -27,7 +27,7 @@ library QuickSort {
                     arr[uint256(i)]
                 );
                 i += 1;
-                j += 1;
+                j -= 1;
             }
         }
         if (left < j) sort(arr, left, j);
