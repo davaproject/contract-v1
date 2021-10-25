@@ -14,7 +14,7 @@ struct AssetInfo {
     mapping(uint256 => string) titles;
     mapping(uint256 => address) creators;
     mapping(uint256 => string) descriptions;
-    mapping(uint256 => string) svgs;
+    mapping(uint256 => string) imgURIs;
     mapping(uint256 => uint256) maxSupply;
     mapping(uint256 => IAsset.Attribute[]) attributes;
 }
@@ -56,7 +56,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         _info.titles[tokenId] = title_;
         _info.creators[tokenId] = creator_;
         _info.descriptions[tokenId] = description_;
-        _info.svgs[tokenId] = uri_;
+        _info.imgURIs[tokenId] = uri_;
         _info.maxSupply[tokenId] = maxSupply_;
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
@@ -93,17 +93,17 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
     // viewers
 
     function uri(uint256 tokenId) public view override returns (string memory) {
-        string[] memory svgs = new string[](3);
-        svgs[0] = _backgroundImgUri;
-        svgs[1] = _info.svgs[tokenId];
-        svgs[2] = _foregroundImgUri;
+        string[] memory imgURIs = new string[](3);
+        imgURIs[0] = _backgroundImgUri;
+        imgURIs[1] = _info.imgURIs[tokenId];
+        imgURIs[2] = _foregroundImgUri;
 
         return
             OnchainMetadata.toMetadata(
                 _info.titles[tokenId],
                 _info.creators[tokenId],
                 _info.descriptions[tokenId],
-                svgs,
+                imgURIs,
                 _info.attributes[tokenId]
             );
     }
@@ -114,7 +114,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         override
         returns (string memory)
     {
-        return _info.svgs[tokenId];
+        return _info.imgURIs[tokenId];
     }
 
     function image(uint256 tokenId)
@@ -123,9 +123,9 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         override
         returns (string memory)
     {
-        string[] memory svgs = new string[](1);
-        svgs[0] = _info.svgs[tokenId];
-        return OnchainMetadata.compileImages(svgs);
+        string[] memory imgURIs = new string[](1);
+        imgURIs[0] = _info.imgURIs[tokenId];
+        return OnchainMetadata.compileImages(imgURIs);
     }
 
     function creator(uint256 tokenId)
