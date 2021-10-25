@@ -2,9 +2,9 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
+import {IERC721Enumerable} from "@openzeppelin/contracts/interfaces/IERC721Enumerable.sol";
 
-interface IDava is IERC721 {
+interface IDava is IERC721Enumerable {
     function mint(address to, uint256 id) external;
 
     function registerAsset(address asset) external;
