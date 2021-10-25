@@ -14,7 +14,7 @@ contract DavaHelmetAddOn is AssetBase {
     }
 
     function assetType() public pure virtual override returns (bytes32) {
-        return keccak256("HelmetAddOn");
+        return keccak256("dava.helmetaddon");
     }
 
     function zIndex() public pure virtual override returns (uint256) {

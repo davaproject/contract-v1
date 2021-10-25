@@ -14,7 +14,7 @@ contract DavaSuitAddOn is AssetBase {
     }
 
     function assetType() public pure virtual override returns (bytes32) {
-        return keccak256("SuitAddOn");
+        return keccak256("dava.suitaddon");
     }
 
     function zIndex() public pure virtual override returns (uint256) {

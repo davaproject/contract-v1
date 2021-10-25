@@ -14,7 +14,7 @@ contract DavaBackground is AssetBase {
     }
 
     function assetType() public pure virtual override returns (bytes32) {
-        return keccak256("Background");
+        return keccak256("dava.background");
     }
 
     function zIndex() public pure virtual override returns (uint256) {

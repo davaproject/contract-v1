@@ -14,7 +14,7 @@ contract DavaFrameBody is AssetBase {
     }
 
     function assetType() public pure virtual override returns (bytes32) {
-        return keccak256("FrameBody");
+        return keccak256("dava.framebody");
     }
 
     function zIndex() public pure virtual override returns (uint256) {

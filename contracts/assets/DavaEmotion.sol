@@ -14,7 +14,7 @@ contract DavaEmotion is AssetBase {
     }
 
     function assetType() public pure virtual override returns (bytes32) {
-        return keccak256("Emotion");
+        return keccak256("dava.emotion");
     }
 
     function zIndex() public pure virtual override returns (uint256) {
