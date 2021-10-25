@@ -21,7 +21,11 @@ interface IAsset {
 
     function creator(uint256 tokenId_) external view returns (address);
 
+    function imageUri(uint256 tokenId_) external view returns (string memory);
+
     function image(uint256 tokenId_) external view returns (string memory);
+
+    function rawImage(uint256 tokenId_) external view returns (string memory);
 
     function maxSupply(uint256 tokenId_) external view returns (uint256);
 }

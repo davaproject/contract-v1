@@ -81,13 +81,33 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
             );
     }
 
+    function imageUri(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return _info.svgs[tokenId];
+    }
+
     function image(uint256 tokenId)
         external
         view
         override
         returns (string memory)
     {
-        return _info.svgs[tokenId];
+        string[] memory svgs = new string[](1);
+        svgs[0] = _info.svgs[tokenId];
+        return OnchainMetadata.compileImages(svgs);
+    }
+
+    function rawImage(uint256 tokenId)
+        external
+        view
+        override
+        returns (string memory)
+    {
+        return OnchainMetadata.toSVGImage(_info.svgs[tokenId]);
     }
 
     function creator(uint256 tokenId)
