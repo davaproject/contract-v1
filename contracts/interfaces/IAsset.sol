@@ -3,11 +3,17 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 interface IAsset {
+    struct OnchainTrait {
+        string traitType;
+        string value;
+    }
+
     function create(
         string calldata title_,
         address creator_,
         string calldata description_,
         string calldata uri_,
+        OnchainTrait[] calldata attributes,
         uint256 maxNum_
     ) external;
 
@@ -24,8 +30,6 @@ interface IAsset {
     function imageUri(uint256 tokenId_) external view returns (string memory);
 
     function image(uint256 tokenId_) external view returns (string memory);
-
-    function rawImage(uint256 tokenId_) external view returns (string memory);
 
     function maxSupply(uint256 tokenId_) external view returns (uint256);
 }

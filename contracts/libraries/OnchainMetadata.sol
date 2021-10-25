@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
+import {IAsset} from "../interfaces/IAsset.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 library OnchainMetadata {
@@ -18,17 +19,12 @@ library OnchainMetadata {
         uint256 zIndex;
     }
 
-    struct OnchainTrait {
-        string traitType;
-        string value;
-    }
-
     function toMetadata(
         string memory name,
         address creator,
         string memory description,
-        string memory svg,
-        OnchainTrait[] memory attributes
+        string[] memory svgs,
+        IAsset.OnchainTrait[] memory attributes
     ) internal pure returns (string memory) {
         bytes memory metadata = abi.encodePacked(
             '{"name":"',
@@ -41,7 +37,7 @@ library OnchainMetadata {
         );
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
-            OnchainTrait memory trait = attributes[i];
+            IAsset.OnchainTrait memory trait = attributes[i];
             metadata = abi.encodePacked(
                 metadata,
                 '{"trait_type":"',
@@ -58,7 +54,7 @@ library OnchainMetadata {
         metadata = abi.encodePacked(
             metadata,
             '],"image":"data:image/svg_xml;utf8,',
-            toSVGImage(svg),
+            compileImages(svgs),
             '"}'
         );
 

@@ -10,7 +10,16 @@ contract DavaSuitAddOn is AssetBase {
         uint256 value;
     }
 
-    constructor() AssetBase("ipfs://ERC1155-name-description-thumbnail-uri") {}
+    constructor(
+        string[] memory lowerIndexSVGs_,
+        string[] memory upperIndexSVGs_
+    )
+        AssetBase(
+            "ipfs://ERC1155-name-description-thumbnail-uri",
+            lowerIndexSVGs_,
+            upperIndexSVGs_
+        )
+    {}
 
     function trait(uint256 tokenId) public view returns (SuitAddOn memory) {
         //
