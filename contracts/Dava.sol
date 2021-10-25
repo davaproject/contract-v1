@@ -2,12 +2,12 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
 import {IAvatar} from "./interfaces/IAvatar.sol";
 import {IAsset} from "./interfaces/IAsset.sol";
@@ -19,6 +19,8 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
     using Clones for address;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant ASSET_MANAGER_ROLE =
+        keccak256("ASSET_MANAGER_ROLE");
     bytes32 public constant UPGRADE_MANAGER_ROLE =
         keccak256("UPGRADE_MANAGER_ROLE");
 
@@ -45,6 +47,10 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
         _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
+    function upgradeTo(address newImplementation) public onlyRole(UPGRADE_MANAGER_ROLE) {
+        _upgradeTo(newImplementation);
+    }
+
     function mint(address to, uint256 id)
         public
         override
@@ -57,7 +63,7 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
     function registerAsset(address asset)
         public
         override
-        onlyRole(UPGRADE_MANAGER_ROLE)
+        onlyRole(ASSET_MANAGER_ROLE)
     {
         require(
             IERC165(asset).supportsInterface(type(IAsset).interfaceId),
@@ -73,7 +79,7 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
     function deregisterAsset(address asset)
         public
         override
-        onlyRole(UPGRADE_MANAGER_ROLE)
+        onlyRole(ASSET_MANAGER_ROLE)
     {
         bytes32 assetType = IAsset(asset).assetType();
         require(_assets[assetType].contains(asset), "Dava: Not registered");
