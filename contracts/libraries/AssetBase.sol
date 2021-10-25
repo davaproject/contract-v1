@@ -17,23 +17,23 @@ struct AssetInfo {
     mapping(uint256 => string) svgs;
     mapping(uint256 => uint256) maxSupply;
     mapping(uint256 => IAsset.Attribute[]) attributes;
-    string[] lowerIndexSVGs;
-    string[] upperIndexSVGs;
 }
 
 abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
     using Address for address;
 
+    string private _backgroundImgUri;
+    string private _foregroundImgUri;
+
     AssetInfo private _info;
     uint256 public override numberOfAssets;
 
     constructor(
-        string memory uri_,
-        string[] memory lowerIndexSVGs_,
-        string[] memory upperIndexSVGs_
-    ) ERC1155(uri_) Ownable() {
-        _info.lowerIndexSVGs = lowerIndexSVGs_;
-        _info.upperIndexSVGs = upperIndexSVGs_;
+        string memory backgroundImgUri_,
+        string memory foregroundImgUri_
+    ) ERC1155("") Ownable() {
+        _backgroundImgUri = backgroundImgUri_;
+        _foregroundImgUri = foregroundImgUri_;
     }
 
     function create(
@@ -86,20 +86,10 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
     // viewers
 
     function uri(uint256 tokenId) public view override returns (string memory) {
-        uint256 lowerIndexSVGAmount = _info.lowerIndexSVGs.length;
-        uint256 upperIndexSVGAmount = _info.upperIndexSVGs.length;
-        string[] memory svgs = new string[](
-            lowerIndexSVGAmount + upperIndexSVGAmount + 1
-        );
-
-        for (uint256 i = 0; i < lowerIndexSVGAmount; i += 1) {
-            svgs[i] = _info.lowerIndexSVGs[i];
-        }
-        svgs[lowerIndexSVGAmount] = _info.svgs[tokenId];
-
-        for (uint256 i = 0; i < upperIndexSVGAmount; i += 1) {
-            svgs[i] = _info.upperIndexSVGs[i];
-        }
+        string[] memory svgs = new string[](3);
+        svgs[0] = _backgroundImgUri;
+        svgs[1] = _info.svgs[tokenId];
+        svgs[2] = _foregroundImgUri;
 
         return
             OnchainMetadata.toMetadata(
