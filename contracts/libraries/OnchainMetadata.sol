@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
+import {IAsset} from "../interfaces/IAsset.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 library OnchainMetadata {
@@ -13,22 +14,12 @@ library OnchainMetadata {
     string private constant SVG_IMG_START_LINE = '<image href="';
     string private constant SVG_IMG_END_LINE = '" width="100%"/>';
 
-    struct OnchainSVG {
-        string svg;
-        uint256 zIndex;
-    }
-
-    struct OnchainTrait {
-        string traitType;
-        string value;
-    }
-
     function toMetadata(
         string memory name,
         address creator,
         string memory description,
-        string memory svg,
-        OnchainTrait[] memory attributes
+        string[] memory imgURIs,
+        IAsset.Attribute[] memory attributes
     ) internal pure returns (string memory) {
         bytes memory metadata = abi.encodePacked(
             '{"name":"',
@@ -41,13 +32,13 @@ library OnchainMetadata {
         );
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
-            OnchainTrait memory trait = attributes[i];
+            IAsset.Attribute memory attribute = attributes[i];
             metadata = abi.encodePacked(
                 metadata,
                 '{"trait_type":"',
-                trait.traitType,
+                attribute.traitType,
                 '","value":"',
-                trait.value,
+                attribute.value,
                 '"}'
             );
             if (i < attributes.length - 1) {
@@ -58,23 +49,23 @@ library OnchainMetadata {
         metadata = abi.encodePacked(
             metadata,
             '],"image":"data:image/svg_xml;utf8,',
-            toSVGImage(svg),
+            compileImages(imgURIs),
             '"}'
         );
 
         return string(metadata);
     }
 
-    function compileImages(string[] memory svgs)
+    function compileImages(string[] memory imgURIs)
         internal
         pure
         returns (string memory)
     {
         string memory accumulator;
 
-        for (uint256 i = 0; i < svgs.length; i += 1) {
+        for (uint256 i = 0; i < imgURIs.length; i += 1) {
             accumulator = string(
-                abi.encodePacked(accumulator, toSVGImage(svgs[i]))
+                abi.encodePacked(accumulator, toSVGImage(imgURIs[i]))
             );
         }
 
@@ -82,12 +73,14 @@ library OnchainMetadata {
             string(abi.encodePacked(SVG_START_LINE, accumulator, SVG_END_LINE));
     }
 
-    function toSVGImage(string memory svg)
+    function toSVGImage(string memory imgUri)
         internal
         pure
         returns (string memory)
     {
         return
-            string(abi.encodePacked(SVG_IMG_START_LINE, svg, SVG_IMG_END_LINE));
+            string(
+                abi.encodePacked(SVG_IMG_START_LINE, imgUri, SVG_IMG_END_LINE)
+            );
     }
 }

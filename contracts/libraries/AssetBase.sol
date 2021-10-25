@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 import {ERC1155Supply, ERC1155} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IAsset} from "../interfaces/IAsset.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
@@ -14,34 +14,69 @@ struct AssetInfo {
     mapping(uint256 => string) titles;
     mapping(uint256 => address) creators;
     mapping(uint256 => string) descriptions;
-    mapping(uint256 => string) svgs;
+    mapping(uint256 => string) imgURIs;
     mapping(uint256 => uint256) maxSupply;
-    mapping(uint256 => OnchainMetadata.OnchainTrait[]) attributes;
+    mapping(uint256 => IAsset.Attribute[]) attributes;
 }
 
-abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
+abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
     using Address for address;
+
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
+
+    string private _backgroundImgUri;
+    string private _foregroundImgUri;
 
     AssetInfo private _info;
     uint256 public override numberOfAssets;
 
-    constructor(string memory uri_) ERC1155(uri_) Ownable() {}
+    uint256 public maxTotalAssetSupply = 0;
+    uint256 public totalAssetSupply = 0;
+
+    constructor(
+        string memory backgroundImgUri_,
+        string memory foregroundImgUri_,
+        string memory frameImgUri_
+    ) ERC1155("") {
+        _backgroundImgUri = backgroundImgUri_;
+        _foregroundImgUri = foregroundImgUri_;
+
+        if (bytes(frameImgUri_).length == 0) {
+            numberOfAssets += 1;
+        } else {
+            create("", msg.sender, "", frameImgUri_, (new Attribute[](0)), 0);
+        }
+
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, msg.sender);
+        _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setupRole(CREATOR_ROLE, msg.sender);
+        _setRoleAdmin(CREATOR_ROLE, DEFAULT_ADMIN_ROLE);
+    }
 
     function create(
-        string calldata title_,
+        string memory title_,
         address creator_,
-        string calldata description_,
-        string calldata uri_,
+        string memory description_,
+        string memory uri_,
+        Attribute[] memory attributes,
         uint256 maxSupply_
-    ) external override onlyOwner {
+    ) public override onlyRole(CREATOR_ROLE) {
         uint256 tokenId = numberOfAssets;
         require(_info.creators[tokenId] == address(0), "Already created");
         _info.titles[tokenId] = title_;
         _info.creators[tokenId] = creator_;
         _info.descriptions[tokenId] = description_;
-        _info.svgs[tokenId] = uri_;
+        _info.imgURIs[tokenId] = uri_;
         _info.maxSupply[tokenId] = maxSupply_;
+
+        for (uint256 i = 0; i < attributes.length; i += 1) {
+            _info.attributes[tokenId].push(attributes[i]);
+        }
+
         numberOfAssets = tokenId + 1;
+        maxTotalAssetSupply += maxSupply_;
     }
 
     function mint(
@@ -49,8 +84,10 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) public onlyOwner {
+    ) public onlyRole(MINTER_ROLE) {
         require(totalSupply(id) + amount <= maxSupply(id), "Out of stock.");
+
+        totalAssetSupply += amount;
         return super._mint(account, id, amount, data);
     }
 
@@ -59,11 +96,13 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) public onlyOwner {
+    ) public onlyRole(MINTER_ROLE) {
         for (uint256 i = 0; i < ids.length; i += 1) {
             uint256 id = ids[i];
             uint256 amount = amounts[i];
             require(totalSupply(id) + amount <= maxSupply(id), "Out of stock.");
+
+            totalAssetSupply += amount;
         }
         return super._mintBatch(to, ids, amounts, data);
     }
@@ -71,14 +110,28 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
     // viewers
 
     function uri(uint256 tokenId) public view override returns (string memory) {
+        string[] memory imgURIs = new string[](3);
+        imgURIs[0] = _backgroundImgUri;
+        imgURIs[1] = _info.imgURIs[tokenId];
+        imgURIs[2] = _foregroundImgUri;
+
         return
             OnchainMetadata.toMetadata(
                 _info.titles[tokenId],
                 _info.creators[tokenId],
                 _info.descriptions[tokenId],
-                _info.svgs[tokenId],
+                imgURIs,
                 _info.attributes[tokenId]
             );
+    }
+
+    function imageUri(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return _info.imgURIs[tokenId];
     }
 
     function image(uint256 tokenId)
@@ -87,7 +140,9 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         override
         returns (string memory)
     {
-        return _info.svgs[tokenId];
+        string[] memory imgURIs = new string[](1);
+        imgURIs[0] = _info.imgURIs[tokenId];
+        return OnchainMetadata.compileImages(imgURIs);
     }
 
     function creator(uint256 tokenId)
@@ -114,7 +169,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         public
         view
         virtual
-        override(ERC1155)
+        override(ERC1155, AccessControl)
         returns (bool)
     {
         return

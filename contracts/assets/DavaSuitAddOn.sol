@@ -1,30 +1,23 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
-pragma abicoder v2;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "../libraries/AssetBase.sol";
 
 contract DavaSuitAddOn is AssetBase {
-    struct SuitAddOn {
-        uint256 value;
-    }
-
-    constructor() AssetBase("ipfs://ERC1155-name-description-thumbnail-uri") {}
-
-    function trait(uint256 tokenId) public view returns (SuitAddOn memory) {
-        //
-    }
+    constructor(
+        string memory backgroundImgUri_,
+        string memory foregroundImgUri_
+    ) AssetBase(backgroundImgUri_, foregroundImgUri_, "") {}
 
     function name() public pure virtual override returns (string memory) {
         return "suit-addon";
     }
 
     function assetType() public pure virtual override returns (bytes32) {
-        return keccak256("SuitAddOn(uint256 value)");
+        return keccak256("dava.suitaddon");
     }
 
     function zIndex() public pure virtual override returns (uint256) {
-        return 100000;
+        return 20000;
     }
 }
