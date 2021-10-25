@@ -5,11 +5,9 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../interfaces/IAsset.sol";
 import "../libraries/AvatarBase.sol";
-import "../libraries/OnchainMetadata.sol";
 
 contract AvatarV2Draft is AvatarBase {
     using Strings for uint256;
-    using OnchainMetadata for OnchainMetadata.OnchainSVG[];
 
     function testChangeName(string memory val) public {
         _props().name = val;
