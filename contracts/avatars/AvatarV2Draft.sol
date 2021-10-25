@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../interfaces/IAsset.sol";
 import "../libraries/AvatarBase.sol";
