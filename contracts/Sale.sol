@@ -13,6 +13,7 @@ contract Sale is EIP712, Ownable {
 
     uint256 public constant PRICE = 0.095 ether;
     uint256 public constant MAX_MINT_PER_ACCOUNT = 50;
+    uint256 public constant MAX_MINT_PER_TRANSACTION = 30;
 
     uint256 public constant PRE_SALE_OPENING_TIME = 10000;
     uint256 public constant PRE_SALE_CLOSING_TIME = 10000;
@@ -93,6 +94,7 @@ contract Sale is EIP712, Ownable {
         onlyDuringPublicSale
     {
         require(!soldOut, "Sale: sold out");
+        require(purchaseAmount <= MAX_MINT_PER_TRANSACTION, "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction");
         require(
             purchaseAmount <= MAX_TOTAL_SUPPLY - dava.totalSupply(),
             "Sale: exceeds max supply"
@@ -124,6 +126,7 @@ contract Sale is EIP712, Ownable {
         payable
         onlyDuringPreSale
     {
+        require(purchaseAmount <= MAX_MINT_PER_TRANSACTION, "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction");
         require(
             msg.sender == preSaleReq.whitelist.beneficiary,
             "Sale: msg.sender is not whitelisted"
