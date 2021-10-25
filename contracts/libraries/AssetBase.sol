@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 import {ERC1155Supply, ERC1155} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IAsset} from "../interfaces/IAsset.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
@@ -19,8 +19,11 @@ struct AssetInfo {
     mapping(uint256 => IAsset.Attribute[]) attributes;
 }
 
-abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
+abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
     using Address for address;
+
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
 
     string private _backgroundImgUri;
     string private _foregroundImgUri;
@@ -32,7 +35,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         string memory backgroundImgUri_,
         string memory foregroundImgUri_,
         string memory frameImgUri_
-    ) ERC1155("") Ownable() {
+    ) ERC1155("") {
         _backgroundImgUri = backgroundImgUri_;
         _foregroundImgUri = foregroundImgUri_;
 
@@ -41,6 +44,12 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         } else {
             create("", msg.sender, "", frameImgUri_, (new Attribute[](0)), 0);
         }
+
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, msg.sender);
+        _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setupRole(CREATOR_ROLE, msg.sender);
+        _setRoleAdmin(CREATOR_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
     function create(
@@ -50,7 +59,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         string memory uri_,
         Attribute[] memory attributes,
         uint256 maxSupply_
-    ) public override onlyOwner {
+    ) public override onlyRole(CREATOR_ROLE) {
         uint256 tokenId = numberOfAssets;
         require(_info.creators[tokenId] == address(0), "Already created");
         _info.titles[tokenId] = title_;
@@ -71,7 +80,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) public onlyOwner {
+    ) public onlyRole(MINTER_ROLE) {
         require(totalSupply(id) + amount <= maxSupply(id), "Out of stock.");
         return super._mint(account, id, amount, data);
     }
@@ -81,7 +90,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) public onlyOwner {
+    ) public onlyRole(MINTER_ROLE) {
         for (uint256 i = 0; i < ids.length; i += 1) {
             uint256 id = ids[i];
             uint256 amount = amounts[i];
@@ -152,7 +161,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         public
         view
         virtual
-        override(ERC1155)
+        override(ERC1155, AccessControl)
         returns (bool)
     {
         return

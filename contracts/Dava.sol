@@ -4,6 +4,7 @@ pragma abicoder v2;
 
 import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -12,10 +13,14 @@ import {IAvatar} from "./interfaces/IAvatar.sol";
 import {IAsset} from "./interfaces/IAsset.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
-contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
+contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Clones for address;
+
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant UPGRADE_MANAGER_ROLE =
+        keccak256("UPGRADE_MANAGER_ROLE");
 
     mapping(bytes32 => EnumerableSet.AddressSet) private _assets;
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
@@ -32,14 +37,28 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
         UpgradeableBeacon(minimalProxy_)
     {
         _minimalProxy = minimalProxy_;
+
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, msg.sender);
+        _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setupRole(UPGRADE_MANAGER_ROLE, msg.sender);
+        _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
-    function mint(address to, uint256 id) public override onlyOwner {
+    function mint(address to, uint256 id)
+        public
+        override
+        onlyRole(MINTER_ROLE)
+    {
         require(id < MAX_SUPPLY, "Dava: Invalid id");
         _mint(to, id);
     }
 
-    function registerAsset(address asset) public override onlyOwner {
+    function registerAsset(address asset)
+        public
+        override
+        onlyRole(UPGRADE_MANAGER_ROLE)
+    {
         require(
             IERC165(asset).supportsInterface(type(IAsset).interfaceId),
             "Does not support IAsset interface"
@@ -51,7 +70,11 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
         }
     }
 
-    function deregisterAsset(address asset) public override onlyOwner {
+    function deregisterAsset(address asset)
+        public
+        override
+        onlyRole(UPGRADE_MANAGER_ROLE)
+    {
         bytes32 assetType = IAsset(asset).assetType();
         require(_assets[assetType].contains(asset), "Dava: Not registered");
         _assets[assetType].remove(asset);
@@ -104,6 +127,18 @@ contract Dava is ERC721Enumerable, IDava, UpgradeableBeacon {
             "ERC721Metadata: URI query for nonexistent token"
         );
         return IAvatar(getAvatar(tokenId)).getPFP();
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControl, ERC721Enumerable, IERC165)
+        returns (bool)
+    {
+        return
+            AccessControl.supportsInterface(interfaceId) ||
+            ERC721Enumerable.supportsInterface(interfaceId);
     }
 
     function _mint(address to, uint256 id) internal override {
