@@ -138,7 +138,9 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
     {
         return
             AccessControl.supportsInterface(interfaceId) ||
-            ERC721Enumerable.supportsInterface(interfaceId);
+            ERC721Enumerable.supportsInterface(interfaceId) ||
+            super.supportsInterface(interfaceId) ||
+            interfaceId == type(IDava).interfaceId;
     }
 
     function _mint(address to, uint256 id) internal override {
