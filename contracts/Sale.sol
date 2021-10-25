@@ -99,7 +99,7 @@ contract Sale is EIP712, Ownable {
     {
         require(!soldOut, "Sale: sold out");
         require(
-            purchaseAmount <= MAX_TOTAL_SUPPLY - totalSoldAmount(),
+            purchaseAmount <= MAX_TOTAL_SUPPLY - dava.totalSupply(),
             "Sale: exceeds max supply"
         );
         require(
@@ -112,7 +112,7 @@ contract Sale is EIP712, Ownable {
         publicSaleMintAmountOf[msg.sender] += purchaseAmount;
         totalPublicSaleAmount += purchaseAmount;
 
-        if (totalSoldAmount() == MAX_TOTAL_SUPPLY) {
+        if (dava.totalSupply() + purchaseAmount == MAX_TOTAL_SUPPLY) {
             soldOut = true;
             emit SoldOut();
         }
@@ -173,11 +173,6 @@ contract Sale is EIP712, Ownable {
         receiver.transfer(amount);
 
         emit WithdrawFunds(receiver, amount);
-    }
-
-    function totalSoldAmount() private view returns (uint256) {
-        return
-            totalAllocatedAmount + totalPreSaleAmount + totalPublicSaleAmount;
     }
 
     function _checkEthAmount(uint256 purchaseAmount, uint256 paidEth)
