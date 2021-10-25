@@ -14,17 +14,12 @@ library OnchainMetadata {
     string private constant SVG_IMG_START_LINE = '<image href="';
     string private constant SVG_IMG_END_LINE = '" width="100%"/>';
 
-    struct OnchainSVG {
-        string svg;
-        uint256 zIndex;
-    }
-
     function toMetadata(
         string memory name,
         address creator,
         string memory description,
         string[] memory svgs,
-        IAsset.OnchainTrait[] memory attributes
+        IAsset.Attribute[] memory attributes
     ) internal pure returns (string memory) {
         bytes memory metadata = abi.encodePacked(
             '{"name":"',
@@ -37,13 +32,13 @@ library OnchainMetadata {
         );
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
-            IAsset.OnchainTrait memory trait = attributes[i];
+            IAsset.Attribute memory attribute = attributes[i];
             metadata = abi.encodePacked(
                 metadata,
                 '{"trait_type":"',
-                trait.traitType,
+                attribute.traitType,
                 '","value":"',
-                trait.value,
+                attribute.value,
                 '"}'
             );
             if (i < attributes.length - 1) {

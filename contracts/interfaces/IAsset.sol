@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 interface IAsset {
-    struct OnchainTrait {
+    struct Attribute {
         string traitType;
         string value;
     }
@@ -13,7 +13,7 @@ interface IAsset {
         address creator_,
         string calldata description_,
         string calldata uri_,
-        OnchainTrait[] calldata attributes,
+        Attribute[] calldata attributes,
         uint256 maxNum_
     ) external;
 

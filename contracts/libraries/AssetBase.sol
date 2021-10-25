@@ -16,7 +16,7 @@ struct AssetInfo {
     mapping(uint256 => string) descriptions;
     mapping(uint256 => string) svgs;
     mapping(uint256 => uint256) maxSupply;
-    mapping(uint256 => IAsset.OnchainTrait[]) attributes;
+    mapping(uint256 => IAsset.Attribute[]) attributes;
     string[] lowerIndexSVGs;
     string[] upperIndexSVGs;
 }
@@ -41,7 +41,7 @@ abstract contract AssetBase is Ownable, ERC1155Supply, IAsset {
         address creator_,
         string calldata description_,
         string calldata uri_,
-        OnchainTrait[] calldata attributes,
+        Attribute[] calldata attributes,
         uint256 maxSupply_
     ) external override onlyOwner {
         uint256 tokenId = numberOfAssets;
