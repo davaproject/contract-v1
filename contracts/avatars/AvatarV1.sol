@@ -73,7 +73,9 @@ contract AvatarV1 is AvatarBase {
             layers[i] = QuickSort.Layer(image, zIndex);
         }
 
-        QuickSort.sort(layers, int256(0), int256(assets.length - 1));
+        if (assets.length > 1) {
+            QuickSort.sort(layers, int256(0), int256(assets.length - 1));
+        }
 
         string[] memory imgURIs = new string[](assets.length);
         for (uint256 i = 0; i < assets.length; i += 1) {
