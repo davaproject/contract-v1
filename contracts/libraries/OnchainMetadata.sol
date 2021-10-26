@@ -22,7 +22,7 @@ library OnchainMetadata {
         IERC1155Asset.Attribute[] memory attributes
     ) internal pure returns (string memory) {
         bytes memory metadata = abi.encodePacked(
-            '{"name":"',
+            'data:application/json;utf8,{"name":"',
             name,
             '","creator":"',
             uint256(uint160(creator)).toHexString(20),
