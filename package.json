@@ -1,10 +1,18 @@
 {
   "name": "contract-v1",
-  "version": "1.0.0",
+  "version": "1.0.0-beta-rc.0",
   "description": "Dava Contract",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "types/index.ts",
+  "files": [
+    "contracts",
+    "dist",
+    "types",
+    "deployed.json"
+  ],
   "scripts": {
     "compile": "npx hardhat compile",
+    "build": "yarn tsc --build tsconfig.json",
     "coverage": "npx hardhat coverage",
     "size": "yarn compile && npx hardhat size-contracts",
     "clean": "npx hardhat clean",

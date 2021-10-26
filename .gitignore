@@ -6,6 +6,7 @@ artifacts
 
 #Typechain
 types
+dist
 
 #test
 coverage

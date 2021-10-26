@@ -4,9 +4,11 @@
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
-    "outDir": "dist",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "typeRoots": ["node_modules/@types"],
+    "outDir": "./dist",
+    "rootDir": "./types",
+    // "declaration": true
   },
-  "include": ["./scripts", "./deploy", "./test"],
-  "files": ["./hardhat.config.ts"]
+  "include": ["./types", "./deployed.json"]
 }
