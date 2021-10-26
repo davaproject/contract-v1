@@ -33,12 +33,15 @@ interface IAsset {
 contract AssetDrop is Ownable {
     uint256 constant DROP_AMOUNT_PER_AVATAR = 3;
 
+    uint256 public openingTime = 2**256 - 1;
+
     mapping(uint256 => bool) public alreadyDropped;
 
     IDava public dava;
     IAsset[] private _assets;
     IRandomBox public randomBox;
 
+    event SetOpeningTime(uint256 openingTime);
     event RequestAssets(uint256 indexed avatarId);
 
     constructor(
@@ -51,7 +54,17 @@ contract AssetDrop is Ownable {
         randomBox = randomBox_;
     }
 
-    function requestAssets(uint256 avatarId) external {
+    modifier onlyDuringOpened() {
+        require(block.timestamp >= openingTime, "AssetDrop: not opened");
+        _;
+    }
+
+    function setOpeningTime(uint256 openingTime_) external onlyOwner {
+        openingTime = openingTime_;
+        emit SetOpeningTime(openingTime_);
+    }
+
+    function requestAssets(uint256 avatarId) external onlyDuringOpened {
         require(
             dava.ownerOf(avatarId) == msg.sender,
             "AssetDrop: not authorized"
