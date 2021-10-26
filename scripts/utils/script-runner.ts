@@ -1,4 +1,4 @@
-import { isDeployed, recordDeployment } from "./deploy-log";
+import { recordDeployment } from "./deploy-log";
 import { isExecuted, recordExecution } from "./execution-log";
 import { Network } from "./network";
 
