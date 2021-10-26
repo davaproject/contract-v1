@@ -7,7 +7,7 @@ contract DavaSuitAddOn is ERC1155Asset {
     constructor(
         string memory backgroundImgUri_,
         string memory foregroundImgUri_
-    ) ERC1155Asset(backgroundImgUri_, foregroundImgUri_, "") {}
+    ) ERC1155Asset(backgroundImgUri_, foregroundImgUri_) {}
 
     function name() public pure virtual override returns (string memory) {
         return "suit-addon";

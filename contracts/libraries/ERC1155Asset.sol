@@ -42,8 +42,7 @@ abstract contract ERC1155Asset is
 
     constructor(
         string memory backgroundImgUri_,
-        string memory foregroundImgUri_,
-        string memory frameImgUri_
+        string memory foregroundImgUri_
     ) ERC1155("") Ownable() {
         _backgroundImgUri = backgroundImgUri_;
         _foregroundImgUri = foregroundImgUri_;
