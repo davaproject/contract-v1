@@ -68,10 +68,8 @@ const registerAsset = async ({
   dava: Dava;
   asset: string;
 }): Promise<void> => {
-  console.log(`Start register asset <${asset}> to <Dava>`);
   const tx = await dava.registerAsset(asset);
   await tx.wait(1);
-  console.log(`asset <${asset}> contract is registered in <Dava>`);
 };
 
 const grantMinterRole = async ({
@@ -81,11 +79,9 @@ const grantMinterRole = async ({
   asset: AssetBase;
   operator: string;
 }): Promise<void> => {
-  console.log(`Grant MINTER_ROLE to <${operator}> in <${asset.address}>`);
   const MINTER_ROLE = await asset.MINTER_ROLE();
   const tx = await asset.grantRole(MINTER_ROLE, operator);
   await tx.wait(1);
-  console.log(`MINTER_ROLE is granted to <${operator}> in <${asset.address}>`);
 };
 
 export const fixtures = async (): Promise<Fixture> => {
