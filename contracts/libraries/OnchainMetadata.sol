@@ -9,10 +9,10 @@ library OnchainMetadata {
     using Strings for uint256;
 
     string private constant SVG_START_LINE =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">';
+        "<svg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000' viewBox='0 0 1000 1000'>";
     string private constant SVG_END_LINE = "</svg>";
-    string private constant SVG_IMG_START_LINE = '<image href="';
-    string private constant SVG_IMG_END_LINE = '" width="100%"/>';
+    string private constant SVG_IMG_START_LINE = "<image href='";
+    string private constant SVG_IMG_END_LINE = "' width='100%'/>";
 
     function toMetadata(
         string memory name,
