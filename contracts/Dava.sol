@@ -126,16 +126,17 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
             );
     }
 
-    function getDefaultImage(bytes32 assetType)
+    function getDefaultAsset(bytes32 assetType)
         public
         view
         override
-        returns (string memory)
+        returns (string memory image, uint256 zIndex)
     {
         IAsset defaultAsset = _defaultAssets[assetType];
-        if (address(defaultAsset) == address(0)) return "";
+        if (address(defaultAsset) == address(0)) return ("", 0);
         else {
-            return defaultAsset.defaultImage();
+            image = defaultAsset.defaultImage();
+            zIndex = defaultAsset.zIndex();
         }
     }
 

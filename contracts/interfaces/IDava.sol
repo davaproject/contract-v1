@@ -29,8 +29,8 @@ interface IDava is IERC721Enumerable {
 
     function getPFP(uint256 id) external view returns (string memory);
 
-    function getDefaultImage(bytes32 assetType)
+    function getDefaultAsset(bytes32 assetType)
         external
         view
-        returns (string memory);
+        returns (string memory image, uint256 zIndex);
 }
