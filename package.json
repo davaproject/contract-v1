@@ -2,7 +2,7 @@
   "name": "contract-v1",
   "version": "1.0.0-beta-rc.2",
   "description": "Dava Contract",
-  "main": "dist/index.js",
+  "main": "dist/types/index.js",
   "types": "types/index.ts",
   "files": [
     "contracts",
