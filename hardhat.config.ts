@@ -40,7 +40,7 @@ const config: HardhatUserConfig = {
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY || ""}`,
-      accounts: [`0x${process.env.PRIV_KEY || ""}`],
+      accounts: process.env.PRIV_KEY ? [`0x${process.env.PRIV_KEY}`] : [],
     },
     // ropsten: {
     //   url: `https://ropsten.infura.io/v3/${process.env.INFURA_KEY}`,
