@@ -28,7 +28,7 @@ contract AvatarV1 is AvatarBase {
 
         uint256 wearingAssetAmount = 0;
         for (uint256 i = 0; i < assets.length; i += 1) {
-            if (assets[i].id > 0) {
+            if (assets[i].assetAddr != address(0x0)) {
                 string memory name = IAsset(assets[i].assetAddr).name();
                 string memory assetTitle = IERC1155Asset(assets[i].assetAddr)
                     .assetTitle(assets[i].id);
