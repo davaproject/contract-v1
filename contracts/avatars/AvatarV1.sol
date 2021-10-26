@@ -66,15 +66,18 @@ contract AvatarV1 is AvatarBase {
 
         for (uint256 i = 0; i < assets.length; i += 1) {
             string memory img;
+            uint256 zIndex;
             if (assets[i].assetAddr == address(0x0)) {
-                img = IDava(dava()).getDefaultImage(assets[i].assetType);
+                (img, zIndex) = IDava(dava()).getDefaultAsset(
+                    assets[i].assetType
+                );
             } else {
                 img = IERC1155Asset(assets[i].assetAddr).imageUri(assets[i].id);
+                zIndex = IERC1155Asset(assets[i].assetAddr).zIndex();
             }
             if (bytes(img).length == 0) {
                 layers[i] = QuickSort.Layer("", 2**256 - 1 - i);
             } else {
-                uint256 zIndex = IAsset(assets[i].assetAddr).zIndex();
                 layers[i] = QuickSort.Layer(img, zIndex);
             }
         }
