@@ -4,6 +4,7 @@ pragma abicoder v2;
 
 import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Account} from "./Account.sol";
 import {MinimalProxy} from "./MinimalProxy.sol";
 import {IAsset} from "../interfaces/IAsset.sol";
@@ -12,6 +13,8 @@ import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
 
 abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
+    using Strings for uint256;
+
     event PutOn(bytes32 indexed assetType, address asset, uint256 id);
     event TakeOff(bytes32 indexed assetType, address asset, uint256 id);
 
@@ -68,8 +71,19 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
 
     // add batchExecution()
 
-    function name() public view virtual override returns (string memory) {
-        return _props().name;
+    function name()
+        public
+        view
+        virtual
+        override
+        returns (string memory avatarName)
+    {
+        avatarName = _props().name;
+        if (bytes(avatarName).length == 0) {
+            avatarName = string(
+                abi.encodePacked("DAVA #", _props().davaId.toString())
+            );
+        }
     }
 
     function owner() public view override returns (address) {
