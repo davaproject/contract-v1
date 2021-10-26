@@ -61,7 +61,6 @@ describe("Avatar", () => {
       await mintedAvatar.connect(accounts[0]).execute({
         to: accounts[1].address,
         value: parseEther("1"),
-        nonce: await mintedAvatar.nonce(),
         data: "0x",
       });
       expect(await ethers.provider.getBalance(accounts[1].address)).to.equal(

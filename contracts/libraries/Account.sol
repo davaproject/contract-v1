@@ -19,9 +19,7 @@ abstract contract Account is
 {
     using ECDSA for bytes32;
 
-    uint256 private _nonce;
-
-    event Executed(address to, uint256 value, uint256 nonce, bytes data);
+    event Executed(address to, uint256 value, bytes data);
 
     constructor() {}
 
@@ -69,10 +67,6 @@ abstract contract Account is
                 : bytes4(0xffffffff);
     }
 
-    function nonce() public view virtual override returns (uint256) {
-        return _nonce;
-    }
-
     function owner() public view virtual override returns (address);
 
     function supportsInterface(bytes4 interfaceId)
@@ -90,8 +84,6 @@ abstract contract Account is
     }
 
     function _call(Transaction memory transaction) internal {
-        require(transaction.nonce == _nonce, "Account: invalid nonce");
-        _nonce += 1;
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
         );
@@ -99,7 +91,6 @@ abstract contract Account is
         emit Executed(
             transaction.to,
             transaction.value,
-            transaction.nonce,
             transaction.data
         );
     }
