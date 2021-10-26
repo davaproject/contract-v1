@@ -46,8 +46,6 @@ contract Sale is EIP712, Ownable {
         Whitelist whitelist;
     }
 
-    event SoldOut();
-
     constructor(
         IDava dava_,
         uint256 presaleStart,
@@ -109,10 +107,10 @@ contract Sale is EIP712, Ownable {
         _checkEthAmount(purchaseAmount, msg.value);
 
         publicSaleMintAmountOf[msg.sender] += purchaseAmount;
-        totalPublicSaleAmount += purchaseAmount;
 
         for (uint256 i = 0; i < purchaseAmount; i += 1) {
             dava.mint(msg.sender, _getMintableId());
+            totalPublicSaleAmount += 1;
         }
     }
 
@@ -152,9 +150,9 @@ contract Sale is EIP712, Ownable {
         require(signer == owner(), "Sale: invalid signature");
 
         preSaleMintAmountOf[msg.sender] += purchaseAmount;
-        totalPreSaleAmount += purchaseAmount;
         for (uint256 i = 0; i < purchaseAmount; i += 1) {
             dava.mint(msg.sender, _getMintableId());
+            totalPreSaleAmount += 1;
         }
     }
 
