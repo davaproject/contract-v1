@@ -6,7 +6,7 @@ import {ERC1155Supply, ERC1155} from "@openzeppelin/contracts/token/ERC1155/exte
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import {IAsset} from "../interfaces/IAsset.sol";
+import {IERC1155Asset, IAsset} from "../interfaces/IERC1155Asset.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
 
@@ -16,10 +16,10 @@ struct AssetInfo {
     mapping(uint256 => string) descriptions;
     mapping(uint256 => string) imgURIs;
     mapping(uint256 => uint256) maxSupply;
-    mapping(uint256 => IAsset.Attribute[]) attributes;
+    mapping(uint256 => IERC1155Asset.Attribute[]) attributes;
 }
 
-abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
+abstract contract ERC1155Asset is AccessControl, ERC1155Supply, IERC1155Asset {
     using Address for address;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -173,6 +173,7 @@ abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
         returns (bool)
     {
         return
+            interfaceId == type(IERC1155Asset).interfaceId ||
             interfaceId == type(IAsset).interfaceId ||
             super.supportsInterface(interfaceId);
     }
@@ -188,6 +189,8 @@ abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
     {
         return _info.titles[tokenId];
     }
+
+    function defaultImage() external pure override returns (string memory) {}
 
     /**
      * @dev Return this asset class's own name.

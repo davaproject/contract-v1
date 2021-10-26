@@ -103,7 +103,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         // Try to retrieve from the storage
         Asset memory asset_ = _props().assets[assetType];
         if (asset_.assetAddr == address(0x0)) {
-            return Asset(asset_.assetAddr, 0);
+            return Asset(assetType, asset_.assetAddr, 0);
         }
 
         // Check the balance
@@ -115,7 +115,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         if (owning) {
             return asset_;
         } else {
-            return Asset(asset_.assetAddr, 0);
+            return Asset(assetType, asset_.assetAddr, 0);
         }
     }
 

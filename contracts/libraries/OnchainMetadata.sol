@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {IAsset} from "../interfaces/IAsset.sol";
+import {IERC1155Asset} from "../interfaces/IERC1155Asset.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 library OnchainMetadata {
@@ -19,7 +19,7 @@ library OnchainMetadata {
         address creator,
         string memory description,
         string[] memory imgURIs,
-        IAsset.Attribute[] memory attributes
+        IERC1155Asset.Attribute[] memory attributes
     ) internal pure returns (string memory) {
         bytes memory metadata = abi.encodePacked(
             '{"name":"',
@@ -32,7 +32,7 @@ library OnchainMetadata {
         );
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
-            IAsset.Attribute memory attribute = attributes[i];
+            IERC1155Asset.Attribute memory attribute = attributes[i];
             metadata = abi.encodePacked(
                 metadata,
                 '{"trait_type":"',
