@@ -10,7 +10,7 @@ contract Sale is EIP712, Ownable {
         keccak256("Whitelist(uint256 ticketAmount,address beneficiary)");
 
     uint256 public constant MAX_MINT_PER_TICKET = 3;
-    uint256 public constant PRE_ALLOCATED_AMOUNT = 389;
+    uint256 public constant PRE_ALLOCATED_AMOUNT = 500;
 
     uint256 public constant PRICE = 0.095 ether;
     uint256 public constant MAX_MINT_PER_ACCOUNT = 50;
@@ -20,11 +20,8 @@ contract Sale is EIP712, Ownable {
     uint256 public immutable PRE_SALE_CLOSING_TIME;
     uint256 public immutable PUBLIC_SALE_OPENING_TIME;
 
-    bool public soldOut = false;
-
     // Supply
     uint256 private constant MAX_TOTAL_SUPPLY = 10000;
-    uint256 public totalAllocatedAmount = 0;
     uint256 public totalPreSaleAmount = 0;
     uint256 public totalPublicSaleAmount = 0;
 
@@ -32,6 +29,11 @@ contract Sale is EIP712, Ownable {
     mapping(address => uint256) public publicSaleMintAmountOf;
 
     IDava public dava;
+
+    struct AllocInfo {
+        address recipient;
+        uint256 tokenId;
+    }
 
     struct Whitelist {
         uint256 ticketAmount;
@@ -45,10 +47,6 @@ contract Sale is EIP712, Ownable {
         Whitelist whitelist;
     }
 
-    event PreMint(address indexed receiver, uint256 amount);
-    event JoinPublicSale(address indexed buyer, uint256 amount);
-    event JoinPreSale(address indexed buyer, uint256 amount);
-    event WithdrawFunds(address indexed receiver, uint256 amount);
     event SoldOut();
 
     constructor(
@@ -83,25 +81,13 @@ contract Sale is EIP712, Ownable {
         _;
     }
 
-    function preMint(
-        address[] calldata receiverList,
-        uint256[] calldata amountList
-    ) external onlyOwner {
-        require(
-            receiverList.length == amountList.length,
-            "Sale: invalid arguments"
-        );
-
-        for (uint256 i = 0; i < receiverList.length; i++) {
+    function claim(AllocInfo[] memory list) external onlyOwner {
+        for (uint256 i = 0; i < list.length; i++) {
             require(
-                amountList[i] <= PRE_ALLOCATED_AMOUNT - totalAllocatedAmount,
+                list[i].tokenId < PRE_ALLOCATED_AMOUNT,
                 "Sale: exceeds max allocated amount"
             );
-            totalAllocatedAmount += amountList[i];
-
-            for (uint256 j = 0; j < amountList[i]; j += 1) {
-                dava.mint(receiverList[i], dava.totalSupply());
-            }
+            dava.mint(list[i].recipient, list[i].tokenId);
         }
     }
 
@@ -110,14 +96,10 @@ contract Sale is EIP712, Ownable {
         payable
         onlyDuringPublicSale
     {
-        require(!soldOut, "Sale: sold out");
+        require(!soldOut(), "Sale: sold out");
         require(
             purchaseAmount <= MAX_MINT_PER_TRANSACTION,
             "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction"
-        );
-        require(
-            purchaseAmount <= MAX_TOTAL_SUPPLY - dava.totalSupply(),
-            "Sale: exceeds max supply"
         );
         require(
             purchaseAmount <=
@@ -129,16 +111,9 @@ contract Sale is EIP712, Ownable {
         publicSaleMintAmountOf[msg.sender] += purchaseAmount;
         totalPublicSaleAmount += purchaseAmount;
 
-        if (dava.totalSupply() + purchaseAmount == MAX_TOTAL_SUPPLY) {
-            soldOut = true;
-            emit SoldOut();
-        }
-
         for (uint256 i = 0; i < purchaseAmount; i += 1) {
-            dava.mint(msg.sender, dava.totalSupply());
+            dava.mint(msg.sender, _getMintableId());
         }
-
-        emit JoinPublicSale(msg.sender, purchaseAmount);
     }
 
     function joinPreSale(uint256 purchaseAmount, PreSaleReq calldata preSaleReq)
@@ -183,17 +158,29 @@ contract Sale is EIP712, Ownable {
         preSaleMintAmountOf[msg.sender] += purchaseAmount;
         totalPreSaleAmount += purchaseAmount;
         for (uint256 i = 0; i < purchaseAmount; i += 1) {
-            dava.mint(msg.sender, dava.totalSupply());
+            dava.mint(msg.sender, _getMintableId());
         }
-
-        emit JoinPreSale(msg.sender, purchaseAmount);
     }
 
     function withdrawFunds(address payable receiver) external onlyOwner {
         uint256 amount = address(this).balance;
         receiver.transfer(amount);
+    }
 
-        emit WithdrawFunds(receiver, amount);
+    function soldOut() public view returns (bool) {
+        return (totalPreSaleAmount +
+            totalPublicSaleAmount +
+            PRE_ALLOCATED_AMOUNT ==
+            MAX_TOTAL_SUPPLY);
+    }
+
+    function _getMintableId() private view returns (uint256) {
+        uint256 id = PRE_ALLOCATED_AMOUNT +
+            totalPreSaleAmount +
+            totalPublicSaleAmount;
+        require(id < MAX_TOTAL_SUPPLY, "Sale: exceeds max supply");
+
+        return id;
     }
 
     function _checkEthAmount(uint256 purchaseAmount, uint256 paidEth)
