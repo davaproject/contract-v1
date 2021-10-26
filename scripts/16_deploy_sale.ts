@@ -18,7 +18,12 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
 
   console.log("Start deploying <Sale>");
   const Sale = new Sale__factory(deployer);
-  const sale = await Sale.deploy(dava);
+  const sale = await Sale.deploy(
+    dava,
+    1635292800,
+    1635379200,
+    1635552000
+  );
   await sale.deployed();
   console.log("<Sale> Contract deployed at:", sale.address);
 

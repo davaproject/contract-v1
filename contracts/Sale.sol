@@ -15,9 +15,9 @@ contract Sale is EIP712, Ownable {
     uint256 public constant MAX_MINT_PER_ACCOUNT = 50;
     uint256 public constant MAX_MINT_PER_TRANSACTION = 30;
 
-    uint256 public constant PRE_SALE_OPENING_TIME = 10000;
-    uint256 public constant PRE_SALE_CLOSING_TIME = 10000;
-    uint256 public constant PUBLIC_SALE_OPENING_TIME = 10000;
+    uint256 public immutable PRE_SALE_OPENING_TIME;
+    uint256 public immutable PRE_SALE_CLOSING_TIME;
+    uint256 public immutable PUBLIC_SALE_OPENING_TIME;
 
     bool public soldOut = false;
 
@@ -50,8 +50,16 @@ contract Sale is EIP712, Ownable {
     event WithdrawFunds(address indexed receiver, uint256 amount);
     event SoldOut();
 
-    constructor(IDava dava_) EIP712("AvatarSale", "V1") {
+    constructor(
+        IDava dava_,
+        uint256 presaleStart,
+        uint256 presaleEnd,
+        uint256 publicStart
+    ) EIP712("AvatarSale", "V1") {
         dava = dava_;
+        PRE_SALE_OPENING_TIME = presaleStart;
+        PRE_SALE_CLOSING_TIME = presaleEnd;
+        PUBLIC_SALE_OPENING_TIME = publicStart;
     }
 
     modifier onlyDuringPreSale() {

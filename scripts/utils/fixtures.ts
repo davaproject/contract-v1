@@ -200,7 +200,16 @@ export const fixtures = async (): Promise<Fixture> => {
 
   // Start deploying <Sale>
   const SaleContract = new Sale__factory(deployer);
-  const sale = await SaleContract.deploy(dava.address);
+  const now = (await ethers.provider.getBlock("latest")).timestamp;
+  const preStart = now + 1000;
+  const preEnd = now + 2000;
+  const publicStart = now + 3000;
+  const sale = await SaleContract.deploy(
+    dava.address,
+    preStart,
+    preEnd,
+    publicStart
+  );
   await sale.deployed();
 
   // Grant MINTER_ROLE to <Sale> contract
