@@ -1,6 +1,6 @@
 {
   "name": "@davaproject/contract-v1",
-  "version": "1.0.0-beta-rc.4",
+  "version": "1.0.0-beta-rc.5",
   "description": "Dava Contract",
   "main": "dist/types/index.js",
   "types": "types/index.ts",
