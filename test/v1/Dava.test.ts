@@ -10,7 +10,7 @@ import {
 } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { constants } from "ethers";
-import { fixtures } from "../../scripts/utils/fixtures";
+import { Fixture, fixtures } from "../../scripts/utils/fixtures";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -19,10 +19,11 @@ describe("Dava", () => {
   let snapshot: string;
   let avatarV1: AvatarV1;
   let dava: Dava;
+  let contracts: Fixture;
   let [deployer, ...accounts]: SignerWithAddress[] = [];
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
-    const contracts = await fixtures();
+    contracts = await fixtures();
     dava = contracts.dava;
     avatarV1 = contracts.avatarV1;
   });
@@ -67,5 +68,27 @@ describe("Dava", () => {
         expect(await avatar.version()).to.equal("V2");
       });
     });
-  }); 
+  });
+
+  describe("IDava", () => {
+    describe("registerDefaultAsset() & deregisterDefaultAsset()", () => {
+      const tokenId = 0;
+      beforeEach(async () => {
+        await dava.connect(deployer).mint(accounts[0].address, tokenId);
+      });
+      it("should remove the default asset and recover correctly", async () => {
+        const uri0 = await dava.tokenURI(0);
+        await dava
+          .connect(deployer)
+          .deregisterDefaultAsset(contracts.assets.davaSignature.address);
+        const uri1 = await dava.tokenURI(0);
+        await dava
+          .connect(deployer)
+          .registerDefaultAsset(contracts.assets.davaSignature.address);
+        const uri2 = await dava.tokenURI(0);
+        expect(uri0).to.eq(uri2);
+        expect(uri1).not.to.eq(uri2);
+      });
+    });
+  });
 });

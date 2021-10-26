@@ -37,7 +37,7 @@ import {
 } from "../../types";
 import data from "../data.json";
 
-type Fixture = {
+export type Fixture = {
   minimalProxy: MinimalProxy;
   dava: Dava;
   avatarV1: AvatarV1;
@@ -153,7 +153,7 @@ export const fixtures = async (): Promise<Fixture> => {
     data.images.default.signature
   );
   await davaSignature.deployed();
-  await registerAsset({ dava, asset: davaSignature.address });
+  await registerDefaultAsset({ dava, asset: davaSignature.address });
 
   // Start deploying <DavaBackground>
   const DavaBackgroundContract = new DavaBackground__factory(deployer);
