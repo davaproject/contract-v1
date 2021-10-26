@@ -4,10 +4,7 @@ pragma solidity >=0.8.0;
 import "../libraries/AssetBase.sol";
 
 contract DavaFrameHead is AssetBase {
-    constructor(
-        string memory backgroundImgUri_,
-        string memory foregroundImgUri_
-    ) AssetBase(backgroundImgUri_, foregroundImgUri_, "") {}
+    constructor(string memory frameImgUri_) AssetBase("", "", frameImgUri_) {}
 
     function name() public pure virtual override returns (string memory) {
         return "frame-head";
