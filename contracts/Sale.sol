@@ -74,18 +74,26 @@ contract Sale is EIP712, Ownable {
         _;
     }
 
-    function preMint(address receiver, uint256 amount) external onlyOwner {
+    function preMint(
+        address[] calldata receiverList,
+        uint256[] calldata amountList
+    ) external onlyOwner {
         require(
-            amount <= PRE_ALLOCATED_AMOUNT - totalAllocatedAmount,
-            "Sale: exceeds max allocated amount"
+            receiverList.length == amountList.length,
+            "Sale: invalid arguments"
         );
-        totalAllocatedAmount += amount;
 
-        for (uint256 i = 0; i < amount; i += 1) {
-            dava.mint(receiver, dava.totalSupply());
+        for (uint256 i = 0; i < receiverList.length; i++) {
+            require(
+                amountList[i] <= PRE_ALLOCATED_AMOUNT - totalAllocatedAmount,
+                "Sale: exceeds max allocated amount"
+            );
+            totalAllocatedAmount += amountList[i];
+
+            for (uint256 j = 0; j < amountList[i]; j += 1) {
+                dava.mint(receiverList[i], dava.totalSupply());
+            }
         }
-
-        emit PreMint(receiver, amount);
     }
 
     function joinPublicSale(uint256 purchaseAmount)
@@ -94,7 +102,10 @@ contract Sale is EIP712, Ownable {
         onlyDuringPublicSale
     {
         require(!soldOut, "Sale: sold out");
-        require(purchaseAmount <= MAX_MINT_PER_TRANSACTION, "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction");
+        require(
+            purchaseAmount <= MAX_MINT_PER_TRANSACTION,
+            "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction"
+        );
         require(
             purchaseAmount <= MAX_TOTAL_SUPPLY - dava.totalSupply(),
             "Sale: exceeds max supply"
@@ -126,7 +137,10 @@ contract Sale is EIP712, Ownable {
         payable
         onlyDuringPreSale
     {
-        require(purchaseAmount <= MAX_MINT_PER_TRANSACTION, "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction");
+        require(
+            purchaseAmount <= MAX_MINT_PER_TRANSACTION,
+            "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction"
+        );
         require(
             msg.sender == preSaleReq.whitelist.beneficiary,
             "Sale: msg.sender is not whitelisted"
