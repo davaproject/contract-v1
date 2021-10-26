@@ -65,12 +65,16 @@ contract AvatarV1 is AvatarBase {
         QuickSort.Layer[] memory layers = new QuickSort.Layer[](assets.length);
 
         for (uint256 i = 0; i < assets.length; i += 1) {
-            string memory image = IAsset(assets[i].assetAddr).image(
-                assets[i].id
-            );
-            uint256 zIndex = IAsset(assets[i].assetAddr).zIndex();
+            if (assets[i].assetAddr == address(0x0)) {
+                layers[i] = QuickSort.Layer("", 2**256 - 1 - i);
+            } else {
+                string memory imageUri = IAsset(assets[i].assetAddr).imageUri(
+                    assets[i].id
+                );
+                uint256 zIndex = IAsset(assets[i].assetAddr).zIndex();
 
-            layers[i] = QuickSort.Layer(image, zIndex);
+                layers[i] = QuickSort.Layer(imageUri, zIndex);
+            }
         }
 
         if (assets.length > 1) {

@@ -102,6 +102,10 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     {
         // Try to retrieve from the storage
         Asset memory asset_ = _props().assets[assetType];
+        if (asset_.assetAddr == address(0x0)) {
+            return Asset(asset_.assetAddr, 0);
+        }
+
         // Check the balance
         bool owning = IERC1155(asset_.assetAddr).balanceOf(
             address(this),
