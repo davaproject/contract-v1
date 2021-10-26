@@ -130,4 +130,11 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     function version() public pure virtual override returns (string memory);
 
     function getPFP() external view virtual override returns (string memory);
+
+    function getMetadata()
+        external
+        view
+        virtual
+        override
+        returns (string memory);
 }

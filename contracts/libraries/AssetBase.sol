@@ -169,12 +169,24 @@ abstract contract AssetBase is AccessControl, ERC1155Supply, IAsset {
         public
         view
         virtual
-        override(ERC1155, AccessControl)
+        override(ERC1155, AccessControl, IERC165)
         returns (bool)
     {
         return
             interfaceId == type(IAsset).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @dev return registered asset title
+     */
+    function assetTitle(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return _info.titles[tokenId];
     }
 
     /**

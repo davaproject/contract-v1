@@ -2,7 +2,9 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-interface IAsset {
+import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
+
+interface IAsset is IERC1155 {
     struct Attribute {
         string traitType;
         string value;
@@ -24,6 +26,8 @@ interface IAsset {
     function assetType() external pure returns (bytes32);
 
     function zIndex() external pure returns (uint256);
+
+    function assetTitle(uint256 tokenId_) external view returns (string memory);
 
     function creator(uint256 tokenId_) external view returns (address);
 

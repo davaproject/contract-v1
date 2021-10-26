@@ -24,4 +24,6 @@ interface IDava is IERC721 {
         external
         view
         returns (bytes32[] memory);
+
+    function getPFP(uint256 id) external view returns (string memory);
 }

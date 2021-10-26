@@ -47,7 +47,10 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
         _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
-    function upgradeTo(address newImplementation) public onlyRole(UPGRADE_MANAGER_ROLE) {
+    function upgradeTo(address newImplementation)
+        public
+        onlyRole(UPGRADE_MANAGER_ROLE)
+    {
         _upgradeTo(newImplementation);
     }
 
@@ -122,6 +125,20 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
     }
 
     function tokenURI(uint256 tokenId)
+        public
+        view
+        virtual
+        override
+        returns (string memory)
+    {
+        require(
+            _exists(tokenId),
+            "ERC721Metadata: URI query for nonexistent token"
+        );
+        return IAvatar(getAvatar(tokenId)).getMetadata();
+    }
+
+    function getPFP(uint256 tokenId)
         public
         view
         virtual

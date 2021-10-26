@@ -17,6 +17,50 @@ contract AvatarV1 is AvatarBase {
     }
 
     function getPFP() external view override returns (string memory) {
+        return OnchainMetadata.compileImages(_imgURIs());
+    }
+
+    function getMetadata() external view override returns (string memory) {
+        Asset[] memory assets = allAssets();
+
+        IAsset.Attribute[] memory attributes = new IAsset.Attribute[](
+            assets.length
+        );
+
+        uint256 wearingAssetAmount = 0;
+        for (uint256 i = 0; i < assets.length; i += 1) {
+            if (assets[i].id > 0) {
+                string memory name = IAsset(assets[i].assetAddr).name();
+                string memory assetTitle = IAsset(assets[i].assetAddr)
+                    .assetTitle(assets[i].id);
+
+                attributes[wearingAssetAmount] = IAsset.Attribute(
+                    name,
+                    assetTitle
+                );
+                wearingAssetAmount += 1;
+            }
+        }
+
+        IAsset.Attribute[] memory wearingAttributes = new IAsset.Attribute[](
+            wearingAssetAmount
+        );
+
+        for (uint256 i = 0; i < wearingAssetAmount; i += 1) {
+            wearingAttributes[i] = attributes[i];
+        }
+
+        return
+            OnchainMetadata.toMetadata(
+                name(),
+                address(0x0),
+                "Genesis Avatar",
+                _imgURIs(),
+                wearingAttributes
+            );
+    }
+
+    function _imgURIs() private view returns (string[] memory) {
         Asset[] memory assets = allAssets();
         QuickSort.Layer[] memory layers = new QuickSort.Layer[](assets.length);
 
@@ -36,6 +80,6 @@ contract AvatarV1 is AvatarBase {
             imgURIs[i] = layers[i].imgUri;
         }
 
-        return OnchainMetadata.compileImages(imgURIs);
+        return imgURIs;
     }
 }

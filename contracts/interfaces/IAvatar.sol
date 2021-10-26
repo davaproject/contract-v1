@@ -25,4 +25,6 @@ interface IAvatar {
     function allAssets() external view returns (Asset[] memory assets);
 
     function getPFP() external view returns (string memory);
+
+    function getMetadata() external view returns (string memory);
 }

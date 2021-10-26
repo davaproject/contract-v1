@@ -17,6 +17,16 @@ contract AvatarV2Draft is AvatarBase {
         return "V2";
     }
 
+    function getMetadata() external view override returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    "https://api.v2.davaproject.com/metadata/",
+                    _props().davaId.toString()
+                )
+            );
+    }
+
     function getPFP() external view override returns (string memory) {
         return
             string(
