@@ -48,7 +48,7 @@ library OnchainMetadata {
 
         metadata = abi.encodePacked(
             metadata,
-            '],"image":"data:image/svg_xml;utf8,',
+            '],"image":"data:image/svg+xml;utf8,',
             compileImages(imgURIs),
             '"}'
         );
