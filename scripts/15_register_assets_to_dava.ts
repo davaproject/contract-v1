@@ -37,7 +37,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
     "DavaSuitAddOn",
   ];
 
-  const davaAddress = await getDeployed(network, "Dava");
+  const davaAddress = getDeployed(network, "Dava");
   if (!davaAddress) {
     throw Error(`${davaAddress} is not deployed yet`);
   }
@@ -49,7 +49,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   await assets.reduce(
     (acc, assetTitle) =>
       acc.then(async () => {
-        const asset = await getDeployed(network, assetTitle);
+        const asset = getDeployed(network, assetTitle);
         if (!asset) {
           throw Error(`${assetTitle} is not deployed yet`);
         }

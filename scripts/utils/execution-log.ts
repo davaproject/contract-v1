@@ -1,4 +1,4 @@
-import { Low, JSONFile } from "lowdb";
+import fs from "fs";
 import { Network } from "./network";
 
 export type ExecutionLog = {
@@ -7,32 +7,35 @@ export type ExecutionLog = {
   };
 };
 
-let logFile: Low<ExecutionLog>;
+const filePath = `${__dirname}/../executions.json`;
+let logFile: ExecutionLog;
 
-export const getExecutionLog = async () => {
+export const getExecutionLog = (): ExecutionLog => {
   if (!logFile) {
-    logFile = new Low(new JSONFile<ExecutionLog>("executions.json"));
-    await logFile.read();
-    logFile.data = logFile.data || { mainnet: {}, rinkeby: {} };
+    const logString = fs.readFileSync(filePath).toString();
+
+    if (logString.length == 0) {
+      logFile = { rinkeby: {}, mainnet: {} };
+    }
+
+    logFile = JSON.parse(logString) as ExecutionLog;
   }
+
   return logFile;
 };
 
-export const isExecuted = async (
-  network: Network,
-  id: number
-): Promise<boolean> => {
-  const executionLog = await getExecutionLog();
-  const executionResult = (executionLog.data as ExecutionLog)[network][id];
+export const isExecuted = (network: Network, id: number): boolean => {
+  const executionLog = getExecutionLog();
+  const executionResult = executionLog[network][id];
   return !!executionResult;
 };
 
-export const recordExecution = async (
+export const recordExecution = (
   network: Network,
   id: number,
   result: boolean
 ) => {
-  const executionLog = await getExecutionLog();
-  (executionLog.data as ExecutionLog)[network][id] = result;
-  await executionLog.write();
+  const executionLog = getExecutionLog();
+  executionLog[network][id] = result;
+  fs.writeFileSync(filePath, JSON.stringify(executionLog));
 };

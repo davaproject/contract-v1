@@ -11,12 +11,12 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("Deploying contracts with the account:", deployer.address);
 
   console.log("Start deploying <AssetDrop>");
-  const dava = await getDeployed(network, "Dava");
+  const dava = getDeployed(network, "Dava");
   if (!dava) {
     throw Error("<Dava> is not deployed yet");
   }
 
-  const randomBox = await getDeployed(network, "RandomBox");
+  const randomBox = getDeployed(network, "RandomBox");
   if (!randomBox) {
     throw Error("<RandomBox> is not deployed yet");
   }
@@ -31,7 +31,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   ];
   const assets = await Promise.all(
     assetTitleList.map(async (assetTitle) => {
-      const asset = await getDeployed(network, assetTitle);
+      const asset = getDeployed(network, assetTitle);
       if (!asset) {
         throw Error(`${assetTitle} is not deployed yet`);
       }

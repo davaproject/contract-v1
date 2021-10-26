@@ -10,7 +10,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const dava = await getDeployed(network, "Dava");
+  const dava = getDeployed(network, "Dava");
   if (!dava) {
     throw Error("Dava is not deployed yet");
   }

@@ -10,12 +10,12 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   const [deployer] = await ethers.getSigners();
   console.log("Interacting contracts with the account:", deployer.address);
 
-  const sale = await getDeployed(network, "Sale");
+  const sale = getDeployed(network, "Sale");
   if (!sale) {
     throw Error("Sale is not deployed yet");
   }
 
-  const davaAddress = await getDeployed(network, "Dava");
+  const davaAddress = getDeployed(network, "Dava");
   if (!davaAddress) {
     throw Error("Dava is not deployed yet");
   }

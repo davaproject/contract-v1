@@ -25,7 +25,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   const [deployer] = await ethers.getSigners();
   console.log("Interacting contracts with the account:", deployer.address);
 
-  const assetDrop = await getDeployed(network, "AssetDrop");
+  const assetDrop = getDeployed(network, "AssetDrop");
   if (!assetDrop) {
     throw Error("<AssetDrop> is not deployed yet");
   }
@@ -40,7 +40,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   ];
   const assets: Array<Contract> = await Promise.all(
     assetTitleList.map(async (assetTitle) => {
-      const assetAddress = await getDeployed(network, assetTitle);
+      const assetAddress = getDeployed(network, assetTitle);
       if (!assetAddress) {
         throw Error(`${assetTitle} is not deployed yet`);
       }

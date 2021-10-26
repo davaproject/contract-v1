@@ -1,40 +1,46 @@
+import fs from "fs";
 import { constants } from "ethers";
-import { Low, JSONFile } from "lowdb";
 import { Network } from "./network";
 
-export type Deployed = {
+export type DeployedLog = {
   [network in Network]: {
     [contractName: string]: string;
   };
 };
 
-let logFile: Low<Deployed>;
+const filePath = `${__dirname}/../deployed.json`;
+let logFile: DeployedLog;
 
-export const getDeployLog = async () => {
+export const getDeployLog = (): DeployedLog => {
   if (!logFile) {
-    logFile = new Low(new JSONFile<Deployed>("deployed.json"));
-    await logFile.read();
-    logFile.data = logFile.data || { mainnet: {}, rinkeby: {} };
+    const logString = fs.readFileSync(filePath).toString();
+
+    if (logString.length == 0) {
+      logFile = { rinkeby: {}, mainnet: {} };
+    }
+
+    logFile = JSON.parse(logString) as DeployedLog;
   }
+
   return logFile;
 };
 
-export const getDeployed = async (
+export const getDeployed = (
   network: Network,
   contract: string
-): Promise<string | undefined> => {
-  const deployLog = await getDeployLog();
-  const deployedAddress = (deployLog.data as Deployed)[network][contract];
+): string | undefined => {
+  const deployLog = getDeployLog();
+  const deployedAddress = deployLog[network][contract];
   return deployedAddress;
 };
 
-export const recordDeployment = async (
+export const recordDeployment = (
   network: Network,
   contract: string,
   address: string
 ) => {
   if (address === constants.AddressZero) throw Error("Not deployed.");
-  const deployLog = await getDeployLog();
-  (deployLog.data as Deployed)[network][contract] = address;
-  await deployLog.write();
+  const deployLog = getDeployLog();
+  deployLog[network][contract] = address;
+  fs.writeFileSync(filePath, JSON.stringify(deployLog));
 };

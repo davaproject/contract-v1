@@ -2,35 +2,20 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
-import { Contract } from "@ethersproject/contracts";
 
 const network = getNetwork();
 const id = 20;
-
-const grantMinterRole = async ({
-  asset,
-  operator,
-}: {
-  asset: Contract;
-  operator: string;
-}): Promise<void> => {
-  console.log(`Grant MINTER_ROLE to <${operator}> in <${asset.address}>`);
-  const MINTER_ROLE = await asset.MINTER_ROLE();
-  const tx = await asset.grantRole(MINTER_ROLE, operator);
-  await tx.wait(1);
-  console.log(`MINTER_ROLE is granted to <${operator}> in <${asset.address}>`);
-};
 
 const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   const [deployer] = await ethers.getSigners();
   console.log("Interacting contracts with the account:", deployer.address);
 
-  const assetDrop = await getDeployed(network, "AssetDrop");
+  const assetDrop = getDeployed(network, "AssetDrop");
   if (!assetDrop) {
     throw Error("<AssetDrop> is not deployed yet");
   }
 
-  const randomBoxAddress = await getDeployed(network, "RandomBox");
+  const randomBoxAddress = getDeployed(network, "RandomBox");
   if (!randomBoxAddress) {
     throw Error("<RandomBox> is not deployed yet");
   }

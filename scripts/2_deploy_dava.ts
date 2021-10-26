@@ -10,7 +10,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const minimalProxy = await getDeployed(network, "MinimalProxy");
+  const minimalProxy = getDeployed(network, "MinimalProxy");
   if (!minimalProxy) {
     throw Error("MinimalProxy is not deployed yet");
   }
