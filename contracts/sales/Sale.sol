@@ -9,7 +9,8 @@ contract Sale is EIP712, Ownable {
     bytes32 public constant TYPE_HASH =
         keccak256("Whitelist(uint256 ticketAmount,address beneficiary)");
 
-    uint256 public constant PRE_ALLOCATED_AMOUNT = 500;
+    uint256 public constant MAX_MINT_PER_TICKET = 3;
+    uint256 public constant PRE_ALLOCATED_AMOUNT = 389;
 
     uint256 public constant PRICE = 0.095 ether;
     uint256 public constant MAX_MINT_PER_ACCOUNT = 50;
@@ -155,7 +156,7 @@ contract Sale is EIP712, Ownable {
         );
         require(
             purchaseAmount <=
-                preSaleReq.whitelist.ticketAmount -
+                (preSaleReq.whitelist.ticketAmount * MAX_MINT_PER_TICKET) -
                     preSaleMintAmountOf[msg.sender],
             "Sale: exceeds assigned amount"
         );
