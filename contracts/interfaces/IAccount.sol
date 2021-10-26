@@ -15,5 +15,7 @@ interface IAccount {
 
     function batchExecute(Transaction[] calldata transactions) external payable;
 
+    function nonce() external view returns (uint256);
+
     function owner() external view returns (address);
 }

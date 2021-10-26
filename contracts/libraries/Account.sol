@@ -73,20 +73,8 @@ abstract contract Account is
                 : bytes4(0xffffffff);
     }
 
-    function _call(Transaction memory transaction) internal {
-        require(transaction.nonce == _nonce, "Account: invalid nonce");
-        _nonce += 1;
-        (bool success, ) = transaction.to.call{value: transaction.value}(
-            transaction.data
-        );
-        require(success, "Account: transaction reverted");
-        emit Executed(
-            transaction.to,
-            transaction.value,
-            transaction.gas,
-            transaction.nonce,
-            transaction.data
-        );
+    function nonce() public view virtual override returns (uint256) {
+        return _nonce;
     }
 
     function owner() public view virtual override returns (address);
@@ -103,5 +91,21 @@ abstract contract Account is
             interfaceId == type(IERC721Receiver).interfaceId ||
             interfaceId == type(IAccount).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+    function _call(Transaction memory transaction) internal {
+        require(transaction.nonce == _nonce, "Account: invalid nonce");
+        _nonce += 1;
+        (bool success, ) = transaction.to.call{value: transaction.value}(
+            transaction.data
+        );
+        require(success, "Account: transaction reverted");
+        emit Executed(
+            transaction.to,
+            transaction.value,
+            transaction.gas,
+            transaction.nonce,
+            transaction.data
+        );
     }
 }
