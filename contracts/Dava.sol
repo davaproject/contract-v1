@@ -116,7 +116,31 @@ contract Dava is
         require(_assets[assetType].contains(asset), "Dava: Not registered");
         _assets[assetType].remove(asset);
 
-        if (_assets[assetType].length() == 0) {
+        if (
+            _supportedAssetTypes.contains(assetType) &&
+            _assets[assetType].length() == 0 &&
+            address(_defaultAssets[assetType]) == address(0)
+        ) {
+            _supportedAssetTypes.remove(assetType);
+        }
+    }
+
+    function deregisterDefaultAsset(address asset)
+        public
+        override
+        onlyRole(ASSET_MANAGER_ROLE)
+    {
+        bytes32 assetType = IAsset(asset).assetType();
+        require(
+            address(_defaultAssets[assetType]) != address(0),
+            "Dava: Not registered"
+        );
+
+        delete _defaultAssets[assetType];
+        if (
+            _supportedAssetTypes.contains(assetType) &&
+            _assets[assetType].length() == 0
+        ) {
             _supportedAssetTypes.remove(assetType);
         }
     }

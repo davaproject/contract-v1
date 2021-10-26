@@ -13,6 +13,8 @@ interface IDava is IERC721Enumerable {
 
     function deregisterAsset(address asset) external;
 
+    function deregisterDefaultAsset(address asset) external;
+
     function isDavaAsset(address asset) external view returns (bool);
 
     function getAvatar(uint256 id) external view returns (address);
