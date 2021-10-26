@@ -4,6 +4,7 @@ pragma abicoder v2;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -13,7 +14,13 @@ import {IAvatar} from "./interfaces/IAvatar.sol";
 import {IAsset} from "./interfaces/IAsset.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
-contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
+contract Dava is
+    AccessControl,
+    ERC721Enumerable,
+    Ownable,
+    IDava,
+    UpgradeableBeacon
+{
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Clones for address;
@@ -39,6 +46,7 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
     constructor(address minimalProxy_)
         ERC721("Dava", "DAVA")
         UpgradeableBeacon(minimalProxy_)
+        Ownable()
     {
         _minimalProxy = minimalProxy_;
 
