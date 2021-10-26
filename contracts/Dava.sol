@@ -25,6 +25,8 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
         keccak256("UPGRADE_MANAGER_ROLE");
 
     mapping(bytes32 => EnumerableSet.AddressSet) private _assets;
+    mapping(bytes32 => IAsset) private _defaultAssets;
+
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
     address private _minimalProxy;
 
@@ -81,6 +83,22 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
         }
     }
 
+    function registerDefaultAsset(address asset)
+        public
+        override
+        onlyRole(ASSET_MANAGER_ROLE)
+    {
+        require(
+            IERC165(asset).supportsInterface(type(IAsset).interfaceId),
+            "Does not support IAsset interface"
+        );
+        bytes32 assetType = IAsset(asset).assetType();
+        _defaultAssets[assetType] = IAsset(asset);
+        if (!_supportedAssetTypes.contains(assetType)) {
+            _supportedAssetTypes.add(assetType);
+        }
+    }
+
     function deregisterAsset(address asset)
         public
         override
@@ -106,6 +124,19 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
                 bytes32(tokenId),
                 address(this)
             );
+    }
+
+    function getDefaultImage(bytes32 assetType)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        IAsset defaultAsset = _defaultAssets[assetType];
+        if (address(defaultAsset) == address(0)) return "";
+        else {
+            return defaultAsset.defaultImage();
+        }
     }
 
     function getAllAssets(bytes32 assetType)

@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import "../libraries/AssetBase.sol";
+import "../libraries/ERC1155Asset.sol";
 
-contract DavaSuit is AssetBase {
+contract DavaSuit is ERC1155Asset {
     constructor(
         string memory backgroundImgUri_,
         string memory foregroundImgUri_
-    ) AssetBase(backgroundImgUri_, foregroundImgUri_, "") {}
+    ) ERC1155Asset(backgroundImgUri_, foregroundImgUri_, "") {}
 
     function name() public pure virtual override returns (string memory) {
         return "suit";

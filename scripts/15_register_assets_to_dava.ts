@@ -8,6 +8,19 @@ import { Dava__factory } from "../types";
 const network = getNetwork();
 const id = 15;
 
+const registerDefaultAsset = async ({
+  dava,
+  asset,
+}: {
+  dava: Contract;
+  asset: string;
+}): Promise<void> => {
+  console.log(`Start register asset <${asset}> to <Dava>`);
+  const tx = await dava.registerDefaultAsset(asset);
+  await tx.wait(1);
+  console.log(`asset <${asset}> contract is registered in <Dava>`);
+};
+
 const registerAsset = async ({
   dava,
   asset,
@@ -24,6 +37,12 @@ const registerAsset = async ({
 const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   const [deployer] = await ethers.getSigners();
   console.log("Interacting contracts with the account:", deployer.address);
+
+  const defaultAssets = [
+    "DavaFrameBackground",
+    "DavaFrameBody",
+    "DavaFrameHead",
+  ];
 
   const assets = [
     "DavaFrameBackground",
@@ -45,6 +64,17 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   const DavaContract = new Dava__factory(deployer);
   const dava = await DavaContract.attach(davaAddress);
 
+  await defaultAssets.reduce(
+    (acc, assetTitle) =>
+      acc.then(async () => {
+        const asset = getDeployed(network, assetTitle);
+        if (!asset) {
+          throw Error(`${assetTitle} is not deployed yet`);
+        }
+        await registerDefaultAsset({ dava, asset: asset });
+      }),
+    Promise.resolve()
+  );
   await assets.reduce(
     (acc, assetTitle) =>
       acc.then(async () => {
@@ -52,7 +82,6 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
         if (!asset) {
           throw Error(`${assetTitle} is not deployed yet`);
         }
-
         await registerAsset({ dava, asset: asset });
       }),
     Promise.resolve()

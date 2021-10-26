@@ -1,7 +1,7 @@
 import { ContractTransaction } from "@ethersproject/contracts";
 import { ethers } from "hardhat";
 import {
-  AssetBase,
+  ERC1155Asset,
   AssetDrop,
   AssetDrop__factory,
   AvatarV1,
@@ -72,11 +72,22 @@ const registerAsset = async ({
   await tx.wait(1);
 };
 
+const registerDefaultAsset = async ({
+  dava,
+  asset,
+}: {
+  dava: Dava;
+  asset: string;
+}): Promise<void> => {
+  const tx = await dava.registerDefaultAsset(asset);
+  await tx.wait(1);
+};
+
 const grantMinterRole = async ({
   asset,
   operator,
 }: {
-  asset: AssetBase;
+  asset: ERC1155Asset;
   operator: string;
 }): Promise<void> => {
   const MINTER_ROLE = await asset.MINTER_ROLE();
@@ -118,7 +129,7 @@ export const fixtures = async (): Promise<Fixture> => {
     data.images.default.frameBackground
   );
   await davaFrameBackground.deployed();
-  await registerAsset({ dava, asset: davaFrameBackground.address });
+  await registerDefaultAsset({ dava, asset: davaFrameBackground.address });
 
   // Start deploying <DavaFrameBody>
   const DavaFrameBodyContract = new DavaFrameBody__factory(deployer);
@@ -126,7 +137,7 @@ export const fixtures = async (): Promise<Fixture> => {
     data.images.default.frameBody
   );
   await davaFrameBody.deployed();
-  await registerAsset({ dava, asset: davaFrameBody.address });
+  await registerDefaultAsset({ dava, asset: davaFrameBody.address });
 
   // Start deploying <DavaFrameHead>
   const DavaFrameHeadContract = new DavaFrameHead__factory(deployer);
@@ -134,7 +145,7 @@ export const fixtures = async (): Promise<Fixture> => {
     data.images.default.frameHead
   );
   await davaFrameHead.deployed();
-  await registerAsset({ dava, asset: davaFrameHead.address });
+  await registerDefaultAsset({ dava, asset: davaFrameHead.address });
 
   // Start deploying <DavaSignature>
   const DavaSignatureContract = new DavaSignature__factory(deployer);

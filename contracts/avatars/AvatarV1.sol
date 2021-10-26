@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "../interfaces/IAsset.sol";
+import "../interfaces/IERC1155Asset.sol";
 import "../libraries/AvatarBase.sol";
 import "../libraries/OnchainMetadata.sol";
 import "../libraries/QuickSort.sol";
@@ -23,18 +23,17 @@ contract AvatarV1 is AvatarBase {
     function getMetadata() external view override returns (string memory) {
         Asset[] memory assets = allAssets();
 
-        IAsset.Attribute[] memory attributes = new IAsset.Attribute[](
-            assets.length
-        );
+        IERC1155Asset.Attribute[]
+            memory attributes = new IERC1155Asset.Attribute[](assets.length);
 
         uint256 wearingAssetAmount = 0;
         for (uint256 i = 0; i < assets.length; i += 1) {
             if (assets[i].id > 0) {
                 string memory name = IAsset(assets[i].assetAddr).name();
-                string memory assetTitle = IAsset(assets[i].assetAddr)
+                string memory assetTitle = IERC1155Asset(assets[i].assetAddr)
                     .assetTitle(assets[i].id);
 
-                attributes[wearingAssetAmount] = IAsset.Attribute(
+                attributes[wearingAssetAmount] = IERC1155Asset.Attribute(
                     name,
                     assetTitle
                 );
@@ -42,9 +41,10 @@ contract AvatarV1 is AvatarBase {
             }
         }
 
-        IAsset.Attribute[] memory wearingAttributes = new IAsset.Attribute[](
-            wearingAssetAmount
-        );
+        IERC1155Asset.Attribute[]
+            memory wearingAttributes = new IERC1155Asset.Attribute[](
+                wearingAssetAmount
+            );
 
         for (uint256 i = 0; i < wearingAssetAmount; i += 1) {
             wearingAttributes[i] = attributes[i];
@@ -65,15 +65,17 @@ contract AvatarV1 is AvatarBase {
         QuickSort.Layer[] memory layers = new QuickSort.Layer[](assets.length);
 
         for (uint256 i = 0; i < assets.length; i += 1) {
+            string memory img;
             if (assets[i].assetAddr == address(0x0)) {
+                img = IDava(dava()).getDefaultImage(assets[i].assetType);
+            } else {
+                img = IERC1155Asset(assets[i].assetAddr).imageUri(assets[i].id);
+            }
+            if (bytes(img).length == 0) {
                 layers[i] = QuickSort.Layer("", 2**256 - 1 - i);
             } else {
-                string memory imageUri = IAsset(assets[i].assetAddr).imageUri(
-                    assets[i].id
-                );
                 uint256 zIndex = IAsset(assets[i].assetAddr).zIndex();
-
-                layers[i] = QuickSort.Layer(imageUri, zIndex);
+                layers[i] = QuickSort.Layer(img, zIndex);
             }
         }
 

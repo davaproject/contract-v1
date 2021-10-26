@@ -9,6 +9,8 @@ interface IDava is IERC721Enumerable {
 
     function registerAsset(address asset) external;
 
+    function registerDefaultAsset(address asset) external;
+
     function deregisterAsset(address asset) external;
 
     function isDavaAsset(address asset) external view returns (bool);
@@ -26,4 +28,9 @@ interface IDava is IERC721Enumerable {
         returns (bytes32[] memory);
 
     function getPFP(uint256 id) external view returns (string memory);
+
+    function getDefaultImage(bytes32 assetType)
+        external
+        view
+        returns (string memory);
 }
