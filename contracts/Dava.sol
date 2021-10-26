@@ -43,6 +43,8 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setupRole(ASSET_MANAGER_ROLE, msg.sender);
+        _setRoleAdmin(ASSET_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
         _setupRole(UPGRADE_MANAGER_ROLE, msg.sender);
         _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
