@@ -28,7 +28,7 @@ describe("Sale", () => {
   afterEach(async () => {
     await ethers.provider.send("evm_revert", [snapshot]);
   });
-  describe("joinPublicSale", () => {
+  describe("mint", () => {
     let price: BigNumberish;
     let buyer: SignerWithAddress;
     before(async () => {
@@ -43,9 +43,9 @@ describe("Sale", () => {
         ]);
         await ethers.provider.send("evm_mine", []);
       });
-      it("should faile to join the sales", async () => {
-        await expect(sale.connect(buyer).joinPublicSale(1, { value: price })).to
-          .be.reverted;
+      it("should fail to mint", async () => {
+        await expect(sale.connect(buyer).mint(1, { value: price })).to.be
+          .reverted;
       });
     });
     describe("during the public sale period", () => {
@@ -55,7 +55,7 @@ describe("Sale", () => {
           timestamp.toNumber(),
         ]);
         await ethers.provider.send("evm_mine", []);
-        await sale.connect(buyer).joinPublicSale(1, { value: price });
+        await sale.connect(buyer).mint(1, { value: price });
       });
       it("should transfer ETH", async () => {
         expect(await ethers.provider.getBalance(sale.address)).to.eq(price);
@@ -75,7 +75,7 @@ describe("Sale", () => {
         timestamp.toNumber(),
       ]);
       await ethers.provider.send("evm_mine", []);
-      await sale.connect(accounts[0]).joinPublicSale(1, { value: price });
+      await sale.connect(accounts[0]).mint(1, { value: price });
     });
     it("should allow the deployer to withdraw ETH", async () => {
       expect(await ethers.provider.getBalance(sale.address)).to.eq(price);

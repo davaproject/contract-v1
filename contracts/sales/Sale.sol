@@ -90,7 +90,8 @@ contract Sale is EIP712, Ownable {
         }
     }
 
-    function joinPublicSale(uint256 purchaseAmount)
+    // this is for public sale.
+    function mint(uint256 purchaseAmount)
         external
         payable
         onlyDuringPublicSale
@@ -115,15 +116,11 @@ contract Sale is EIP712, Ownable {
         }
     }
 
-    function joinPreSale(uint256 purchaseAmount, PreSaleReq calldata preSaleReq)
-        external
-        payable
-        onlyDuringPreSale
-    {
-        require(
-            purchaseAmount <= MAX_MINT_PER_ACCOUNT,
-            "Sale: can not purchase more than MAX_MINT_PER_ACCOUNT in a transaction"
-        );
+    // this is for pre sale.
+    function mintWithSignature(
+        uint256 purchaseAmount,
+        PreSaleReq calldata preSaleReq
+    ) external payable onlyDuringPreSale {
         require(
             msg.sender == preSaleReq.whitelist.beneficiary,
             "Sale: msg.sender is not whitelisted"
