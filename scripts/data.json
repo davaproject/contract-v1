@@ -1,22 +1,22 @@
 {
   "images": {
     "default": {
-      "frameBackground": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
-      "frameBody": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
-      "frameHead": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png",
-      "emptyBackground": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
-      "emptyHeadBody": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBody.png",
-      "emptyBodyBackground": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_BodyBackground.png",
-      "emptyHeadBodyBackground": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBodyBackground.png",
-      "emptyHead": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_Head.png",
-      "signature": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png"
+      "frameBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "frameBody": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
+      "frameHead": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png",
+      "emptyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "emptyHeadBody": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBody.png",
+      "emptyBodyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_BodyBackground.png",
+      "emptyHeadBodyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBodyBackground.png",
+      "emptyHead": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_Head.png",
+      "signature": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png"
     },
     "background": [
       {
         "title": "TEST_ASSET_TITLE",
         "creator": "",
         "description": "",
-        "uri": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
+        "uri": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
         "attributes": [],
         "maxSupply": 100
       }
@@ -26,7 +26,7 @@
         "title": "TEST_ASSET_TITLE",
         "creator": "",
         "description": "",
-        "uri": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
+        "uri": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
         "attributes": [],
         "maxSupply": 100
       }
@@ -36,7 +36,7 @@
         "title": "TEST_ASSET_TITLE",
         "creator": "",
         "description": "",
-        "uri": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
+        "uri": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
         "attributes": [],
         "maxSupply": 100
       }
@@ -46,7 +46,7 @@
         "title": "TEST_ASSET_TITLE",
         "creator": "",
         "description": "",
-        "uri": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
+        "uri": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
         "attributes": [],
         "maxSupply": 100
       }
@@ -56,7 +56,7 @@
         "title": "TEST_ASSET_TITLE",
         "creator": "",
         "description": "",
-        "uri": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
+        "uri": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
         "attributes": [],
         "maxSupply": 100
       }
@@ -66,7 +66,7 @@
         "title": "TEST_ASSET_TITLE",
         "creator": "",
         "description": "",
-        "uri": "https://gateway.pinata.cloud/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
+        "uri": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
         "attributes": [],
         "maxSupply": 100
       }
@@ -88,6 +88,6 @@
     "davaSuitAddOn": "",
     "sale": "",
     "randomBox": "",
-    "assetDrop": "",
+    "assetDrop": ""
   }
 }
