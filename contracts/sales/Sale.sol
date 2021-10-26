@@ -13,8 +13,7 @@ contract Sale is EIP712, Ownable {
     uint256 public constant PRE_ALLOCATED_AMOUNT = 500;
 
     uint256 public constant PRICE = 0.095 ether;
-    uint256 public constant MAX_MINT_PER_ACCOUNT = 50;
-    uint256 public constant MAX_MINT_PER_TRANSACTION = 30;
+    uint256 public constant MAX_MINT_PER_ACCOUNT = 30;
 
     uint256 public immutable PRE_SALE_OPENING_TIME;
     uint256 public immutable PRE_SALE_CLOSING_TIME;
@@ -98,8 +97,8 @@ contract Sale is EIP712, Ownable {
     {
         require(!soldOut(), "Sale: sold out");
         require(
-            purchaseAmount <= MAX_MINT_PER_TRANSACTION,
-            "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction"
+            purchaseAmount <= MAX_MINT_PER_ACCOUNT,
+            "Sale: can not purchase more than MAX_MINT_PER_ACCOUNT in a transaction"
         );
         require(
             purchaseAmount <=
@@ -122,8 +121,8 @@ contract Sale is EIP712, Ownable {
         onlyDuringPreSale
     {
         require(
-            purchaseAmount <= MAX_MINT_PER_TRANSACTION,
-            "Sale: can not purchase more than MAX_MINT_PER_TRANSACTION in a transaction"
+            purchaseAmount <= MAX_MINT_PER_ACCOUNT,
+            "Sale: can not purchase more than MAX_MINT_PER_ACCOUNT in a transaction"
         );
         require(
             msg.sender == preSaleReq.whitelist.beneficiary,
