@@ -53,12 +53,6 @@ abstract contract ERC1155Asset is
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
         _setupRole(CREATOR_ROLE, msg.sender);
         _setRoleAdmin(CREATOR_ROLE, DEFAULT_ADMIN_ROLE);
-
-        if (bytes(frameImgUri_).length == 0) {
-            numberOfAssets += 1;
-        } else {
-            create("", msg.sender, "", frameImgUri_, (new Attribute[](0)), 0);
-        }
     }
 
     function create(
