@@ -66,4 +66,24 @@ describe("Sale", () => {
       });
     });
   });
+  describe("withdrawFund", () => {
+    let price: BigNumberish;
+    beforeEach(async () => {
+      price = await sale.PRICE();
+      const timestamp = await sale.PUBLIC_SALE_OPENING_TIME();
+      await ethers.provider.send("evm_setNextBlockTimestamp", [
+        timestamp.toNumber(),
+      ]);
+      await ethers.provider.send("evm_mine", []);
+      await sale.connect(accounts[0]).joinPublicSale(1, { value: price });
+    });
+    it("should allow the deployer to withdraw ETH", async () => {
+      expect(await ethers.provider.getBalance(sale.address)).to.eq(price);
+      const recipient = accounts[1].address;
+      const bal0 = await ethers.provider.getBalance(recipient);
+      await sale.connect(deployer).withdrawFunds(recipient);
+      const bal1 = await ethers.provider.getBalance(recipient);
+      expect(bal1.sub(bal0)).to.eq(price);
+    });
+  });
 });
