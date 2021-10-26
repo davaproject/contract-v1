@@ -7,7 +7,7 @@
     "resolveJsonModule": true,
     "typeRoots": ["node_modules/@types"],
     "outDir": "./dist",
-    "rootDir": "./types",
+    "rootDir": "./",
     // "declaration": true
   },
   "include": ["./types", "./deployed.json"]
