@@ -6,7 +6,7 @@ import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Account} from "./Account.sol";
-import {MinimalProxy} from "./MinimalProxy.sol";
+import {MinimalProxy, Proxy} from "./MinimalProxy.sol";
 import {IAsset} from "../interfaces/IAsset.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
@@ -21,6 +21,8 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     // DO NOT DECLARE state variables in the proxy contract.
     // If you wanna access to the existing state variables, use _props().
     // If you want to add new variables, design a new struct and allocate a slot for it.
+
+    receive() external payable override(Proxy, Account) {}
 
     function setName(string memory name_) public virtual override onlyOwner {
         _props().name = name_;

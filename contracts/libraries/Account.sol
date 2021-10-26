@@ -21,14 +21,11 @@ abstract contract Account is
 
     uint256 private _nonce;
 
-    event Executed(
-        address to,
-        uint256 value,
-        uint256 nonce,
-        bytes data
-    );
+    event Executed(address to, uint256 value, uint256 nonce, bytes data);
 
     constructor() {}
+
+    receive() external payable virtual {}
 
     modifier onlyOwner() {
         require(

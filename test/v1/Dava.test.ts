@@ -67,5 +67,5 @@ describe("Dava", () => {
         expect(await avatar.version()).to.equal("V2");
       });
     });
-  });
+  }); 
 });
