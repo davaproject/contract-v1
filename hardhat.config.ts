@@ -1,13 +1,13 @@
-import '@nomiclabs/hardhat-etherscan';
-import 'hardhat-gas-reporter';
-import '@typechain/hardhat';
-import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-waffle';
-import 'hardhat-contract-sizer';
-import 'hardhat-tracer';
-import 'solidity-coverage';
-import { HardhatUserConfig } from 'hardhat/config';
-import dotenv from 'dotenv';
+import "@nomiclabs/hardhat-etherscan";
+import "hardhat-gas-reporter";
+import "@typechain/hardhat";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-waffle";
+import "hardhat-contract-sizer";
+import "hardhat-tracer";
+import "solidity-coverage";
+import { HardhatUserConfig } from "hardhat/config";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -22,7 +22,7 @@ const onlyRunInFullTest = () => (process.env.FULL_TEST ? true : false);
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.8.4',
+    version: "0.8.4",
     settings: {
       optimizer: {
         enabled: true,
@@ -34,14 +34,14 @@ const config: HardhatUserConfig = {
     hardhat: {
       initialBaseFeePerGas: 0,
       accounts: {
-        accountsBalance: '100000000000000000000000', // 100,000eth
+        accountsBalance: "100000000000000000000000", // 100,000eth
       },
       blockGasLimit: 12450000,
     },
-    // rinkeby: {
-    //   url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
-    //   accounts: [`0x${process.env.PRIV_KEY}`],
-    // },
+    rinkeby: {
+      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY || ""}`,
+      accounts: [`0x${process.env.PRIV_KEY || ""}`],
+    },
     // ropsten: {
     //   url: `https://ropsten.infura.io/v3/${process.env.INFURA_KEY}`,
     //   accounts: [`0x${process.env.PRIV_KEY}`],
@@ -55,8 +55,8 @@ const config: HardhatUserConfig = {
     apiKey: process.env.ETHERSCAN_KEY,
   },
   typechain: {
-    outDir: './types',
-    target: 'ethers-v5',
+    outDir: "./types",
+    target: "ethers-v5",
   },
   gasReporter: {
     enabled: onlyRunInFullTest(),
