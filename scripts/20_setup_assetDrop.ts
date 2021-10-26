@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
+import { RandomBox__factory } from "../types";
 
 const network = getNetwork();
 const id = 20;
@@ -19,9 +20,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   if (!randomBoxAddress) {
     throw Error("<RandomBox> is not deployed yet");
   }
-  const RandomBox = await ethers.getContractFactory(
-    "contracts/RandomBox.sol/RandomBox"
-  );
+  const RandomBox = new RandomBox__factory(deployer);
   const randomBox = await RandomBox.attach(randomBoxAddress);
 
   console.log("Grant OPERATOR_ROLE to <AssetDrop>");

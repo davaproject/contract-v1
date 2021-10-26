@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import data from "./data.json";
+import { DavaHelmet__factory } from "../types";
 
 const network = getNetwork();
 const id = 11;
@@ -11,9 +12,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("Deploying contracts with the account:", deployer.address);
 
   console.log("Start deploying <DavaHelmet>");
-  const DavaHelmet = await ethers.getContractFactory(
-    "contracts/assets/DavaHelmet.sol/DavaHelmet"
-  );
+  const DavaHelmet = new DavaHelmet__factory(deployer);
   const davaHelmet = await DavaHelmet.deploy(
     data.images.default.emptyHeadBodyBackground,
     ""

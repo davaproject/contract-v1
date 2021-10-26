@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
+import { Dava__factory } from "../types";
 
 const network = getNetwork();
 const id = 2;
@@ -16,9 +17,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   }
 
   console.log("Start deploying <Dava>");
-  const DavaContract = await ethers.getContractFactory(
-    "contracts/Dava.sol/Dava"
-  );
+  const DavaContract = new Dava__factory(deployer);
   const dava = await DavaContract.deploy(minimalProxy);
   await dava.deployed();
   console.log("<Dava> Contract deployed at:", dava.address);

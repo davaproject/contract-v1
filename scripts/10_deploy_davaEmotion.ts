@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import data from "./data.json";
+import { DavaEmotion__factory } from "../types";
 
 const network = getNetwork();
 const id = 10;
@@ -11,9 +12,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("Deploying contracts with the account:", deployer.address);
 
   console.log("Start deploying <DavaEmotion>");
-  const DavaEmotion = await ethers.getContractFactory(
-    "contracts/assets/DavaEmotion.sol/DavaEmotion"
-  );
+  const DavaEmotion = new DavaEmotion__factory(deployer);
   const davaEmotion = await DavaEmotion.deploy(
     data.images.default.emptyHeadBodyBackground,
     ""

@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import data from "./data.json";
+import { DavaSuit__factory } from "../types";
 
 const network = getNetwork();
 const id = 13;
@@ -11,9 +12,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("Deploying contracts with the account:", deployer.address);
 
   console.log("Start deploying <DavaSuit>");
-  const DavaSuit = await ethers.getContractFactory(
-    "contracts/assets/DavaSuit.sol/DavaSuit"
-  );
+  const DavaSuit = new DavaSuit__factory(deployer);
   const davaSuit = await DavaSuit.deploy(
     data.images.default.emptyBodyBackground,
     data.images.default.emptyHead

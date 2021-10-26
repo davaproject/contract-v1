@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
+import { AssetDrop__factory } from "../types";
 
 const network = getNetwork();
 const id = 19;
@@ -39,9 +40,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
     })
   );
 
-  const AssetDrop = await ethers.getContractFactory(
-    "contracts/AssetDrop.sol/AssetDrop"
-  );
+  const AssetDrop = new AssetDrop__factory(deployer);
   const assetDrop = await AssetDrop.deploy(dava, assets, randomBox);
   await assetDrop.deployed();
   console.log("<AssetDrop> Contract deployed at:", assetDrop.address);

@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
+import { Dava__factory } from "../types";
 
 const network = getNetwork();
 const id = 4;
@@ -21,9 +22,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   }
 
   console.log("Start upgrading <Dava> with <AvatarV1>");
-  const DavaContract = await ethers.getContractFactory(
-    "contracts/Dava.sol/Dava"
-  );
+  const DavaContract = new Dava__factory(deployer);
   const dava = await DavaContract.attach(davaAddress);
   const tx = await dava.connect(deployer).upgradeTo(avatarV1);
   await tx.wait(1);

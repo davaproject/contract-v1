@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import data from "./data.json";
+import { DavaSignature__factory } from "../types";
 
 const network = getNetwork();
 const id = 8;
@@ -11,9 +12,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("Deploying contracts with the account:", deployer.address);
 
   console.log("Start deploying <DavaSignature>");
-  const DavaSignature = await ethers.getContractFactory(
-    "contracts/assets/DavaSignature.sol/DavaSignature"
-  );
+  const DavaSignature = new DavaSignature__factory(deployer);
   const davaSignature = await DavaSignature.deploy(
     data.images.default.signature
   );
