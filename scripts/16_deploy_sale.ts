@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
+import { Sale__factory } from "../types";
 
 const network = getNetwork();
 const id = 16;
@@ -16,7 +17,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   }
 
   console.log("Start deploying <Sale>");
-  const Sale = await ethers.getContractFactory("contracts/Sale.sol/Sale");
+  const Sale = new Sale__factory(deployer);
   const sale = await Sale.deploy(dava);
   await sale.deployed();
   console.log("<Sale> Contract deployed at:", sale.address);

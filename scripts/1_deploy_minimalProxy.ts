@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
+import { MinimalProxy__factory } from "../types";
 
 const network = getNetwork();
 const id = 1;
@@ -10,10 +11,8 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("Deploying contracts with the account:", deployer.address);
 
   console.log("Start deploying <MinimalProxy>");
-  const MinalProxyContract = await ethers.getContractFactory(
-    "contracts/libraries/MinimalProxy.sol/MinimalProxy"
-  );
-  const minimalProxy = await MinalProxyContract.deploy();
+  const MinimalProxyContract = new MinimalProxy__factory(deployer);
+  const minimalProxy = await MinimalProxyContract.deploy();
   await minimalProxy.deployed();
   console.log("<MinimalProxy> Contract deployed at:", minimalProxy.address);
 

@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import data from "./data.json";
+import { DavaBackground__factory } from "../types";
 
 const network = getNetwork();
 const id = 9;
@@ -11,9 +12,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("Deploying contracts with the account:", deployer.address);
 
   console.log("Start deploying <DavaBackground>");
-  const DavaBackground = await ethers.getContractFactory(
-    "contracts/assets/DavaBackground.sol/DavaBackground"
-  );
+  const DavaBackground = new DavaBackground__factory(deployer);
   const davaBackground = await DavaBackground.deploy(
     data.images.default.emptyBackground,
     data.images.default.emptyHeadBody

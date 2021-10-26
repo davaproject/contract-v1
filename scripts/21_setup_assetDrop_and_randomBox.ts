@@ -3,6 +3,7 @@ import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
 import { Contract } from "@ethersproject/contracts";
+import { AssetBase__factory } from "../types";
 
 const network = getNetwork();
 const id = 21;
@@ -45,10 +46,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
         throw Error(`${assetTitle} is not deployed yet`);
       }
 
-      const AssetBase = await ethers.getContractFactory(
-        "contracts/libraries/AssetBase.sol/AssetBase"
-      );
-      const asset = await AssetBase.attach(assetAddress);
+      const asset = AssetBase__factory.connect(assetAddress, deployer);
       return asset;
     })
   );
