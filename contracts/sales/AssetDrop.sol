@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IRandomBox.sol";
+import "../interfaces/IRandomBox.sol";
 
 interface IDava {
     function ownerOf(uint256 tokenId) external view returns (address);

@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IDava.sol";
+import "../interfaces/IDava.sol";
 
 contract Sale is EIP712, Ownable {
     bytes32 public constant TYPE_HASH =
