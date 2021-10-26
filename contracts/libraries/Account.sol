@@ -24,7 +24,6 @@ abstract contract Account is
     event Executed(
         address to,
         uint256 value,
-        uint256 gas,
         uint256 nonce,
         bytes data
     );
@@ -103,7 +102,6 @@ abstract contract Account is
         emit Executed(
             transaction.to,
             transaction.value,
-            transaction.gas,
             transaction.nonce,
             transaction.data
         );

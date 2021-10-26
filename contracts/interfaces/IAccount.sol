@@ -5,7 +5,6 @@ pragma abicoder v2;
 struct Transaction {
     address to;
     uint256 value;
-    uint256 gas;
     uint256 nonce;
     bytes data;
 }
