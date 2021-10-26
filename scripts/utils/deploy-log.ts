@@ -8,7 +8,7 @@ export type DeployedLog = {
   };
 };
 
-const filePath = `${__dirname}/../deployed.json`;
+const filePath = `${__dirname}/../../deployed.json`;
 let logFile: DeployedLog;
 
 export const getDeployLog = (): DeployedLog => {
