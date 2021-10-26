@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import "../libraries/ERC1155Asset.sol";
+import {DefaultImageAsset} from "../libraries/DefaultImageAsset.sol";
 
-contract DavaSignature is ERC1155Asset {
-    constructor(string memory frameImgUri_) ERC1155Asset("", "", frameImgUri_) {}
+contract DavaSignature is DefaultImageAsset {
+    constructor(string memory defaultImage_) DefaultImageAsset(defaultImage_) {}
 
     function name() public pure virtual override returns (string memory) {
         return "signature";

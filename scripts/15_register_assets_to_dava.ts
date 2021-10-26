@@ -42,6 +42,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
     "DavaFrameBackground",
     "DavaFrameBody",
     "DavaFrameHead",
+    "DavaSignature",
   ];
 
   const assets = [
