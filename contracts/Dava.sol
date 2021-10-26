@@ -202,10 +202,8 @@ contract Dava is
         returns (bool)
     {
         return
-            AccessControl.supportsInterface(interfaceId) ||
-            ERC721Enumerable.supportsInterface(interfaceId) ||
-            super.supportsInterface(interfaceId) ||
-            interfaceId == type(IDava).interfaceId;
+            interfaceId == type(IDava).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     function _mint(address to, uint256 id) internal override {
