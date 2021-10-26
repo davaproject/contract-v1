@@ -9,11 +9,18 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
+import {IPFSGateway} from "./libraries/IPFSGateway.sol";
 import {IAvatar} from "./interfaces/IAvatar.sol";
 import {IAsset} from "./interfaces/IAsset.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
-contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
+contract Dava is
+    AccessControl,
+    ERC721Enumerable,
+    IPFSGateway,
+    IDava,
+    UpgradeableBeacon
+{
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Clones for address;
@@ -52,6 +59,13 @@ contract Dava is AccessControl, ERC721Enumerable, IDava, UpgradeableBeacon {
         onlyRole(UPGRADE_MANAGER_ROLE)
     {
         _upgradeTo(newImplementation);
+    }
+
+    function upgradeIPFSGateway(string memory gateway)
+        public
+        onlyRole(UPGRADE_MANAGER_ROLE)
+    {
+        _setGateway(gateway);
     }
 
     function mint(address to, uint256 id)
