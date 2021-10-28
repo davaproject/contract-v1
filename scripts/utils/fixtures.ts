@@ -2,31 +2,19 @@ import { ContractTransaction } from "@ethersproject/contracts";
 import { ethers } from "hardhat";
 import {
   ERC1155Asset,
-  AssetDrop,
-  AssetDrop__factory,
   AvatarV1,
   AvatarV1__factory,
   Dava,
-  DavaBackground,
-  DavaBackground__factory,
-  DavaEmotion,
-  DavaEmotion__factory,
+  DavaOfficial,
+  DavaOfficial__factory,
   DavaFrameBackground,
   DavaFrameBackground__factory,
   DavaFrameBody,
   DavaFrameBody__factory,
   DavaFrameHead,
   DavaFrameHead__factory,
-  DavaHelmet,
-  DavaHelmetAddOn,
-  DavaHelmetAddOn__factory,
-  DavaHelmet__factory,
   DavaSignature,
   DavaSignature__factory,
-  DavaSuit,
-  DavaSuitAddOn,
-  DavaSuitAddOn__factory,
-  DavaSuit__factory,
   Dava__factory,
   MinimalProxy,
   MinimalProxy__factory,
@@ -37,28 +25,40 @@ import {
 } from "../../types";
 import data from "../data.json";
 
-export type Fixture = {
+export type Assets = {
+  defaultAsset: {
+    background: {
+      tokenId: number;
+      url: string;
+    };
+    foreground: {
+      tokenId: number;
+      url: string;
+    };
+  };
+  host: string;
+};
+
+export type Contracts = {
   minimalProxy: MinimalProxy;
   dava: Dava;
   avatarV1: AvatarV1;
   assets: {
+    davaOfficial: DavaOfficial;
+
     // Dummy Assets (for mannequin)
     davaFrameBackground: DavaFrameBackground;
     davaFrameBody: DavaFrameBody;
     davaFrameHead: DavaFrameHead;
     davaSignature: DavaSignature;
-
-    // Real Assets
-    davaBackground: DavaBackground;
-    davaEmotion: DavaEmotion;
-    davaHelmet: DavaHelmet;
-    davaHelmetAddOn: DavaHelmetAddOn;
-    davaSuit: DavaSuit;
-    davaSuitAddOn: DavaSuitAddOn;
   };
   sale: Sale;
   randomBox: RandomBox;
-  assetDrop: AssetDrop;
+};
+
+export type Fixture = {
+  contracts: Contracts;
+  assets: Assets;
 };
 
 const registerAsset = async ({
@@ -68,7 +68,7 @@ const registerAsset = async ({
   dava: Dava;
   asset: string;
 }): Promise<void> => {
-  const tx = await dava.registerAsset(asset);
+  const tx = await dava["registerAsset(address)"](asset);
   await tx.wait(1);
 };
 
@@ -95,6 +95,7 @@ const grantMinterRole = async ({
   await tx.wait(1);
 };
 
+const host = "https://api.davaproject.com";
 export const fixtures = async (): Promise<Fixture> => {
   let tx: ContractTransaction;
 
@@ -108,7 +109,7 @@ export const fixtures = async (): Promise<Fixture> => {
 
   // Start deploying <Dava>
   const DavaContract = new Dava__factory(deployer);
-  const dava = await DavaContract.deploy(minimalProxy.address);
+  const dava = await DavaContract.deploy(minimalProxy.address, host);
   await dava.deployed();
 
   // Start deploying <AvatarV1>
@@ -155,59 +156,41 @@ export const fixtures = async (): Promise<Fixture> => {
   await davaSignature.deployed();
   await registerDefaultAsset({ dava, asset: davaSignature.address });
 
-  // Start deploying <DavaBackground>
-  const DavaBackgroundContract = new DavaBackground__factory(deployer);
-  const davaBackground = await DavaBackgroundContract.deploy(
-    data.images.default.emptyBackground,
-    data.images.default.emptyHeadBody
-  );
-  await davaBackground.deployed();
-  await registerAsset({ dava, asset: davaBackground.address });
+  // Start deploying <DavaOfficial>
+  const DavaOfficialContract = new DavaOfficial__factory(deployer);
+  const davaOfficial = await DavaOfficialContract.deploy(host);
+  await davaOfficial.deployed();
+  await registerAsset({ dava, asset: davaOfficial.address });
 
-  // Start deploying <DavaEmotion>
-  const DavaEmotionContract = new DavaEmotion__factory(deployer);
-  const davaEmotion = await DavaEmotionContract.deploy(
-    data.images.default.emptyHeadBodyBackground,
-    ""
-  );
-  await davaEmotion.deployed();
-  await registerAsset({ dava, asset: davaEmotion.address });
+  // Setup default assets
+  const defaultAssetType = await davaOfficial.DEFAULT_ASSET_TYPE();
 
-  // Start deploying <DavaHelmet>
-  const DavaHelmetContract = new DavaHelmet__factory(deployer);
-  const davaHelmet = await DavaHelmetContract.deploy(
-    data.images.default.emptyHeadBodyBackground,
-    ""
+  const background = {
+    tokenId: await (await davaOfficial.numberOfAssets()).toNumber(),
+    url: "https://ipfs.io/background.png",
+  };
+  await davaOfficial.createAsset(
+    defaultAssetType,
+    "frame",
+    ethers.constants.AddressZero,
+    "",
+    background.url,
+    [],
+    0
   );
-  await davaHelmet.deployed();
-  await registerAsset({ dava, asset: davaHelmet.address });
-
-  // Start deploying <DavaHelmetAddon>
-  const DavaHelmetAddOnContract = new DavaHelmetAddOn__factory(deployer);
-  const davaHelmetAddOn = await DavaHelmetAddOnContract.deploy(
-    data.images.default.emptyHeadBodyBackground,
-    ""
+  const foreground = {
+    tokenId: await (await davaOfficial.numberOfAssets()).toNumber(),
+    url: "https://ipfs.io/foreground.png",
+  };
+  await davaOfficial.createAsset(
+    defaultAssetType,
+    "frame",
+    ethers.constants.AddressZero,
+    "",
+    foreground.url,
+    [],
+    0
   );
-  await davaHelmetAddOn.deployed();
-  await registerAsset({ dava, asset: davaHelmetAddOn.address });
-
-  // Start deploying <DavaSuit>
-  const DavaSuitContract = new DavaSuit__factory(deployer);
-  const davaSuit = await DavaSuitContract.deploy(
-    data.images.default.emptyBodyBackground,
-    data.images.default.emptyHead
-  );
-  await davaSuit.deployed();
-  await registerAsset({ dava, asset: davaSuit.address });
-
-  // Start deploying <DavaSuitAddOn>
-  const DavaSuitAddOnContract = new DavaSuitAddOn__factory(deployer);
-  const davaSuitAddOn = await DavaSuitAddOnContract.deploy(
-    data.images.default.emptyBodyBackground,
-    data.images.default.emptyHead
-  );
-  await davaSuitAddOn.deployed();
-  await registerAsset({ dava, asset: davaSuitAddOn.address });
 
   // Start deploying <Sale>
   const SaleContract = new Sale__factory(deployer);
@@ -233,56 +216,31 @@ export const fixtures = async (): Promise<Fixture> => {
   const randomBox = await RandomBoxContract.deploy();
   await randomBox.deployed();
 
-  // Start deploying <AssetDrop>
-  const assets = [
-    davaBackground,
-    davaEmotion,
-    davaHelmet,
-    davaHelmetAddOn,
-    davaSuit,
-    davaSuitAddOn,
-  ];
-  const AssetDropContract = new AssetDrop__factory(deployer);
-  const assetDrop = await AssetDropContract.deploy(
-    dava.address,
-    assets.map(({ address }) => address),
-    randomBox.address
-  );
-  await assetDrop.deployed();
-
-  // Grant MINTER_ROLE to <AssetDrop>
-  await assets.reduce(
-    (acc, asset) =>
-      acc.then(() => grantMinterRole({ asset, operator: assetDrop.address })),
-    Promise.resolve()
-  );
-
-  // Grant OPERATOR_ROLE to <AssetDrop>
-  const OPERATOR_ROLE = await randomBox.OPERATOR_ROLE();
-  tx = await randomBox.grantRole(OPERATOR_ROLE, assetDrop.address);
-  await tx.wait(1);
-
   return {
-    minimalProxy,
-    dava,
-    avatarV1,
-    assets: {
-      // Dummy Assets (for mannequin)
-      davaFrameBackground,
-      davaFrameBody,
-      davaFrameHead,
-      davaSignature,
+    contracts: {
+      minimalProxy,
+      dava,
+      avatarV1,
+      assets: {
+        davaOfficial,
 
-      // Real Assets
-      davaBackground,
-      davaEmotion,
-      davaHelmet,
-      davaHelmetAddOn,
-      davaSuit,
-      davaSuitAddOn,
+        // Dummy Assets (for mannequin)
+        davaFrameBackground,
+        davaFrameBody,
+        davaFrameHead,
+        davaSignature,
+
+        // Real Assets
+      },
+      sale,
+      randomBox,
     },
-    sale,
-    randomBox,
-    assetDrop,
+    assets: {
+      defaultAsset: {
+        background,
+        foreground,
+      },
+      host,
+    },
   };
 };

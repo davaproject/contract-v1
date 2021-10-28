@@ -10,7 +10,7 @@ import {
 } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { constants } from "ethers";
-import { Fixture, fixtures } from "../../scripts/utils/fixtures";
+import { Contracts, fixtures } from "../../scripts/utils/fixtures";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -19,11 +19,11 @@ describe("Dava", () => {
   let snapshot: string;
   let avatarV1: AvatarV1;
   let dava: Dava;
-  let contracts: Fixture;
+  let contracts: Contracts;
   let [deployer, ...accounts]: SignerWithAddress[] = [];
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
-    contracts = await fixtures();
+    ({ contracts } = await fixtures());
     dava = contracts.dava;
     avatarV1 = contracts.avatarV1;
   });

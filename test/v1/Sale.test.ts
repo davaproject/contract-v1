@@ -2,11 +2,10 @@ import chai from "chai";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Dava, Sale, Sale__factory } from "../../types";
+import { Dava, Sale } from "../../types";
 import { solidity } from "ethereum-waffle";
-import { BigNumberish, constants } from "ethers";
+import { BigNumberish, utils } from "ethers";
 import { fixtures } from "../../scripts/utils/fixtures";
-import { parseEther } from "@ethersproject/units";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -18,7 +17,7 @@ describe("Sale", () => {
   let [deployer, ...accounts]: SignerWithAddress[] = [];
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
-    const contracts = await fixtures();
+    const { contracts } = await fixtures();
     sale = contracts.sale;
     dava = contracts.dava;
   });
@@ -55,13 +54,15 @@ describe("Sale", () => {
           timestamp.toNumber(),
         ]);
         await ethers.provider.send("evm_mine", []);
-        await sale.connect(buyer).mint(1, { value: price });
+        await sale.connect(buyer).mint(2, { value: utils.parseEther("0.19") });
       });
       it("should transfer ETH", async () => {
-        expect(await ethers.provider.getBalance(sale.address)).to.eq(price);
+        expect(await ethers.provider.getBalance(sale.address)).to.eq(
+          utils.parseEther("0.19")
+        );
       });
       it("should mint a new avatar for the user", async () => {
-        expect(await dava.balanceOf(buyer.address)).to.eq(1);
+        expect(await dava.balanceOf(buyer.address)).to.eq(2);
         expect(await dava.balanceOf(accounts[1].address)).to.eq(0);
       });
     });
