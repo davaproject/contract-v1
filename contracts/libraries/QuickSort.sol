@@ -5,8 +5,8 @@ pragma solidity >=0.8.0;
 /// @notice basic quickSort function from https://gist.github.com/subhodi/b3b86cc13ad2636420963e692a4d896f#file-quicksort-sol
 library QuickSort {
     struct Layer {
-        string imgUri;
-        uint256 zIndex;
+        uint256 value;
+        uint256 index;
     }
 
     function sort(
@@ -17,10 +17,10 @@ library QuickSort {
         int256 i = left;
         int256 j = right;
         if (i == j) return;
-        uint256 pivot = arr[uint256(left + (right - left) / 2)].zIndex;
+        uint256 pivot = arr[uint256(left + (right - left) / 2)].index;
         while (i <= j) {
-            while (arr[uint256(i)].zIndex < pivot) i += 1;
-            while (pivot < arr[uint256(j)].zIndex) j -= 1;
+            while (arr[uint256(i)].index < pivot) i += 1;
+            while (pivot < arr[uint256(j)].index) j -= 1;
             if (i <= j) {
                 (arr[uint256(i)], arr[uint256(j)]) = (
                     arr[uint256(j)],
