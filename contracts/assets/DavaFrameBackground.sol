@@ -6,15 +6,19 @@ import {DefaultImageAsset} from "../libraries/DefaultImageAsset.sol";
 contract DavaFrameBackground is DefaultImageAsset {
     constructor(string memory defaultImage_) DefaultImageAsset(defaultImage_) {}
 
-    function name() public pure virtual override returns (string memory) {
+    function name() public pure override returns (string memory) {
         return "frame-background";
     }
 
-    function assetType() public pure virtual override returns (bytes32) {
+    function assetTypes() public pure override returns (bytes32[] memory) {
+        return new bytes32[](0);
+    }
+
+    function assetType() public pure override returns (bytes32) {
         return keccak256("dava.framebackground");
     }
 
-    function zIndex() public pure virtual override returns (uint256) {
+    function zIndex() public pure override returns (uint256) {
         return 5000;
     }
 }

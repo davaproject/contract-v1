@@ -7,22 +7,37 @@ import {IAsset} from "./IAsset.sol";
 
 interface IERC1155Asset is IAsset, IERC1155 {
     struct Attribute {
-        string traitType;
+        string trait_type;
         string value;
     }
 
-    function create(
-        string calldata title_,
+    function createAsset(
+        bytes32 collectionType_,
+        string memory title_,
         address creator_,
-        string calldata description_,
-        string calldata uri_,
-        Attribute[] calldata attributes,
-        uint256 maxNum_
+        string memory description_,
+        string memory uri_,
+        Attribute[] memory attributes_,
+        uint256 maxSupply_
+    ) external;
+
+    function createCollection(
+        string memory name_,
+        uint256 backgroundImageTokenId_,
+        uint256 foregroundImageTokenId_,
+        uint256 zIndex_
     ) external;
 
     function numberOfAssets() external view returns (uint256);
 
+    function collectionTitle(uint256 tokenId_)
+        external
+        view
+        returns (string memory);
+
     function assetTitle(uint256 tokenId_) external view returns (string memory);
+
+    function zIndex(uint256 tokenId_) external view returns (uint256);
 
     function creator(uint256 tokenId_) external view returns (address);
 

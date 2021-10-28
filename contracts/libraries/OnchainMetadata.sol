@@ -37,7 +37,7 @@ library OnchainMetadata {
             metadata = abi.encodePacked(
                 metadata,
                 '{"trait_type":"',
-                attribute.traitType,
+                attribute.trait_type,
                 '","value":"',
                 attribute.value,
                 '"}'

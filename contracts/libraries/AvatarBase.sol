@@ -52,14 +52,14 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
 
     function _putOn(Asset memory asset_) private {
         require(
-            IDava(dava()).isDavaAsset(asset_.assetAddr),
+            IDava(dava()).isDavaAsset(asset_.assetAddr, asset_.assetType),
             "Avatar: not a registered asset."
         );
         require(
             IERC1155(asset_.assetAddr).balanceOf(address(this), asset_.id) > 0,
             "Avatar: does not have the asset."
         );
-        bytes32 assetType = IAsset(asset_.assetAddr).assetType();
+        bytes32 assetType = asset_.assetType;
         _props().assets[assetType] = asset_;
         emit PutOn(assetType, asset_.assetAddr, asset_.id);
     }

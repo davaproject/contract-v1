@@ -31,6 +31,8 @@ contract Dava is
     bytes32 public constant UPGRADE_MANAGER_ROLE =
         keccak256("UPGRADE_MANAGER_ROLE");
 
+    string public override imgServerHost;
+
     mapping(bytes32 => EnumerableSet.AddressSet) private _assets;
     mapping(bytes32 => IAsset) private _defaultAssets;
 
@@ -43,12 +45,13 @@ contract Dava is
     event AssetDeregistered(address asset);
 
     // DAO contract owns this registry
-    constructor(address minimalProxy_)
+    constructor(address minimalProxy_, string memory imgServerHost_)
         ERC721("Dava", "DAVA")
         UpgradeableBeacon(minimalProxy_)
         Ownable()
     {
         _minimalProxy = minimalProxy_;
+        imgServerHost = imgServerHost_;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
@@ -59,15 +62,22 @@ contract Dava is
         _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
+    function setHost(string memory imgServerHost_)
+        external
+        onlyRole(UPGRADE_MANAGER_ROLE)
+    {
+        imgServerHost = imgServerHost_;
+    }
+
     function upgradeTo(address newImplementation)
-        public
+        external
         onlyRole(UPGRADE_MANAGER_ROLE)
     {
         _upgradeTo(newImplementation);
     }
 
     function mint(address to, uint256 id)
-        public
+        external
         override
         onlyRole(MINTER_ROLE)
     {
@@ -76,7 +86,7 @@ contract Dava is
     }
 
     function registerAsset(address asset)
-        public
+        external
         override
         onlyRole(ASSET_MANAGER_ROLE)
     {
@@ -84,21 +94,40 @@ contract Dava is
             IERC165(asset).supportsInterface(type(IAsset).interfaceId),
             "Does not support IAsset interface"
         );
-        bytes32 assetType = IAsset(asset).assetType();
-        _assets[assetType].add(asset);
-        if (!_supportedAssetTypes.contains(assetType)) {
-            _supportedAssetTypes.add(assetType);
+
+        bytes32[] memory assetTypes = IAsset(asset).assetTypes();
+        for (uint256 i = 0; i < assetTypes.length; i += 1) {
+            if (!_supportedAssetTypes.contains(assetTypes[i])) {
+                _supportedAssetTypes.add(assetTypes[i]);
+                _assets[assetTypes[i]].add(asset);
+            }
         }
     }
 
+    function registerAsset(address asset, bytes32 assetType)
+        external
+        onlyRole(ASSET_MANAGER_ROLE)
+    {
+        require(
+            !_supportedAssetTypes.contains(assetType),
+            "Dava: already registered assetType"
+        );
+        require(
+            IERC165(asset).supportsInterface(type(IAsset).interfaceId),
+            "Does not support IAsset interface"
+        );
+        _assets[assetType].add(asset);
+        _supportedAssetTypes.add(assetType);
+    }
+
     function registerDefaultAsset(address asset)
-        public
+        external
         override
         onlyRole(ASSET_MANAGER_ROLE)
     {
         require(
             IERC165(asset).supportsInterface(type(IAsset).interfaceId),
-            "Does not support IAsset interface"
+            "Dava: Does not support IAsset interface"
         );
         bytes32 assetType = IAsset(asset).assetType();
         _defaultAssets[assetType] = IAsset(asset);
@@ -108,7 +137,7 @@ contract Dava is
     }
 
     function deregisterAsset(address asset)
-        public
+        external
         override
         onlyRole(ASSET_MANAGER_ROLE)
     {
@@ -125,8 +154,22 @@ contract Dava is
         }
     }
 
+    function deregisterAssetType(bytes32 assetType)
+        external
+        onlyRole(ASSET_MANAGER_ROLE)
+    {
+        require(
+            _supportedAssetTypes.contains(assetType),
+            "Dava: non registered assetType"
+        );
+        for (uint256 i = 0; i < _assets[assetType].length(); i += 1) {
+            _assets[assetType].remove(_assets[assetType].at(i));
+        }
+        _supportedAssetTypes.remove(assetType);
+    }
+
     function deregisterDefaultAsset(address asset)
-        public
+        external
         override
         onlyRole(ASSET_MANAGER_ROLE)
     {
@@ -150,6 +193,15 @@ contract Dava is
         return _assets[assetType].contains(asset);
     }
 
+    function isDavaAsset(address asset, bytes32 assetType)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return _assets[assetType].contains(asset);
+    }
+
     function getAvatar(uint256 tokenId) public view override returns (address) {
         return
             _minimalProxy.predictDeterministicAddress(
@@ -162,11 +214,16 @@ contract Dava is
         public
         view
         override
-        returns (string memory image, uint256 zIndex)
+        returns (
+            address asset,
+            string memory image,
+            uint256 zIndex
+        )
     {
         IAsset defaultAsset = _defaultAssets[assetType];
-        if (address(defaultAsset) == address(0)) return ("", 0);
+        if (address(defaultAsset) == address(0)) return (address(0), "", 0);
         else {
+            asset = address(defaultAsset);
             image = defaultAsset.defaultImage();
             zIndex = defaultAsset.zIndex();
         }
@@ -185,7 +242,7 @@ contract Dava is
         public
         view
         override
-        returns (bytes32[] memory)
+        returns (bytes32[] memory assetTypes)
     {
         return _supportedAssetTypes.values();
     }
@@ -193,7 +250,6 @@ contract Dava is
     function tokenURI(uint256 tokenId)
         public
         view
-        virtual
         override
         returns (string memory)
     {
@@ -207,7 +263,6 @@ contract Dava is
     function getPFP(uint256 tokenId)
         public
         view
-        virtual
         override
         returns (string memory)
     {
@@ -221,7 +276,6 @@ contract Dava is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        virtual
         override(AccessControl, ERC721Enumerable, IERC165)
         returns (bool)
     {

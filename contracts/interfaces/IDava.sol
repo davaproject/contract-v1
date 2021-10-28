@@ -3,8 +3,9 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 import {IERC721Enumerable} from "@openzeppelin/contracts/interfaces/IERC721Enumerable.sol";
+import {IImageHost} from "../interfaces/IImageHost.sol";
 
-interface IDava is IERC721Enumerable {
+interface IDava is IERC721Enumerable, IImageHost {
     function mint(address to, uint256 id) external;
 
     function registerAsset(address asset) external;
@@ -16,6 +17,11 @@ interface IDava is IERC721Enumerable {
     function deregisterDefaultAsset(address asset) external;
 
     function isDavaAsset(address asset) external view returns (bool);
+
+    function isDavaAsset(address asset, bytes32 assetType)
+        external
+        view
+        returns (bool);
 
     function getAvatar(uint256 id) external view returns (address);
 
@@ -34,5 +40,9 @@ interface IDava is IERC721Enumerable {
     function getDefaultAsset(bytes32 assetType)
         external
         view
-        returns (string memory image, uint256 zIndex);
+        returns (
+            address asset,
+            string memory image,
+            uint256 zIndex
+        );
 }
