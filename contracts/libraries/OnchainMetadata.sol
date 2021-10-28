@@ -19,6 +19,7 @@ library OnchainMetadata {
         address creator,
         string memory description,
         string[] memory imgURIs,
+        string memory externalImgUri,
         IERC1155Asset.Attribute[] memory attributes
     ) internal pure returns (string memory) {
         bytes memory metadata = abi.encodePacked(
@@ -48,8 +49,10 @@ library OnchainMetadata {
 
         metadata = abi.encodePacked(
             metadata,
-            '],"image":"data:image/svg+xml;utf8,',
+            '],"image_data":"data:image/svg+xml;utf8,',
             compileImages(imgURIs),
+            '","image":"',
+            externalImgUri,
             '"}'
         );
 
