@@ -127,7 +127,7 @@ export const fixtures = async (): Promise<Fixture> => {
     deployer
   );
   const davaFrameBackground = await DavaFrameBackgroundContract.deploy(
-    data.images.default.frameBackground
+    data.images.frames.frameBackground
   );
   await davaFrameBackground.deployed();
   await registerDefaultAsset({ dava, asset: davaFrameBackground.address });
@@ -135,7 +135,7 @@ export const fixtures = async (): Promise<Fixture> => {
   // Start deploying <DavaFrameBody>
   const DavaFrameBodyContract = new DavaFrameBody__factory(deployer);
   const davaFrameBody = await DavaFrameBodyContract.deploy(
-    data.images.default.frameBody
+    data.images.frames.frameBody
   );
   await davaFrameBody.deployed();
   await registerDefaultAsset({ dava, asset: davaFrameBody.address });
@@ -143,7 +143,7 @@ export const fixtures = async (): Promise<Fixture> => {
   // Start deploying <DavaFrameHead>
   const DavaFrameHeadContract = new DavaFrameHead__factory(deployer);
   const davaFrameHead = await DavaFrameHeadContract.deploy(
-    data.images.default.frameHead
+    data.images.frames.frameHead
   );
   await davaFrameHead.deployed();
   await registerDefaultAsset({ dava, asset: davaFrameHead.address });
@@ -151,7 +151,7 @@ export const fixtures = async (): Promise<Fixture> => {
   // Start deploying <DavaSignature>
   const DavaSignatureContract = new DavaSignature__factory(deployer);
   const davaSignature = await DavaSignatureContract.deploy(
-    data.images.default.signature
+    data.images.frames.signature
   );
   await davaSignature.deployed();
   await registerDefaultAsset({ dava, asset: davaSignature.address });
