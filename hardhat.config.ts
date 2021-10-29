@@ -40,16 +40,18 @@ const config: HardhatUserConfig = {
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY || ""}`,
-      accounts: process.env.PRIV_KEY ? [`0x${process.env.PRIV_KEY}`] : [],
+      accounts: process.env.TESTNET_PRIV_KEY
+        ? [`0x${process.env.TESTNET_PRIV_KEY}`]
+        : [],
     },
     // ropsten: {
     //   url: `https://ropsten.infura.io/v3/${process.env.INFURA_KEY}`,
     //   accounts: [`0x${process.env.PRIV_KEY}`],
     // },
-    // mainnet: {
-    //   url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-    //   accounts: [`0x${process.env.MAINNET_PRIV_KEY}`],
-    // },
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [`0x${process.env.PRIV_KEY}`],
+    },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_KEY,
