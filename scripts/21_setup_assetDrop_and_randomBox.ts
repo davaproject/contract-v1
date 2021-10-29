@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
+import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
 import { Contract } from "@ethersproject/contracts";
@@ -22,7 +22,7 @@ const grantMinterRole = async ({
   console.log(`MINTER_ROLE is granted to <${operator}> in <${asset.address}>`);
 };
 
-const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
+const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Interacting contracts with the account:", deployer.address);
 
@@ -57,7 +57,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
     Promise.resolve()
   );
 
-  return;
+  return {};
 };
 
 main(network, id, run)

@@ -5,9 +5,9 @@ import { getDeployed } from "./utils/deploy-log";
 import { Dava__factory } from "../types";
 
 const network = getNetwork();
-const id = 17;
+const id = 15;
 
-const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
+const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Interacting contracts with the account:", deployer.address);
 
@@ -23,13 +23,13 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
 
   console.log("Grant MINTER_ROLE to <Sale> contract");
   const Dava = new Dava__factory(deployer);
-  const dava = await Dava.attach(davaAddress);
+  const dava = Dava.attach(davaAddress);
   const MINTER_ROLE = await dava.MINTER_ROLE();
   const tx = await dava.grantRole(MINTER_ROLE, sale);
   await tx.wait(1);
   console.log("MINTER_ROLE is granted");
 
-  return;
+  return {};
 };
 
 main(network, id, run)

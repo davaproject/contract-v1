@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
+import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
 import { RandomBox__factory } from "../types";
@@ -7,7 +7,7 @@ import { RandomBox__factory } from "../types";
 const network = getNetwork();
 const id = 20;
 
-const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
+const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Interacting contracts with the account:", deployer.address);
 
@@ -21,7 +21,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
     throw Error("<RandomBox> is not deployed yet");
   }
   const RandomBox = new RandomBox__factory(deployer);
-  const randomBox = await RandomBox.attach(randomBoxAddress);
+  const randomBox = RandomBox.attach(randomBoxAddress);
 
   console.log("Grant OPERATOR_ROLE to <AssetDrop>");
   const OPERATOR_ROLE = await randomBox.OPERATOR_ROLE();
@@ -29,7 +29,7 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   await tx.wait(1);
   console.log("OPERATOR_ROLE is granted");
 
-  return;
+  return {};
 };
 
 main(network, id, run)

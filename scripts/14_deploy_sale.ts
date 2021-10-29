@@ -2,12 +2,12 @@ import { ethers } from "hardhat";
 import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
-import { Sale__factory } from "../types";
+import { Sale, Sale__factory } from "../types";
 
 const network = getNetwork();
-const id = 16;
+const id = 14;
 
-const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
+const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
@@ -18,18 +18,22 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
 
   console.log("Start deploying <Sale>");
   const Sale = new Sale__factory(deployer);
-  const sale = await Sale.deploy(
-    dava,
-    1635292800,
-    1635379200,
-    1635552000
-  );
+
+  let sale: Sale;
+  if (network == "rinkeby") {
+    sale = await Sale.deploy(dava, 0, 1635379200, 0);
+  } else {
+    sale = await Sale.deploy(dava, 0, 1635379200, 0);
+  }
+
   await sale.deployed();
   console.log("<Sale> Contract deployed at:", sale.address);
 
   return {
-    contractName: "Sale",
-    address: sale.address,
+    deployedContract: {
+      contractName: "Sale",
+      address: sale.address,
+    },
   };
 };
 

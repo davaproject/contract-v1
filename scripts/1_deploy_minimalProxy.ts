@@ -1,12 +1,12 @@
 import { ethers } from "hardhat";
-import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
+import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { MinimalProxy__factory } from "../types";
 
 const network = getNetwork();
 const id = 1;
 
-const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
+const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
@@ -17,8 +17,10 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("<MinimalProxy> Contract deployed at:", minimalProxy.address);
 
   return {
-    contractName: "MinimalProxy",
-    address: minimalProxy.address,
+    deployedContract: {
+      contractName: "MinimalProxy",
+      address: minimalProxy.address,
+    },
   };
 };
 

@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
+import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
 import { AssetDrop__factory } from "../types";
@@ -7,7 +7,7 @@ import { AssetDrop__factory } from "../types";
 const network = getNetwork();
 const id = 19;
 
-const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
+const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
@@ -46,8 +46,10 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("<AssetDrop> Contract deployed at:", assetDrop.address);
 
   return {
-    contractName: "AssetDrop",
-    address: assetDrop.address,
+    deployedContract: {
+      contractName: "AssetDrop",
+      address: assetDrop.address,
+    },
   };
 };
 

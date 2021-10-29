@@ -1,4 +1,5 @@
 import { recordDeployment } from "./deploy-log";
+import { recordData } from "./data-log";
 import { isExecuted, recordExecution } from "./execution-log";
 import { Network } from "./network";
 
@@ -8,11 +9,17 @@ const before = async (network: Network, id: number): Promise<void> => {
   }
 };
 
-const after = async (
-  network: Network,
-  id: number,
-  deployedContract?: DeployedContract
-): Promise<void> => {
+const after = async ({
+  network,
+  id,
+  deployedContract,
+  data,
+}: {
+  network: Network;
+  id: number;
+  deployedContract?: DeployedContract;
+  data?: Data;
+}): Promise<void> => {
   await recordExecution(network, id, true);
   if (deployedContract) {
     recordDeployment(
@@ -21,10 +28,17 @@ const after = async (
       deployedContract.address
     );
   }
+  if (data) {
+    recordData(network, data);
+  }
 };
 
+export type Data = { [key: string]: any };
 export type DeployedContract = { contractName: string; address: string };
-export type HardhatScript = () => Promise<DeployedContract | undefined>;
+export type HardhatScript = () => Promise<{
+  deployedContract?: DeployedContract;
+  data?: Data;
+}>;
 
 export const main = async (
   network: Network,
@@ -32,6 +46,6 @@ export const main = async (
   func: HardhatScript
 ): Promise<void> => {
   await before(network, id);
-  const deployedContract = await func();
-  await after(network, id, deployedContract);
+  const { deployedContract, data } = await func();
+  await after({ network, id, deployedContract, data });
 };

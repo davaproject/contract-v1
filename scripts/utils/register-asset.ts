@@ -2,11 +2,12 @@ import { ethers } from "hardhat";
 import { ERC1155Asset } from "../../types";
 
 interface Attribute {
-  traitType: string;
+  trait_type: string;
   value: string;
 }
 
 interface AssetData {
+  collectionType: string;
   title: string;
   creator: string;
   description: string;
@@ -26,7 +27,8 @@ export const registerAsset = async ({
     `Start register asset <${assetData.title}> to <${asset.address}>`
   );
   const creator = assetData.creator || ethers.constants.AddressZero;
-  const tx = await asset.create(
+  const tx = await asset.createAsset(
+    assetData.collectionType,
     assetData.title,
     creator,
     assetData.description,
