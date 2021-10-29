@@ -37,6 +37,8 @@ interface IERC1155Asset is IAsset, IERC1155 {
 
     function assetTitle(uint256 tokenId_) external view returns (string memory);
 
+    function assetType(uint256 tokenId_) external view returns (bytes32);
+
     function zIndex(uint256 tokenId_) external view returns (uint256);
 
     function creator(uint256 tokenId_) external view returns (address);

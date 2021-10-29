@@ -308,6 +308,10 @@ abstract contract ERC1155Asset is
         return _supportedCollectionTypes.values();
     }
 
+    function assetType(uint256 tokenId) public view override returns (bytes32) {
+        return _assetInfo.collectionTypes[tokenId];
+    }
+
     /**
      * @dev zIndex value decides the order of image layering
      */
