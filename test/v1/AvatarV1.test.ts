@@ -149,8 +149,7 @@ describe("Avatar", () => {
           creator: ethers.constants.AddressZero,
           description: "Genesis Avatar",
           attributes: [],
-          image_data:
-            "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
+          raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
           image: expectedImageUri,
         };
 
@@ -319,8 +318,7 @@ describe("Avatar", () => {
             trait_type: collectionTitle,
             value: assetTitle,
           })),
-          image_data:
-            "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
+          raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
           image: expectedImageUri,
         };
 
@@ -376,8 +374,7 @@ describe("Avatar", () => {
               value: assetTitle,
             })
           ),
-          image_data:
-            "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
+          raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
           image: expectedImageUri,
         };
 

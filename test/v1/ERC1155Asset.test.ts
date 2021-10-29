@@ -247,7 +247,7 @@ describe("ERC1155Asset", () => {
         creator: assetInfo.creator.toLowerCase(),
         description: assetInfo.description,
         attributes: assetInfo.attributes,
-        image_data:
+        raw_image:
           "data:image/svg+xml;utf8," +
           createImage([background.url, assetInfo.uri, foreground.url]),
         image: `https://api.davaproject.com?${davaOfficialAddress}=${background.tokenId}&${davaOfficialAddress}=${tokenId}&${davaOfficialAddress}=${foreground.tokenId}`,
