@@ -10,8 +10,8 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
-import {IAvatar} from "./interfaces/IAvatar.sol";
-import {IAsset} from "./interfaces/IAsset.sol";
+import {Asset, IAvatar} from "./interfaces/IAvatar.sol";
+import {IAsset, ITransferableAsset} from "./interfaces/IAsset.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
 contract Dava is
@@ -186,6 +186,37 @@ contract Dava is
         ) {
             _supportedAssetTypes.remove(assetType);
         }
+    }
+
+    function transferAssetToAvatar(
+        uint256 tokenId,
+        address asset,
+        uint256 assetId,
+        uint256 amount
+    ) public override {
+        require(
+            msg.sender == getAvatar(tokenId),
+            "Dava: avatar and tokenId does not match"
+        );
+
+        ITransferableAsset transferableAsset = ITransferableAsset(asset);
+        require(
+            transferableAsset.supportsInterface(
+                type(ITransferableAsset).interfaceId
+            ),
+            "Dava: asset is not transferable"
+        );
+        require(
+            transferableAsset.balanceOf(ownerOf(tokenId), assetId) >= amount,
+            "Dava: owner does not hold asset"
+        );
+        transferableAsset.safeTransferFrom(
+            ownerOf(tokenId),
+            msg.sender,
+            assetId,
+            amount,
+            ""
+        );
     }
 
     function isDavaAsset(address asset) public view override returns (bool) {

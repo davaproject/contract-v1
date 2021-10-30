@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "../interfaces/IERC1155Asset.sol";
 import "../libraries/ImageHost.sol";
 import {IImageHost} from "../interfaces/IImageHost.sol";
+import {ITransferableAsset} from "../interfaces/IAsset.sol";
 import "../libraries/AvatarBase.sol";
 import "../libraries/OnchainMetadata.sol";
 import "../libraries/QuickSort.sol";
@@ -13,6 +14,37 @@ import "../libraries/QuickSort.sol";
 // TODO: ipfs router contract
 contract AvatarV1 is AvatarBase {
     using Strings for uint256;
+
+    function dress(Asset[] calldata assets) external override onlyOwner {
+        for (uint256 i = 0; i < assets.length; i += 1) {
+            if (assets[i].assetAddr == address(0x0)) {
+                Asset memory equippedAsset = _props().assets[
+                    assets[i].assetType
+                ];
+                if (equippedAsset.assetAddr != address(0x0)) {
+                    ITransferableAsset(equippedAsset.assetAddr)
+                        .safeTransferFrom(
+                            address(this),
+                            msg.sender,
+                            equippedAsset.id,
+                            1,
+                            ""
+                        );
+                    _takeOff(assets[i].assetType);
+                }
+            } else {
+                if (!_isEligible(assets[i])) {
+                    IDava(dava()).transferAssetToAvatar(
+                        _props().davaId,
+                        assets[i].assetAddr,
+                        assets[i].id,
+                        1
+                    );
+                }
+                _putOn(assets[i]);
+            }
+        }
+    }
 
     function version() public pure override returns (string memory) {
         return "V1";

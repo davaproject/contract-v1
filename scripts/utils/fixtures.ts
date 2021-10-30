@@ -158,7 +158,7 @@ export const fixtures = async (): Promise<Fixture> => {
 
   // Start deploying <DavaOfficial>
   const DavaOfficialContract = new DavaOfficial__factory(deployer);
-  const davaOfficial = await DavaOfficialContract.deploy(host);
+  const davaOfficial = await DavaOfficialContract.deploy(host, dava.address);
   await davaOfficial.deployed();
   await registerAsset({ dava, asset: davaOfficial.address });
 

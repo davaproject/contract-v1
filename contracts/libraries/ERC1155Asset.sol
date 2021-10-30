@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {ERC1155Supply, ERC1155} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import {ERC1155Supply, ERC1155, IERC1155} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -10,6 +10,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IERC1155Asset, IAsset} from "../interfaces/IERC1155Asset.sol";
+import {ITransferableAsset} from "../interfaces/IAsset.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
 import {ImageHost} from "./ImageHost.sol";
@@ -52,6 +53,8 @@ abstract contract ERC1155Asset is
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
 
+    address public dava;
+
     string public imgServerHost;
 
     AssetInfo private _assetInfo;
@@ -63,8 +66,13 @@ abstract contract ERC1155Asset is
 
     EnumerableSet.Bytes32Set private _supportedCollectionTypes;
 
-    constructor(string memory imgServerHost_) ERC1155("") Ownable() {
+    constructor(string memory imgServerHost_, address dava_)
+        ERC1155("")
+        Ownable()
+    {
         imgServerHost = imgServerHost_;
+        dava = dava_;
+
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
@@ -279,6 +287,7 @@ abstract contract ERC1155Asset is
         return
             interfaceId == type(IERC1155Asset).interfaceId ||
             interfaceId == type(IAsset).interfaceId ||
+            interfaceId == type(ITransferableAsset).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -325,6 +334,16 @@ abstract contract ERC1155Asset is
         bytes32 collectionType = _assetInfo.collectionTypes[tokenId];
         uint256 zIndex_ = _collectionInfo.zIndex[collectionType];
         return zIndex_;
+    }
+
+    function isApprovedForAll(address account, address operator)
+        public
+        view
+        virtual
+        override(ERC1155, IERC1155)
+        returns (bool)
+    {
+        return super.isApprovedForAll(account, operator) || operator == dava;
     }
 
     function defaultImage() external pure override returns (string memory) {}

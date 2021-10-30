@@ -4,6 +4,21 @@ pragma abicoder v2;
 
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
+interface ITransferableAsset is IERC165 {
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) external;
+
+    function balanceOf(address account, uint256 tokenId)
+        external
+        view
+        returns (uint256);
+}
+
 interface IAsset is IERC165 {
     function defaultImage() external view returns (string memory);
 

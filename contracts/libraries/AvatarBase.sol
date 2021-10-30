@@ -11,6 +11,7 @@ import {IAsset} from "../interfaces/IAsset.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
+import {IERC1155Asset} from "../interfaces/IERC1155Asset.sol";
 
 abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     using Strings for uint256;
@@ -28,50 +29,20 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         _props().name = name_;
     }
 
-    function putOn(Asset[] calldata assets)
+    function dress(Asset[] calldata assets)
         external
         virtual
         override
         onlyOwner
     {
         for (uint256 i = 0; i < assets.length; i += 1) {
-            _putOn(assets[i]);
+            if (assets[i].assetAddr == address(0x0)) {
+                _takeOff(assets[i].assetType);
+            } else {
+                _putOn(assets[i]);
+            }
         }
     }
-
-    function takeOff(bytes32[] calldata assetTypes)
-        external
-        virtual
-        override
-        onlyOwner
-    {
-        for (uint256 i = 0; i < assetTypes.length; i += 1) {
-            _takeOff(assetTypes[i]);
-        }
-    }
-
-    function _putOn(Asset memory asset_) private {
-        require(
-            IDava(dava()).isDavaAsset(asset_.assetAddr, asset_.assetType),
-            "Avatar: not a registered asset."
-        );
-        require(
-            IERC1155(asset_.assetAddr).balanceOf(address(this), asset_.id) > 0,
-            "Avatar: does not have the asset."
-        );
-        bytes32 assetType = asset_.assetType;
-        _props().assets[assetType] = asset_;
-        emit PutOn(assetType, asset_.assetAddr, asset_.id);
-    }
-
-    function _takeOff(bytes32 assetType) private {
-        Asset memory target = _props().assets[assetType];
-        require(target.assetAddr != address(0), "Avatar: nothing to take off");
-        emit TakeOff(assetType, target.assetAddr, target.id);
-        delete _props().assets[assetType];
-    }
-
-    // add batchExecution()
 
     function name()
         public
@@ -109,10 +80,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         }
 
         // Check the balance
-        bool owning = IERC1155(asset_.assetAddr).balanceOf(
-            address(this),
-            asset_.id
-        ) > 0;
+        bool owning = _isEligible(asset_);
         // return the asset only when the Avatar owns the asset or return a null asset.
         if (owning) {
             return asset_;
@@ -157,4 +125,37 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         virtual
         override
         returns (string memory);
+
+    function _putOn(Asset memory asset_) internal {
+        require(
+            IDava(dava()).isDavaAsset(asset_.assetAddr, asset_.assetType),
+            "Avatar: not a registered asset."
+        );
+        require(_isEligible(asset_), "Avatar: does not have the asset.");
+        bytes32 assetType = asset_.assetType;
+        _props().assets[assetType] = asset_;
+        emit PutOn(assetType, asset_.assetAddr, asset_.id);
+    }
+
+    function _takeOff(bytes32 assetType) internal {
+        Asset memory target = _props().assets[assetType];
+        require(target.assetAddr != address(0), "Avatar: nothing to take off");
+        delete _props().assets[assetType];
+        emit TakeOff(assetType, target.assetAddr, target.id);
+    }
+
+    function _isEligible(Asset memory asset_)
+        internal
+        view
+        virtual
+        returns (bool)
+    {
+        require(
+            IERC1155Asset(asset_.assetAddr).assetType(asset_.id) ==
+                asset_.assetType,
+            "AvatarBase: invalid assetType"
+        );
+        return (IERC1155(asset_.assetAddr).balanceOf(address(this), asset_.id) >
+            0);
+    }
 }

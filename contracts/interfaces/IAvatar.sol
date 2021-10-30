@@ -11,9 +11,7 @@ struct Asset {
 interface IAvatar {
     function setName(string memory name_) external;
 
-    function putOn(Asset[] calldata assets) external;
-
-    function takeOff(bytes32[] calldata assetTypes) external;
+    function dress(Asset[] calldata assets) external;
 
     function name() external view returns (string memory);
 

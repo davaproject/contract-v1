@@ -4,7 +4,9 @@ pragma solidity >=0.8.0;
 import "../libraries/ERC1155Asset.sol";
 
 contract DavaOfficial is ERC1155Asset {
-    constructor(string memory imgServerHost_) ERC1155Asset(imgServerHost_) {}
+    constructor(string memory imgServerHost_, address dava_)
+        ERC1155Asset(imgServerHost_, dava_)
+    {}
 
     function name() public pure override returns (string memory) {
         return "dava-official";
