@@ -18,20 +18,20 @@ const run: HardhatScript = async () => {
   const Dava = new Dava__factory(deployer);
   const dava = Dava.attach(davaAddress);
 
-  const defaultAssets = [
+  const defaultCollections = [
     "DavaFrameBackground",
     "DavaFrameBody",
     "DavaFrameHead",
     "DavaSignature",
   ];
-  await defaultAssets.reduce(
+  await defaultCollections.reduce(
     (acc, title) =>
       acc.then(async () => {
-        const defaultAsset = getDeployed(network, title);
-        if (!defaultAsset) {
+        const defaultCollection = getDeployed(network, title);
+        if (!defaultCollection) {
           throw Error(`${title} is not deployed yet`);
         }
-        const tx = await dava.registerDefaultAsset(defaultAsset);
+        const tx = await dava.registerDefaultCollection(defaultCollection);
         await tx.wait(1);
         return;
       }),
@@ -43,7 +43,7 @@ const run: HardhatScript = async () => {
     throw Error(`${davaOfficial} is not deployed yet`);
   }
 
-  const tx = await dava["registerAsset(address)"](davaOfficial);
+  const tx = await dava.registerCollection(davaOfficial);
   await tx.wait(1);
 
   return {};

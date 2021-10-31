@@ -226,7 +226,7 @@ describe("Avatar", () => {
                 foreground.tokenId,
                 zIndex
               );
-              await dava["registerAsset(address,bytes32)"](
+              await dava.registerAssetType(
                 davaOfficial.address,
                 collectionType
               );
@@ -417,10 +417,7 @@ describe("Avatar", () => {
           );
 
           const assetType = collectionType(collectionTitle);
-          await dava["registerAsset(address,bytes32)"](
-            davaOfficial.address,
-            assetType
-          );
+          await dava.registerAssetType(davaOfficial.address, assetType);
 
           const assetId = (await davaOfficial.numberOfAssets()).toNumber();
           await davaOfficial.createAsset(

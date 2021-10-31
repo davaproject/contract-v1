@@ -82,20 +82,20 @@ describe("Dava", () => {
   });
 
   describe("IDava", () => {
-    describe("registerDefaultAsset() & deregisterDefaultAsset()", () => {
+    describe("registerDefaultCollection() & deregisterDefaultCollection()", () => {
       const tokenId = 0;
       beforeEach(async () => {
         await dava.connect(deployer).mint(accounts[0].address, tokenId);
       });
-      it("should remove the default asset and recover correctly", async () => {
+      it("should remove the default collection and recover correctly", async () => {
         const uri0 = await dava.tokenURI(0);
         await dava
           .connect(deployer)
-          .deregisterDefaultAsset(contracts.assets.davaSignature.address);
+          .deregisterDefaultCollection(contracts.assets.davaSignature.address);
         const uri1 = await dava.tokenURI(0);
         await dava
           .connect(deployer)
-          .registerDefaultAsset(contracts.assets.davaSignature.address);
+          .registerDefaultCollection(contracts.assets.davaSignature.address);
         const uri2 = await dava.tokenURI(0);
         expect(uri0).to.eq(uri2);
         expect(uri1).not.to.eq(uri2);

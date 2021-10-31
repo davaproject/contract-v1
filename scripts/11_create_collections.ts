@@ -2,7 +2,12 @@ import { ethers } from "hardhat";
 import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
-import { DavaOfficial, DavaOfficial__factory } from "../types";
+import {
+  Dava,
+  Dava__factory,
+  DavaOfficial,
+  DavaOfficial__factory,
+} from "../types";
 import data from "./data.json";
 import { getData } from "./utils/data-log";
 
@@ -31,6 +36,7 @@ const createCollection = async ({
     collection.zIndex
   );
   await tx.wait(1);
+
   console.log(
     `collection <${collection.name}> is registered in <DavaOfficial>`
   );
@@ -38,9 +44,32 @@ const createCollection = async ({
   return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(collection.name));
 };
 
+const registerAssetType = async ({
+  dava,
+  collection,
+  assetType,
+}: {
+  dava: Dava;
+  collection: string;
+  assetType: string;
+}) => {
+  console.log(`Start register assetType <${assetType}> to <Dava>`);
+  const tx = await dava.registerAssetType(collection, assetType);
+  await tx.wait(1);
+
+  console.log(`assetType <${assetType}> is registered in <Dava>`);
+};
+
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Interacting contracts with the account:", deployer.address);
+
+  const davaAddress = getDeployed(network, "Dava");
+  if (!davaAddress) {
+    throw Error(`${davaAddress} is not deployed yet`);
+  }
+  const Dava = new Dava__factory(deployer);
+  const dava = Dava.attach(davaAddress);
 
   const davaOfficialAddress = getDeployed(network, "DavaOfficial");
   if (!davaOfficialAddress) {
@@ -62,11 +91,17 @@ const run: HardhatScript = async () => {
           zIndex: data.zIndex,
         };
 
-        const collectionType = await createCollection({
+        const assetType = await createCollection({
           davaOfficial,
           collection,
         });
-        collections[assetTitle] = collectionType;
+        collections[assetTitle] = assetType;
+
+        await registerAssetType({
+          dava,
+          collection: davaOfficialAddress,
+          assetType: assetType,
+        });
       }),
     Promise.resolve()
   );
