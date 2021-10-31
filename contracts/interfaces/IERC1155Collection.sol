@@ -3,9 +3,9 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
-import {IAsset} from "./IAsset.sol";
+import {ICollection} from "./ICollection.sol";
 
-interface IERC1155Asset is IAsset, IERC1155 {
+interface IERC1155Collection is ICollection, IERC1155 {
     struct Attribute {
         string trait_type;
         string value;

@@ -1,18 +1,18 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import "../libraries/ERC1155Asset.sol";
+import {ERC1155Collection} from "../libraries/ERC1155Collection.sol";
 
-contract DavaOfficial is ERC1155Asset {
+contract DavaOfficial is ERC1155Collection {
     constructor(string memory imgServerHost_, address dava_)
-        ERC1155Asset(imgServerHost_, dava_)
+        ERC1155Collection(imgServerHost_, dava_)
     {}
 
     function name() public pure override returns (string memory) {
         return "dava-official";
     }
 
-    function assetType() public pure override returns (bytes32) {
+    function collectionType() public pure override returns (bytes32) {
         return keccak256("dava.official");
     }
 

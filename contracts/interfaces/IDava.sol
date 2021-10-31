@@ -8,43 +8,43 @@ import {IImageHost} from "../interfaces/IImageHost.sol";
 interface IDava is IERC721Enumerable, IImageHost {
     function mint(address to, uint256 id) external;
 
-    function registerAsset(address asset) external;
+    function registerCollection(address collection) external;
 
-    function registerDefaultAsset(address asset) external;
+    function registerAssetType(address collection, bytes32 assetType) external;
 
-    function deregisterAsset(address asset) external;
+    function registerDefaultCollection(address collection) external;
 
-    function deregisterDefaultAsset(address asset) external;
+    function deregisterCollection(address collection) external;
+
+    function deregisterAssetType(bytes32 assetType) external;
+
+    function deregisterDefaultCollection(address collection) external;
 
     function transferAssetToAvatar(
         uint256 tokenId,
-        address asset,
+        address collection,
         uint256 assetId,
         uint256 amount
     ) external;
 
-    function isDavaAsset(address asset) external view returns (bool);
+    function isRegisteredCollection(address collection)
+        external
+        view
+        returns (bool);
 
-    function isDavaAsset(address asset, bytes32 assetType)
+    function isDefaultCollection(address collection)
+        external
+        view
+        returns (bool);
+
+    function isDavaAsset(address collection, bytes32 assetType)
         external
         view
         returns (bool);
 
     function getAvatar(uint256 id) external view returns (address);
 
-    function getAllAssets(bytes32 assetType)
-        external
-        view
-        returns (address[] memory);
-
-    function getAllSupportedAssetTypes()
-        external
-        view
-        returns (bytes32[] memory);
-
-    function getPFP(uint256 id) external view returns (string memory);
-
-    function getDefaultAsset(bytes32 assetType)
+    function getDefaultAsset(bytes32 collectionType)
         external
         view
         returns (
@@ -52,4 +52,16 @@ interface IDava is IERC721Enumerable, IImageHost {
             string memory image,
             uint256 zIndex
         );
+
+    function getAllSupportedAssetTypes()
+        external
+        view
+        returns (bytes32[] memory);
+
+    function getAllSupportedDefaultCollectionTypes()
+        external
+        view
+        returns (bytes32[] memory);
+
+    function getPFP(uint256 id) external view returns (string memory);
 }

@@ -2,14 +2,16 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "../interfaces/IERC1155Asset.sol";
-import "../libraries/ImageHost.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
+import {ImageHost} from "../libraries/ImageHost.sol";
 import {IImageHost} from "../interfaces/IImageHost.sol";
-import {ITransferableAsset} from "../interfaces/IAsset.sol";
-import "../libraries/AvatarBase.sol";
-import "../libraries/OnchainMetadata.sol";
-import "../libraries/QuickSort.sol";
+import {ITransferableCollection} from "../interfaces/ICollection.sol";
+import {AvatarBase} from "../libraries/AvatarBase.sol";
+import {Asset} from "../interfaces/IAvatar.sol";
+import {IDava} from "../interfaces/IDava.sol";
+import {OnchainMetadata} from "../libraries/OnchainMetadata.sol";
+import {QuickSort} from "../libraries/QuickSort.sol";
 
 // TODO: ipfs router contract
 contract AvatarV1 is AvatarBase {
@@ -22,7 +24,7 @@ contract AvatarV1 is AvatarBase {
                     assets[i].assetType
                 ];
                 if (equippedAsset.assetAddr != address(0x0)) {
-                    ITransferableAsset(equippedAsset.assetAddr)
+                    ITransferableCollection(equippedAsset.assetAddr)
                         .safeTransferFrom(
                             address(this),
                             msg.sender,
@@ -57,33 +59,45 @@ contract AvatarV1 is AvatarBase {
     function getMetadata() external view override returns (string memory) {
         Asset[] memory assets = allAssets();
 
-        IERC1155Asset.Attribute[]
-            memory attributes = new IERC1155Asset.Attribute[](assets.length);
+        IERC1155Collection.Attribute[]
+            memory attributes = new IERC1155Collection.Attribute[](
+                assets.length
+            );
 
         QuickSort.Layer[] memory layers = new QuickSort.Layer[](assets.length);
 
         ImageHost.Query[] memory queries = new ImageHost.Query[](assets.length);
 
+        IDava _dava = IDava(dava());
         uint256 wearingAssetAmount = 0;
         uint256 validAssetAmount = 0;
         for (uint256 i = 0; i < assets.length; i += 1) {
+            bool isValid = false;
             address assetAddr = assets[i].assetAddr;
             uint256 assetId = assets[i].id;
             uint256 zIndex;
+
             if (assetAddr != address(0x0)) {
-                string memory collectionTitle = IERC1155Asset(assetAddr)
-                    .collectionTitle(assetId);
-                string memory assetTitle = IERC1155Asset(assetAddr).assetTitle(
-                    assetId
-                );
+                if (_dava.isDefaultCollection(assetAddr)) {
+                    (, , zIndex) = _dava.getDefaultAsset(assets[i].assetType);
+                    isValid = true;
+                } else {
+                    string memory collectionTitle = IERC1155Collection(
+                        assetAddr
+                    ).collectionTitle(assetId);
+                    string memory assetTitle = IERC1155Collection(assetAddr)
+                        .assetTitle(assetId);
+                    zIndex = IERC1155Collection(assetAddr).zIndex(assetId);
 
-                zIndex = IERC1155Asset(assetAddr).zIndex(assetId);
+                    attributes[wearingAssetAmount] = IERC1155Collection
+                        .Attribute(collectionTitle, assetTitle);
 
-                attributes[wearingAssetAmount] = IERC1155Asset.Attribute(
-                    collectionTitle,
-                    assetTitle
-                );
+                    wearingAssetAmount += 1;
+                    isValid = true;
+                }
+            }
 
+            if (isValid) {
                 queries[validAssetAmount] = ImageHost.Query(
                     uint256(uint160(assetAddr)).toHexString(),
                     assetId.toString()
@@ -93,32 +107,12 @@ contract AvatarV1 is AvatarBase {
                     zIndex
                 );
 
-                wearingAssetAmount += 1;
                 validAssetAmount += 1;
-            } else {
-                if (assetAddr == address(0x0)) {
-                    string memory img;
-                    (assetAddr, img, zIndex) = IDava(dava()).getDefaultAsset(
-                        assets[i].assetType
-                    );
-                    if (bytes(img).length != 0) {
-                        queries[validAssetAmount] = ImageHost.Query(
-                            uint256(uint160(assetAddr)).toHexString(),
-                            assetId.toString()
-                        );
-                        layers[validAssetAmount] = QuickSort.Layer(
-                            validAssetAmount,
-                            zIndex
-                        );
-
-                        validAssetAmount += 1;
-                    }
-                }
             }
         }
 
-        IERC1155Asset.Attribute[]
-            memory wearingAttributes = new IERC1155Asset.Attribute[](
+        IERC1155Collection.Attribute[]
+            memory wearingAttributes = new IERC1155Collection.Attribute[](
                 wearingAssetAmount
             );
         for (uint256 i = 0; i < wearingAssetAmount; i += 1) {
@@ -156,26 +150,28 @@ contract AvatarV1 is AvatarBase {
         Asset[] memory assets = allAssets();
         QuickSort.Layer[] memory layers = new QuickSort.Layer[](assets.length);
 
+        IDava _dava = IDava(dava());
         string[] memory imgURIs = new string[](assets.length);
         uint256 validAssets = 0;
         for (uint256 i = 0; i < assets.length; i += 1) {
-            address addr;
+            address addr = assets[i].assetAddr;
             string memory img;
             uint256 zIndex;
-            if (assets[i].assetAddr == address(0x0)) {
-                (addr, img, zIndex) = IDava(dava()).getDefaultAsset(
-                    assets[i].assetType
-                );
-            } else {
-                img = IERC1155Asset(assets[i].assetAddr).imageUri(assets[i].id);
-                zIndex = IERC1155Asset(assets[i].assetAddr).zIndex(
-                    assets[i].id
-                );
-            }
-            if (bytes(img).length != 0) {
-                layers[validAssets] = QuickSort.Layer(validAssets, zIndex);
-                imgURIs[validAssets] = img;
-                validAssets += 1;
+
+            if (addr != address(0x0)) {
+                if (_dava.isDefaultCollection(addr)) {
+                    (, img, zIndex) = _dava.getDefaultAsset(
+                        assets[i].assetType
+                    );
+                } else {
+                    img = IERC1155Collection(addr).imageUri(assets[i].id);
+                    zIndex = IERC1155Collection(addr).zIndex(assets[i].id);
+                }
+                if (bytes(img).length != 0) {
+                    layers[validAssets] = QuickSort.Layer(validAssets, zIndex);
+                    imgURIs[validAssets] = img;
+                    validAssets += 1;
+                }
             }
         }
 

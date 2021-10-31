@@ -2,9 +2,9 @@
 pragma solidity >=0.8.0;
 
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import {IAsset, IERC165} from "../interfaces/IAsset.sol";
+import {ICollection, IERC165} from "../interfaces/ICollection.sol";
 
-abstract contract DefaultImageAsset is IAsset, ERC165 {
+abstract contract DefaultImageAsset is ICollection, ERC165 {
     string private _defaultImage;
 
     constructor(string memory defaultImage_) {
@@ -23,7 +23,7 @@ abstract contract DefaultImageAsset is IAsset, ERC165 {
         returns (bool)
     {
         return
-            interfaceId == type(IAsset).interfaceId ||
+            interfaceId == type(ICollection).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

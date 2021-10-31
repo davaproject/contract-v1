@@ -7,11 +7,11 @@ import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Account} from "./Account.sol";
 import {MinimalProxy, Proxy} from "./MinimalProxy.sol";
-import {IAsset} from "../interfaces/IAsset.sol";
+import {ICollection} from "../interfaces/ICollection.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
-import {IERC1155Asset} from "../interfaces/IERC1155Asset.sol";
+import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
 
 abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     using Strings for uint256;
@@ -97,9 +97,24 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         returns (Asset[] memory assets)
     {
         bytes32[] memory allTypes = IDava(dava()).getAllSupportedAssetTypes();
-        assets = new Asset[](allTypes.length);
-        for (uint256 i = 0; i < assets.length; i += 1) {
+        bytes32[] memory allDefaultCollectionTypes = IDava(dava())
+            .getAllSupportedDefaultCollectionTypes();
+
+        assets = new Asset[](
+            allTypes.length + allDefaultCollectionTypes.length
+        );
+        for (uint256 i = 0; i < allTypes.length; i += 1) {
             assets[i] = asset(allTypes[i]);
+        }
+        for (uint256 i = 0; i < allDefaultCollectionTypes.length; i += 1) {
+            (address assetAddr, , ) = IDava(dava()).getDefaultAsset(
+                allDefaultCollectionTypes[i]
+            );
+            assets[i + allTypes.length] = Asset(
+                allDefaultCollectionTypes[i],
+                assetAddr,
+                0
+            );
         }
     }
 
@@ -151,7 +166,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         returns (bool)
     {
         require(
-            IERC1155Asset(asset_.assetAddr).assetType(asset_.id) ==
+            IERC1155Collection(asset_.assetAddr).assetType(asset_.id) ==
                 asset_.assetType,
             "AvatarBase: invalid assetType"
         );

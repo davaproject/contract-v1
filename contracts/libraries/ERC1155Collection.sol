@@ -9,8 +9,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import {IERC1155Asset, IAsset} from "../interfaces/IERC1155Asset.sol";
-import {ITransferableAsset} from "../interfaces/IAsset.sol";
+import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
+import {ICollection, ITransferableCollection} from "../interfaces/ICollection.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
 import {ImageHost} from "./ImageHost.sol";
@@ -21,7 +21,7 @@ struct AssetInfo {
     mapping(uint256 => string) descriptions;
     mapping(uint256 => string) imgURIs;
     mapping(uint256 => uint256) maxSupply;
-    mapping(uint256 => IERC1155Asset.Attribute[]) attributes;
+    mapping(uint256 => IERC1155Collection.Attribute[]) attributes;
     mapping(uint256 => bytes32) collectionTypes;
 }
 
@@ -38,11 +38,11 @@ struct CollectionInfo {
     mapping(uint256 => bool) zIndexExists;
 }
 
-abstract contract ERC1155Asset is
+abstract contract ERC1155Collection is
     AccessControl,
     Ownable,
     ERC1155Supply,
-    IERC1155Asset
+    IERC1155Collection
 {
     using Strings for uint256;
     using Address for address;
@@ -285,9 +285,9 @@ abstract contract ERC1155Asset is
         returns (bool)
     {
         return
-            interfaceId == type(IERC1155Asset).interfaceId ||
-            interfaceId == type(IAsset).interfaceId ||
-            interfaceId == type(ITransferableAsset).interfaceId ||
+            interfaceId == type(IERC1155Collection).interfaceId ||
+            interfaceId == type(ICollection).interfaceId ||
+            interfaceId == type(ITransferableCollection).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -352,4 +352,6 @@ abstract contract ERC1155Asset is
      * @dev Return this asset class's own name.
      */
     function name() public pure virtual override returns (string memory);
+
+    function zIndex() public pure virtual override returns (uint256);
 }

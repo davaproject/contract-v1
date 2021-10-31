@@ -14,7 +14,7 @@ contract DavaSignature is DefaultImageAsset {
         return new bytes32[](0);
     }
 
-    function assetType() public pure override returns (bytes32) {
+    function collectionType() public pure override returns (bytes32) {
         return keccak256("dava.signature");
     }
 
