@@ -37,7 +37,7 @@ contract Dava is
     mapping(ICollection => EnumerableSet.Bytes32Set)
         private _assetTypesOfCollection;
     // asset types => collection
-    mapping(bytes32 => ICollection) private _collectionOfAsset;
+    mapping(bytes32 => EnumerableSet.AddressSet) private _collectionOfAsset;
     // collection types => collection
     mapping(bytes32 => ICollection) private _defaultCollections;
 
@@ -125,7 +125,7 @@ contract Dava is
             "Dava: assetType is already registered"
         );
         _assetTypesOfCollection[ICollection(collection)].add(assetType);
-        _collectionOfAsset[assetType] = ICollection(collection);
+        _collectionOfAsset[assetType].add(collection);
         _supportedAssetTypes.add(assetType);
     }
 
@@ -171,6 +171,7 @@ contract Dava is
         ];
         for (uint256 i = 0; i < assetTypes.length(); i += 1) {
             _supportedAssetTypes.remove(assetTypes.at(i));
+            _collectionOfAsset[assetTypes.at(i)].remove(collection);
         }
 
         _registeredCollections.remove(collection);
@@ -186,6 +187,15 @@ contract Dava is
             "Dava: non registered assetType"
         );
         _supportedAssetTypes.remove(assetType);
+
+        EnumerableSet.AddressSet storage collections = _collectionOfAsset[
+            assetType
+        ];
+        for (uint256 i = 0; i < collections.length(); i += 1) {
+            address collection = collections.at(i);
+            _assetTypesOfCollection[ICollection(collection)].remove(assetType);
+        }
+
         delete _collectionOfAsset[assetType];
     }
 
@@ -267,7 +277,7 @@ contract Dava is
         override
         returns (bool)
     {
-        return collection == address(_collectionOfAsset[assetType]);
+        return _collectionOfAsset[assetType].contains(collection);
     }
 
     function getAvatar(uint256 tokenId) public view override returns (address) {
@@ -325,13 +335,13 @@ contract Dava is
         return _assetTypesOfCollection[ICollection(collection)].values();
     }
 
-    function getCollection(bytes32 assetType)
+    function getCollections(bytes32 assetType)
         public
         view
         override
-        returns (address collection)
+        returns (address[] memory collections)
     {
-        return address(_collectionOfAsset[assetType]);
+        return _collectionOfAsset[assetType].values();
     }
 
     function getRegisteredCollections()
