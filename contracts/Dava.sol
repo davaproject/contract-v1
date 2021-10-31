@@ -316,6 +316,33 @@ contract Dava is
         return _supportedDefaultCollectionTypes.values();
     }
 
+    function getAssetTypes(address collection)
+        public
+        view
+        override
+        returns (bytes32[] memory assetTypes)
+    {
+        return _assetTypesOfCollection[ICollection(collection)].values();
+    }
+
+    function getCollection(bytes32 assetType)
+        public
+        view
+        override
+        returns (address collection)
+    {
+        return address(_collectionOfAsset[assetType]);
+    }
+
+    function getRegisteredCollections()
+        public
+        view
+        override
+        returns (address[] memory)
+    {
+        return _registeredCollections.values();
+    }
+
     function tokenURI(uint256 tokenId)
         public
         view

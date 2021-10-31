@@ -63,5 +63,20 @@ interface IDava is IERC721Enumerable, IImageHost {
         view
         returns (bytes32[] memory);
 
+    function getAssetTypes(address collection)
+        external
+        view
+        returns (bytes32[] memory assetTypes);
+
+    function getCollection(bytes32 assetType)
+        external
+        view
+        returns (address collection);
+
+    function getRegisteredCollections()
+        external
+        view
+        returns (address[] memory);
+
     function getPFP(uint256 id) external view returns (string memory);
 }
