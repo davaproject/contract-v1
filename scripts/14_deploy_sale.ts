@@ -21,7 +21,7 @@ const run: HardhatScript = async () => {
 
   let sale: Sale;
   if (network == "rinkeby") {
-    sale = await Sale.deploy(dava, 0, 1635379200, 0);
+    sale = await Sale.deploy(dava, 0, 2635379200, 0);
   } else {
     sale = await Sale.deploy(dava, 0, 1635379200, 0);
   }
