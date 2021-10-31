@@ -7,6 +7,8 @@ import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { parseEther } from "@ethersproject/units";
 import { createImage, createImageUri } from "./utils/image";
+import { collectionType } from "./utils/asset";
+import { checkChange } from "./utils/compare";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -15,6 +17,7 @@ describe("Avatar", () => {
   let snapshot: string;
   let dava: Dava;
   let mintedAvatar: AvatarV1;
+  let avatarOwner: SignerWithAddress;
   let [deployer, ...accounts]: SignerWithAddress[] = [];
 
   let davaOfficial: DavaOfficial;
@@ -39,7 +42,8 @@ describe("Avatar", () => {
     const { contracts, assets } = await fixtures();
 
     dava = contracts.dava;
-    await dava.connect(deployer).mint(accounts[0].address, 0);
+    avatarOwner = accounts[0];
+    await dava.connect(deployer).mint(avatarOwner.address, 0);
     mintedAvatar = AvatarV1__factory.connect(
       await dava.getAvatar(0),
       accounts[0]
@@ -246,7 +250,7 @@ describe("Avatar", () => {
               );
 
               // TODO: registered but not puton case
-              await mintedAvatar.putOn([
+              await mintedAvatar.dress([
                 {
                   assetType: collectionType,
                   assetAddr: davaOfficial.address,
@@ -329,13 +333,21 @@ describe("Avatar", () => {
       });
 
       it("should return updated compiled metadata if avatar take off some", async () => {
-        await mintedAvatar.takeOff([
-          ethers.utils.keccak256(
-            ethers.utils.toUtf8Bytes(layers[0].collectionTitle)
-          ),
-          ethers.utils.keccak256(
-            ethers.utils.toUtf8Bytes(layers[3].collectionTitle)
-          ),
+        await mintedAvatar.dress([
+          {
+            assetType: ethers.utils.keccak256(
+              ethers.utils.toUtf8Bytes(layers[0].collectionTitle)
+            ),
+            assetAddr: ethers.constants.AddressZero,
+            id: 0,
+          },
+          {
+            assetType: ethers.utils.keccak256(
+              ethers.utils.toUtf8Bytes(layers[3].collectionTitle)
+            ),
+            assetAddr: ethers.constants.AddressZero,
+            id: 0,
+          },
         ]);
         const expectedImageUri = createImageUri({
           host,
@@ -382,6 +394,237 @@ describe("Avatar", () => {
         expect(metadata).to.equal(
           "data:application/json;utf8," + JSON.stringify(expectedResult)
         );
+      });
+    });
+  });
+
+  describe("dress", () => {
+    interface Asset {
+      assetType: string;
+      id: number;
+    }
+    let assets: Asset[] = [];
+
+    before(async () => {
+      await Promise.all(
+        [null, null].map(async (_, i) => {
+          const collectionTitle = `test${Date.now()}${i}`;
+          await davaOfficial.createCollection(
+            collectionTitle,
+            background.tokenId,
+            foreground.tokenId,
+            i + 1000
+          );
+
+          const assetType = collectionType(collectionTitle);
+          await dava["registerAsset(address,bytes32)"](
+            davaOfficial.address,
+            assetType
+          );
+
+          const assetId = (await davaOfficial.numberOfAssets()).toNumber();
+          await davaOfficial.createAsset(
+            assetType,
+            `asset-${i}`,
+            deployer.address,
+            "",
+            "",
+            [],
+            10
+          );
+
+          assets.push({ assetType, id: assetId });
+        })
+      );
+    });
+
+    describe("should be reverted", () => {
+      it("if non-owner tries to call", async () => {
+        const nonOwner = accounts[2];
+        expect(avatarOwner.address).not.to.equal(nonOwner.address);
+
+        await expect(
+          mintedAvatar.connect(nonOwner).dress([])
+        ).to.be.revertedWith("Account: only owner can call");
+      });
+    });
+
+    describe("should put on assets", () => {
+      it("when avatarOwner hold asset but avatar does not", async () => {
+        const targetAsset = assets[0];
+        await davaOfficial.mint(avatarOwner.address, targetAsset.id, 1, "0x");
+
+        await checkChange({
+          status: async () => {
+            const avatarOwnerBalance = (
+              await davaOfficial.balanceOf(avatarOwner.address, targetAsset.id)
+            ).toNumber();
+            const avatarBalance = (
+              await davaOfficial.balanceOf(mintedAvatar.address, targetAsset.id)
+            ).toNumber();
+            const equippedAsset = await mintedAvatar.asset(
+              targetAsset.assetType
+            );
+
+            return {
+              avatarOwnerBalance,
+              avatarBalance,
+              equippedAsset: {
+                assetType: equippedAsset.assetType,
+                assetAddr: equippedAsset.assetAddr,
+                id: equippedAsset.id.toNumber(),
+              },
+            };
+          },
+          process: () =>
+            mintedAvatar.dress([
+              {
+                assetType: targetAsset.assetType,
+                assetAddr: davaOfficial.address,
+                id: targetAsset.id,
+              },
+            ]),
+          expectedBefore: {
+            avatarOwnerBalance: 1,
+            avatarBalance: 0,
+            equippedAsset: {
+              assetType: targetAsset.assetType,
+              assetAddr: ethers.constants.AddressZero,
+              id: 0,
+            },
+          },
+          expectedAfter: {
+            avatarOwnerBalance: 0,
+            avatarBalance: 1,
+            equippedAsset: {
+              assetType: targetAsset.assetType,
+              assetAddr: davaOfficial.address,
+              id: targetAsset.id,
+            },
+          },
+        });
+      });
+
+      it("when avatar holds it", async () => {
+        const targetAsset = assets[0];
+        await davaOfficial.mint(mintedAvatar.address, targetAsset.id, 1, "0x");
+
+        await checkChange({
+          status: async () => {
+            const avatarOwnerBalance = (
+              await davaOfficial.balanceOf(avatarOwner.address, targetAsset.id)
+            ).toNumber();
+            const avatarBalance = (
+              await davaOfficial.balanceOf(mintedAvatar.address, targetAsset.id)
+            ).toNumber();
+            const equippedAsset = await mintedAvatar.asset(
+              targetAsset.assetType
+            );
+
+            return {
+              avatarOwnerBalance,
+              avatarBalance,
+              equippedAsset: {
+                assetType: equippedAsset.assetType,
+                assetAddr: equippedAsset.assetAddr,
+                id: equippedAsset.id.toNumber(),
+              },
+            };
+          },
+          process: () =>
+            mintedAvatar.dress([
+              {
+                assetType: targetAsset.assetType,
+                assetAddr: davaOfficial.address,
+                id: targetAsset.id,
+              },
+            ]),
+          expectedBefore: {
+            avatarOwnerBalance: 0,
+            avatarBalance: 1,
+            equippedAsset: {
+              assetType: targetAsset.assetType,
+              assetAddr: ethers.constants.AddressZero,
+              id: 0,
+            },
+          },
+          expectedAfter: {
+            avatarOwnerBalance: 0,
+            avatarBalance: 1,
+            equippedAsset: {
+              assetType: targetAsset.assetType,
+              assetAddr: davaOfficial.address,
+              id: targetAsset.id,
+            },
+          },
+        });
+      });
+    });
+
+    describe("should take off assets", () => {
+      let targetAsset: Asset;
+      before(async () => {
+        targetAsset = assets[0];
+        await davaOfficial.mint(mintedAvatar.address, targetAsset.id, 1, "0x");
+        await mintedAvatar.dress([
+          {
+            assetType: assets[0].assetType,
+            assetAddr: davaOfficial.address,
+            id: assets[0].id,
+          },
+        ]);
+      });
+
+      it("and transfer it to avatarOwner", async () => {
+        await checkChange({
+          status: async () => {
+            const avatarOwnerBalance = (
+              await davaOfficial.balanceOf(avatarOwner.address, targetAsset.id)
+            ).toNumber();
+            const avatarBalance = (
+              await davaOfficial.balanceOf(mintedAvatar.address, targetAsset.id)
+            ).toNumber();
+            const equippedAsset = await mintedAvatar.asset(
+              targetAsset.assetType
+            );
+
+            return {
+              avatarOwnerBalance,
+              avatarBalance,
+              equippedAsset: {
+                assetType: equippedAsset.assetType,
+                assetAddr: equippedAsset.assetAddr,
+                id: equippedAsset.id.toNumber(),
+              },
+            };
+          },
+          process: () =>
+            mintedAvatar.dress([
+              {
+                assetType: targetAsset.assetType,
+                assetAddr: ethers.constants.AddressZero,
+                id: 0,
+              },
+            ]),
+          expectedBefore: {
+            avatarOwnerBalance: 0,
+            avatarBalance: 1,
+            equippedAsset: {
+              assetType: targetAsset.assetType,
+              assetAddr: davaOfficial.address,
+              id: targetAsset.id,
+            },
+          },
+          expectedAfter: {
+            avatarOwnerBalance: 1,
+            avatarBalance: 0,
+            equippedAsset: {
+              assetType: targetAsset.assetType,
+              assetAddr: ethers.constants.AddressZero,
+              id: 0,
+            },
+          },
+        });
       });
     });
   });
