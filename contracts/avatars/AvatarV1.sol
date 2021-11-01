@@ -13,7 +13,6 @@ import {IDava} from "../interfaces/IDava.sol";
 import {OnchainMetadata} from "../libraries/OnchainMetadata.sol";
 import {QuickSort} from "../libraries/QuickSort.sol";
 
-// TODO: ipfs router contract
 contract AvatarV1 is AvatarBase {
     using Strings for uint256;
 
