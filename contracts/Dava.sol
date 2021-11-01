@@ -237,16 +237,16 @@ contract Dava is
         );
 
         address owner = ownerOf(tokenId);
-        IERC1155 erc1155 = IERC1155(zapReq.collection);
+        IERC1155 collection = IERC1155(zapReq.collection);
         require(
-            erc1155.supportsInterface(type(IERC1155).interfaceId),
+            collection.supportsInterface(type(IERC1155).interfaceId),
             "Dava: asset is not transferable"
         );
         require(
-            erc1155.balanceOf(owner, zapReq.assetId) >= zapReq.amount,
+            collection.balanceOf(owner, zapReq.assetId) >= zapReq.amount,
             "Dava: owner does not hold asset"
         );
-        erc1155.safeTransferFrom(
+        collection.safeTransferFrom(
             owner,
             msg.sender,
             zapReq.assetId,
