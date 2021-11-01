@@ -29,18 +29,15 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         _props().name = name_;
     }
 
-    function dress(Asset[] calldata assets)
-        external
-        virtual
-        override
-        onlyOwner
-    {
-        for (uint256 i = 0; i < assets.length; i += 1) {
-            if (assets[i].assetAddr == address(0x0)) {
-                _takeOff(assets[i].assetType);
-            } else {
-                _putOn(assets[i]);
-            }
+    function dress(
+        Asset[] calldata putOnRequest,
+        bytes32[] calldata takeOffAssetTypes
+    ) external virtual override onlyOwner {
+        for (uint256 i = 0; i < putOnRequest.length; i += 1) {
+            _putOn(putOnRequest[i]);
+        }
+        for (uint256 i = 0; i < takeOffAssetTypes.length; i += 1) {
+            _takeOff(takeOffAssetTypes[i]);
         }
     }
 
@@ -76,7 +73,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         // Try to retrieve from the storage
         Asset memory asset_ = _props().assets[assetType];
         if (asset_.assetAddr == address(0x0)) {
-            return Asset(assetType, asset_.assetAddr, 0);
+            return Asset(asset_.assetAddr, 0);
         }
 
         // Check the balance
@@ -85,7 +82,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         if (owning) {
             return asset_;
         } else {
-            return Asset(assetType, asset_.assetAddr, 0);
+            return Asset(asset_.assetAddr, 0);
         }
     }
 
@@ -110,11 +107,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
             (address assetAddr, , ) = IDava(dava()).getDefaultAsset(
                 allDefaultCollectionTypes[i]
             );
-            assets[i + allTypes.length] = Asset(
-                allDefaultCollectionTypes[i],
-                assetAddr,
-                0
-            );
+            assets[i + allTypes.length] = Asset(assetAddr, 0);
         }
     }
 
@@ -142,12 +135,10 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         returns (string memory);
 
     function _putOn(Asset memory asset_) internal {
-        require(
-            IDava(dava()).isDavaAsset(asset_.assetAddr, asset_.assetType),
-            "Avatar: not a registered asset."
+        bytes32 assetType = IERC1155Collection(asset_.assetAddr).assetType(
+            asset_.id
         );
         require(_isEligible(asset_), "Avatar: does not have the asset.");
-        bytes32 assetType = asset_.assetType;
         _props().assets[assetType] = asset_;
         emit PutOn(assetType, asset_.assetAddr, asset_.id);
     }
@@ -166,9 +157,11 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         returns (bool)
     {
         require(
-            IERC1155Collection(asset_.assetAddr).assetType(asset_.id) ==
-                asset_.assetType,
-            "AvatarBase: invalid assetType"
+            IDava(dava()).isDavaAsset(
+                asset_.assetAddr,
+                IERC1155Collection(asset_.assetAddr).assetType(asset_.id)
+            ),
+            "Avatar: not a registered asset."
         );
         return (IERC1155(asset_.assetAddr).balanceOf(address(this), asset_.id) >
             0);

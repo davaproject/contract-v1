@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { ERC1155Asset } from "../../types";
+import { ERC1155Collection } from "../../types";
 
 interface Attribute {
   trait_type: string;
@@ -17,17 +17,17 @@ interface AssetData {
 }
 
 export const registerAsset = async ({
-  asset,
+  collection,
   assetData,
 }: {
-  asset: ERC1155Asset;
+  collection: ERC1155Collection;
   assetData: AssetData;
 }): Promise<void> => {
   console.log(
-    `Start register asset <${assetData.title}> to <${asset.address}>`
+    `Start register asset <${assetData.title}> to <${collection.address}>`
   );
   const creator = assetData.creator || ethers.constants.AddressZero;
-  const tx = await asset.createAsset(
+  const tx = await collection.createAsset(
     assetData.collectionType,
     assetData.title,
     creator,
@@ -38,6 +38,6 @@ export const registerAsset = async ({
   );
   tx.wait(1);
   console.log(
-    `asset <${assetData.title}> contract is registered in <${asset.address}>`
+    `asset <${assetData.title}> is registered in <${collection.address}>`
   );
 };

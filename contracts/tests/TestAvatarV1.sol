@@ -10,7 +10,7 @@ import "hardhat/console.sol";
 
 contract TestAvatarV1 is AvatarBase {
     function receiveAsset(address assetAddr, uint256 id) external {
-        IDava(dava()).transferAssetToAvatar(_props().davaId, assetAddr, id, 1);
+        IDava(dava()).zap(_props().davaId, IDava.ZapReq(assetAddr, id, 1));
     }
 
     function version() public pure override returns (string memory) {

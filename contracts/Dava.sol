@@ -6,12 +6,13 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
 import {Asset, IAvatar} from "./interfaces/IAvatar.sol";
-import {ICollection, ITransferableCollection} from "./interfaces/ICollection.sol";
+import {ICollection} from "./interfaces/ICollection.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
 contract Dava is
@@ -214,38 +215,35 @@ contract Dava is
         _registeredCollections.remove(collection);
     }
 
-    function transferAssetToAvatar(
-        uint256 tokenId,
-        address collection,
-        uint256 assetId,
-        uint256 amount
-    ) public override {
+    function zap(uint256 tokenId, ZapReq calldata zapReq) public override {
         require(
             msg.sender == getAvatar(tokenId),
             "Dava: avatar and tokenId does not match"
         );
 
-        ITransferableCollection transferableCollection = ITransferableCollection(
-                collection
-            );
+        address owner = ownerOf(tokenId);
+        IERC1155 erc1155 = IERC1155(zapReq.collection);
         require(
-            transferableCollection.supportsInterface(
-                type(ITransferableCollection).interfaceId
-            ),
+            erc1155.supportsInterface(type(IERC1155).interfaceId),
             "Dava: asset is not transferable"
         );
         require(
-            transferableCollection.balanceOf(ownerOf(tokenId), assetId) >=
-                amount,
+            erc1155.balanceOf(owner, zapReq.assetId) >= zapReq.amount,
             "Dava: owner does not hold asset"
         );
-        transferableCollection.safeTransferFrom(
-            ownerOf(tokenId),
+        erc1155.safeTransferFrom(
+            owner,
             msg.sender,
-            assetId,
-            amount,
+            zapReq.assetId,
+            zapReq.amount,
             ""
         );
+    }
+
+    function zap(uint256 tokenId, ZapReq[] calldata zapReqs) public override {
+        for (uint256 i = 0; i < zapReqs.length; i += 1) {
+            zap(tokenId, zapReqs[i]);
+        }
     }
 
     function isRegisteredCollection(address collection)

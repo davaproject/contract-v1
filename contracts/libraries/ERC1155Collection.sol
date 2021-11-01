@@ -10,7 +10,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
-import {ICollection, ITransferableCollection} from "../interfaces/ICollection.sol";
+import {ICollection} from "../interfaces/ICollection.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
 import {ImageHost} from "./ImageHost.sol";
@@ -287,7 +287,6 @@ abstract contract ERC1155Collection is
         return
             interfaceId == type(IERC1155Collection).interfaceId ||
             interfaceId == type(ICollection).interfaceId ||
-            interfaceId == type(ITransferableCollection).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 

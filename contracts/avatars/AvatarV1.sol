@@ -6,7 +6,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
 import {ImageHost} from "../libraries/ImageHost.sol";
 import {IImageHost} from "../interfaces/IImageHost.sol";
-import {ITransferableCollection} from "../interfaces/ICollection.sol";
+import {ICollection} from "../interfaces/ICollection.sol";
 import {AvatarBase} from "../libraries/AvatarBase.sol";
 import {Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
@@ -17,33 +17,43 @@ import {QuickSort} from "../libraries/QuickSort.sol";
 contract AvatarV1 is AvatarBase {
     using Strings for uint256;
 
-    function dress(Asset[] calldata assets) external override onlyOwner {
-        for (uint256 i = 0; i < assets.length; i += 1) {
-            if (assets[i].assetAddr == address(0x0)) {
-                Asset memory equippedAsset = _props().assets[
-                    assets[i].assetType
-                ];
-                if (equippedAsset.assetAddr != address(0x0)) {
-                    ITransferableCollection(equippedAsset.assetAddr)
-                        .safeTransferFrom(
-                            address(this),
-                            msg.sender,
-                            equippedAsset.id,
-                            1,
-                            ""
-                        );
-                    _takeOff(assets[i].assetType);
-                }
-            } else {
-                if (!_isEligible(assets[i])) {
-                    IDava(dava()).transferAssetToAvatar(
-                        _props().davaId,
-                        assets[i].assetAddr,
-                        assets[i].id,
-                        1
-                    );
-                }
-                _putOn(assets[i]);
+    function dress(
+        Asset[] calldata putOnRequest,
+        bytes32[] calldata takeOffAssetTypes
+    ) external override onlyOwner {
+        IDava.ZapReq[] memory zapReqs = new IDava.ZapReq[](putOnRequest.length);
+        uint256 zapAmount = 0;
+        for (uint256 i = 0; i < putOnRequest.length; i += 1) {
+            if (!_isEligible(putOnRequest[i])) {
+                zapReqs[zapAmount] = IDava.ZapReq(
+                    putOnRequest[i].assetAddr,
+                    putOnRequest[i].id,
+                    1
+                );
+                zapAmount += 1;
+            }
+        }
+        IDava.ZapReq[] memory validZapReqs = new IDava.ZapReq[](zapAmount);
+        for (uint256 i = 0; i < zapAmount; i += 1) {
+            validZapReqs[i] = zapReqs[i];
+        }
+        IDava(dava()).zap(_props().davaId, validZapReqs);
+
+        for (uint256 i = 0; i < putOnRequest.length; i += 1) {
+            _putOn(Asset(putOnRequest[i].assetAddr, putOnRequest[i].id));
+        }
+
+        for (uint256 i = 0; i < takeOffAssetTypes.length; i += 1) {
+            Asset memory equippedAsset = asset(takeOffAssetTypes[i]);
+            if (equippedAsset.assetAddr != address(0x0)) {
+                _takeOff(takeOffAssetTypes[i]);
+                IERC1155Collection(equippedAsset.assetAddr).safeTransferFrom(
+                    address(this),
+                    msg.sender,
+                    equippedAsset.id,
+                    1,
+                    ""
+                );
             }
         }
     }
@@ -79,7 +89,9 @@ contract AvatarV1 is AvatarBase {
 
             if (assetAddr != address(0x0)) {
                 if (_dava.isDefaultCollection(assetAddr)) {
-                    (, , zIndex) = _dava.getDefaultAsset(assets[i].assetType);
+                    bytes32 collectionType = ICollection(assetAddr)
+                        .collectionType();
+                    (, , zIndex) = _dava.getDefaultAsset(collectionType);
                     isValid = true;
                 } else {
                     string memory collectionTitle = IERC1155Collection(
@@ -160,9 +172,8 @@ contract AvatarV1 is AvatarBase {
 
             if (addr != address(0x0)) {
                 if (_dava.isDefaultCollection(addr)) {
-                    (, img, zIndex) = _dava.getDefaultAsset(
-                        assets[i].assetType
-                    );
+                    bytes32 collectionType = ICollection(addr).collectionType();
+                    (, img, zIndex) = _dava.getDefaultAsset(collectionType);
                 } else {
                     img = IERC1155Collection(addr).imageUri(assets[i].id);
                     zIndex = IERC1155Collection(addr).zIndex(assets[i].id);

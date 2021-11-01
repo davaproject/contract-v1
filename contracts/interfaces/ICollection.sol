@@ -15,18 +15,3 @@ interface ICollection is IERC165 {
 
     function zIndex() external pure returns (uint256);
 }
-
-interface ITransferableCollection is ICollection {
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) external;
-
-    function balanceOf(address account, uint256 tokenId)
-        external
-        view
-        returns (uint256);
-}

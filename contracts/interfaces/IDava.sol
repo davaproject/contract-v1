@@ -6,6 +6,12 @@ import {IERC721Enumerable} from "@openzeppelin/contracts/interfaces/IERC721Enume
 import {IImageHost} from "../interfaces/IImageHost.sol";
 
 interface IDava is IERC721Enumerable, IImageHost {
+    struct ZapReq {
+        address collection;
+        uint256 assetId;
+        uint256 amount;
+    }
+
     function mint(address to, uint256 id) external;
 
     function registerCollection(address collection) external;
@@ -20,12 +26,9 @@ interface IDava is IERC721Enumerable, IImageHost {
 
     function deregisterDefaultCollection(address collection) external;
 
-    function transferAssetToAvatar(
-        uint256 tokenId,
-        address collection,
-        uint256 assetId,
-        uint256 amount
-    ) external;
+    function zap(uint256 tokenId, ZapReq calldata zapReq) external;
+
+    function zap(uint256 tokenId, ZapReq[] calldata zapReqs) external;
 
     function isRegisteredCollection(address collection)
         external

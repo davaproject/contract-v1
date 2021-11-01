@@ -149,7 +149,11 @@ describe("Dava", () => {
     describe("should be reverted", () => {
       it("if non-avatar try to use this function", async () => {
         await expect(
-          dava.transferAssetToAvatar(1, davaOfficial.address, 0, 1)
+          dava["zap(uint256,(address,uint256,uint256))"](1, {
+            collection: davaOfficial.address,
+            assetId: 0,
+            amount: 1,
+          })
         ).to.be.revertedWith("Dava: avatar and tokenId does not match");
       });
 

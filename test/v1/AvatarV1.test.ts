@@ -250,13 +250,15 @@ describe("Avatar", () => {
               );
 
               // TODO: registered but not puton case
-              await mintedAvatar.dress([
-                {
-                  assetType: collectionType,
-                  assetAddr: davaOfficial.address,
-                  id: layer.tokenId,
-                },
-              ]);
+              await mintedAvatar.dress(
+                [
+                  {
+                    assetAddr: davaOfficial.address,
+                    id: layer.tokenId,
+                  },
+                ],
+                []
+              );
             }),
           Promise.resolve()
         );
@@ -333,22 +335,17 @@ describe("Avatar", () => {
       });
 
       it("should return updated compiled metadata if avatar take off some", async () => {
-        await mintedAvatar.dress([
-          {
-            assetType: ethers.utils.keccak256(
+        await mintedAvatar.dress(
+          [],
+          [
+            ethers.utils.keccak256(
               ethers.utils.toUtf8Bytes(layers[0].collectionTitle)
             ),
-            assetAddr: ethers.constants.AddressZero,
-            id: 0,
-          },
-          {
-            assetType: ethers.utils.keccak256(
+            ethers.utils.keccak256(
               ethers.utils.toUtf8Bytes(layers[3].collectionTitle)
             ),
-            assetAddr: ethers.constants.AddressZero,
-            id: 0,
-          },
-        ]);
+          ]
+        );
         const expectedImageUri = createImageUri({
           host,
           layers: [
@@ -441,7 +438,7 @@ describe("Avatar", () => {
         expect(avatarOwner.address).not.to.equal(nonOwner.address);
 
         await expect(
-          mintedAvatar.connect(nonOwner).dress([])
+          mintedAvatar.connect(nonOwner).dress([], [])
         ).to.be.revertedWith("Account: only owner can call");
       });
     });
@@ -467,25 +464,25 @@ describe("Avatar", () => {
               avatarOwnerBalance,
               avatarBalance,
               equippedAsset: {
-                assetType: equippedAsset.assetType,
                 assetAddr: equippedAsset.assetAddr,
                 id: equippedAsset.id.toNumber(),
               },
             };
           },
           process: () =>
-            mintedAvatar.dress([
-              {
-                assetType: targetAsset.assetType,
-                assetAddr: davaOfficial.address,
-                id: targetAsset.id,
-              },
-            ]),
+            mintedAvatar.dress(
+              [
+                {
+                  assetAddr: davaOfficial.address,
+                  id: targetAsset.id,
+                },
+              ],
+              []
+            ),
           expectedBefore: {
             avatarOwnerBalance: 1,
             avatarBalance: 0,
             equippedAsset: {
-              assetType: targetAsset.assetType,
               assetAddr: ethers.constants.AddressZero,
               id: 0,
             },
@@ -494,7 +491,6 @@ describe("Avatar", () => {
             avatarOwnerBalance: 0,
             avatarBalance: 1,
             equippedAsset: {
-              assetType: targetAsset.assetType,
               assetAddr: davaOfficial.address,
               id: targetAsset.id,
             },
@@ -522,25 +518,25 @@ describe("Avatar", () => {
               avatarOwnerBalance,
               avatarBalance,
               equippedAsset: {
-                assetType: equippedAsset.assetType,
                 assetAddr: equippedAsset.assetAddr,
                 id: equippedAsset.id.toNumber(),
               },
             };
           },
           process: () =>
-            mintedAvatar.dress([
-              {
-                assetType: targetAsset.assetType,
-                assetAddr: davaOfficial.address,
-                id: targetAsset.id,
-              },
-            ]),
+            mintedAvatar.dress(
+              [
+                {
+                  assetAddr: davaOfficial.address,
+                  id: targetAsset.id,
+                },
+              ],
+              []
+            ),
           expectedBefore: {
             avatarOwnerBalance: 0,
             avatarBalance: 1,
             equippedAsset: {
-              assetType: targetAsset.assetType,
               assetAddr: ethers.constants.AddressZero,
               id: 0,
             },
@@ -549,7 +545,6 @@ describe("Avatar", () => {
             avatarOwnerBalance: 0,
             avatarBalance: 1,
             equippedAsset: {
-              assetType: targetAsset.assetType,
               assetAddr: davaOfficial.address,
               id: targetAsset.id,
             },
@@ -563,13 +558,15 @@ describe("Avatar", () => {
       before(async () => {
         targetAsset = assets[0];
         await davaOfficial.mint(mintedAvatar.address, targetAsset.id, 1, "0x");
-        await mintedAvatar.dress([
-          {
-            assetType: assets[0].assetType,
-            assetAddr: davaOfficial.address,
-            id: assets[0].id,
-          },
-        ]);
+        await mintedAvatar.dress(
+          [
+            {
+              assetAddr: davaOfficial.address,
+              id: assets[0].id,
+            },
+          ],
+          []
+        );
       });
 
       it("and transfer it to avatarOwner", async () => {
@@ -589,25 +586,16 @@ describe("Avatar", () => {
               avatarOwnerBalance,
               avatarBalance,
               equippedAsset: {
-                assetType: equippedAsset.assetType,
                 assetAddr: equippedAsset.assetAddr,
                 id: equippedAsset.id.toNumber(),
               },
             };
           },
-          process: () =>
-            mintedAvatar.dress([
-              {
-                assetType: targetAsset.assetType,
-                assetAddr: ethers.constants.AddressZero,
-                id: 0,
-              },
-            ]),
+          process: () => mintedAvatar.dress([], [targetAsset.assetType]),
           expectedBefore: {
             avatarOwnerBalance: 0,
             avatarBalance: 1,
             equippedAsset: {
-              assetType: targetAsset.assetType,
               assetAddr: davaOfficial.address,
               id: targetAsset.id,
             },
@@ -616,7 +604,6 @@ describe("Avatar", () => {
             avatarOwnerBalance: 1,
             avatarBalance: 0,
             equippedAsset: {
-              assetType: targetAsset.assetType,
               assetAddr: ethers.constants.AddressZero,
               id: 0,
             },
