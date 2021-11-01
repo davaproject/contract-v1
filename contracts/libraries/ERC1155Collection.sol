@@ -22,7 +22,7 @@ struct AssetInfo {
     mapping(uint256 => string) imgURIs;
     mapping(uint256 => uint256) maxSupply;
     mapping(uint256 => IERC1155Collection.Attribute[]) attributes;
-    mapping(uint256 => bytes32) collectionTypes;
+    mapping(uint256 => bytes32) assetTypes;
 }
 
 struct CollectionInfo {
@@ -64,7 +64,7 @@ abstract contract ERC1155Collection is
     uint256 public maxTotalAssetSupply = 0;
     uint256 public totalAssetSupply = 0;
 
-    EnumerableSet.Bytes32Set private _supportedCollectionTypes;
+    EnumerableSet.Bytes32Set private _supportedAssetTypes;
 
     constructor(string memory imgServerHost_, address dava_)
         ERC1155("")
@@ -79,7 +79,7 @@ abstract contract ERC1155Collection is
         _setupRole(CREATOR_ROLE, msg.sender);
         _setRoleAdmin(CREATOR_ROLE, DEFAULT_ADMIN_ROLE);
 
-        _supportedCollectionTypes.add(DEFAULT_ASSET_TYPE);
+        _supportedAssetTypes.add(DEFAULT_ASSET_TYPE);
     }
 
     function setHost(string memory imgServerHost_) external onlyOwner {
@@ -87,7 +87,7 @@ abstract contract ERC1155Collection is
     }
 
     function createAsset(
-        bytes32 collectionType_,
+        bytes32 assetType_,
         string memory title_,
         address creator_,
         string memory description_,
@@ -104,10 +104,10 @@ abstract contract ERC1155Collection is
 
         // default asset
         require(
-            _supportedCollectionTypes.contains(collectionType_),
+            _supportedAssetTypes.contains(assetType_),
             "ERC1155Asset: non existent collection"
         );
-        if (collectionType_ == DEFAULT_ASSET_TYPE) {
+        if (assetType_ == DEFAULT_ASSET_TYPE) {
             require(
                 maxSupply_ == 0,
                 "ERC1155Asset: maxSupply of default asset should be zero"
@@ -118,7 +118,7 @@ abstract contract ERC1155Collection is
                 "ERC1155Asset: maxSupply should be greater than zero"
             );
         }
-        _assetInfo.collectionTypes[tokenId] = collectionType_;
+        _assetInfo.assetTypes[tokenId] = assetType_;
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
             _assetInfo.attributes[tokenId].push(attributes[i]);
@@ -134,9 +134,9 @@ abstract contract ERC1155Collection is
         uint256 foregroundImageTokenId_,
         uint256 zIndex_
     ) public virtual override onlyRole(CREATOR_ROLE) {
-        bytes32 collectionType = keccak256(abi.encodePacked(name_));
+        bytes32 _assetType = keccak256(abi.encodePacked(name_));
         require(
-            !_supportedCollectionTypes.contains(collectionType),
+            !_supportedAssetTypes.contains(_assetType),
             "ERC1155Asset: already exists collection"
         );
         require(
@@ -145,24 +145,24 @@ abstract contract ERC1155Collection is
         );
 
         require(
-            _assetInfo.collectionTypes[backgroundImageTokenId_] ==
+            _assetInfo.assetTypes[backgroundImageTokenId_] ==
                 DEFAULT_ASSET_TYPE &&
-                _assetInfo.collectionTypes[foregroundImageTokenId_] ==
+                _assetInfo.assetTypes[foregroundImageTokenId_] ==
                 DEFAULT_ASSET_TYPE,
             "ERC1155Asset: background image is not created"
         );
 
-        _collectionInfo.zIndex[collectionType] = zIndex_;
-        _collectionInfo.name[collectionType] = name_;
+        _collectionInfo.zIndex[_assetType] = zIndex_;
+        _collectionInfo.name[_assetType] = name_;
         _collectionInfo.backgroundImageAsset[
-            collectionType
+            _assetType
         ] = backgroundImageTokenId_;
         _collectionInfo.foregroundImageAsset[
-            collectionType
+            _assetType
         ] = foregroundImageTokenId_;
         _collectionInfo.zIndexExists[zIndex_] = true;
 
-        _supportedCollectionTypes.add(collectionType);
+        _supportedAssetTypes.add(_assetType);
     }
 
     function mint(
@@ -200,10 +200,10 @@ abstract contract ERC1155Collection is
 
         string[] memory imgURIs = new string[](3);
         uint256 backgroundTokenId = _collectionInfo.backgroundImageAsset[
-            _assetInfo.collectionTypes[tokenId]
+            _assetInfo.assetTypes[tokenId]
         ];
         uint256 foregroundTokenId = _collectionInfo.foregroundImageAsset[
-            _assetInfo.collectionTypes[tokenId]
+            _assetInfo.assetTypes[tokenId]
         ];
 
         imgURIs[0] = _assetInfo.imgURIs[backgroundTokenId];
@@ -250,12 +250,12 @@ abstract contract ERC1155Collection is
         return OnchainMetadata.compileImages(imgURIs);
     }
 
-    function getAllSupportedCollectionTypes()
+    function getAllSupportedAssetTypes()
         public
         view
         returns (bytes32[] memory)
     {
-        return _supportedCollectionTypes.values();
+        return _supportedAssetTypes.values();
     }
 
     function creator(uint256 tokenId)
@@ -297,8 +297,8 @@ abstract contract ERC1155Collection is
         override
         returns (string memory)
     {
-        bytes32 collectionType = _assetInfo.collectionTypes[tokenId];
-        return _collectionInfo.name[collectionType];
+        bytes32 _assetType = _assetInfo.assetTypes[tokenId];
+        return _collectionInfo.name[_assetType];
     }
 
     /**
@@ -314,11 +314,11 @@ abstract contract ERC1155Collection is
     }
 
     function assetTypes() public view override returns (bytes32[] memory) {
-        return _supportedCollectionTypes.values();
+        return _supportedAssetTypes.values();
     }
 
     function assetType(uint256 tokenId) public view override returns (bytes32) {
-        return _assetInfo.collectionTypes[tokenId];
+        return _assetInfo.assetTypes[tokenId];
     }
 
     /**
@@ -331,8 +331,8 @@ abstract contract ERC1155Collection is
         override
         returns (uint256)
     {
-        bytes32 collectionType = _assetInfo.collectionTypes[tokenId];
-        uint256 zIndex_ = _collectionInfo.zIndex[collectionType];
+        bytes32 _assetType = _assetInfo.assetTypes[tokenId];
+        uint256 zIndex_ = _collectionInfo.zIndex[_assetType];
         return zIndex_;
     }
 

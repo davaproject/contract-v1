@@ -40,8 +40,8 @@ describe("ERC1155Asset", () => {
     beforeEach(async () => {});
 
     it("create collection", async () => {
-      const supportedCollectionTypesBefore =
-        await davaOfficial.getAllSupportedCollectionTypes();
+      const supportedAssetTypesBefore =
+        await davaOfficial.getAllSupportedAssetTypes();
 
       await davaOfficial.createCollection(
         collectionName,
@@ -50,11 +50,11 @@ describe("ERC1155Asset", () => {
         zIndex
       );
 
-      const supportedCollectionTypesAfter =
-        await davaOfficial.getAllSupportedCollectionTypes();
+      const supportedAssetTypesAfter =
+        await davaOfficial.getAllSupportedAssetTypes();
 
-      expect(supportedCollectionTypesAfter.length).to.equal(
-        supportedCollectionTypesBefore.length + 1
+      expect(supportedAssetTypesAfter.length).to.equal(
+        supportedAssetTypesBefore.length + 1
       );
     });
 
