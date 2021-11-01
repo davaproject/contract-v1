@@ -18,7 +18,7 @@ export const createImageUri = ({
   host: string;
   layers: Array<Layer>;
 }): string => {
-  return `${host}?${layers
+  return `${host}/images?${layers
     .map(({ address, tokenId }) => `${address}=${tokenId}`)
     .join("&")}`;
 };

@@ -197,20 +197,21 @@ abstract contract ERC1155Collection is
 
     function uri(uint256 tokenId) public view override returns (string memory) {
         require(exists(tokenId), "non existent token");
-        bytes32 collectionType = _assetInfo.collectionTypes[tokenId];
 
         string[] memory imgURIs = new string[](3);
         uint256 backgroundTokenId = _collectionInfo.backgroundImageAsset[
-            collectionType
+            _assetInfo.collectionTypes[tokenId]
         ];
         uint256 foregroundTokenId = _collectionInfo.foregroundImageAsset[
-            collectionType
+            _assetInfo.collectionTypes[tokenId]
         ];
 
         imgURIs[0] = _assetInfo.imgURIs[backgroundTokenId];
         imgURIs[1] = _assetInfo.imgURIs[tokenId];
         imgURIs[2] = _assetInfo.imgURIs[foregroundTokenId];
 
+        string[] memory params = new string[](1);
+        params[0] = "images";
         ImageHost.Query[] memory queries = new ImageHost.Query[](3);
         string memory thisAddress = uint256(uint160(address(this)))
             .toHexString();
@@ -224,7 +225,7 @@ abstract contract ERC1155Collection is
                 _assetInfo.creators[tokenId],
                 _assetInfo.descriptions[tokenId],
                 imgURIs,
-                ImageHost.getFullUri(imgServerHost, queries),
+                ImageHost.getFullUri(imgServerHost, params, queries),
                 _assetInfo.attributes[tokenId]
             );
     }

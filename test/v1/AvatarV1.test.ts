@@ -16,6 +16,7 @@ const { expect } = chai;
 describe("Avatar", () => {
   let snapshot: string;
   let dava: Dava;
+  let mintedAvatarId: number;
   let mintedAvatar: AvatarV1;
   let avatarOwner: SignerWithAddress;
   let [deployer, ...accounts]: SignerWithAddress[] = [];
@@ -43,9 +44,10 @@ describe("Avatar", () => {
 
     dava = contracts.dava;
     avatarOwner = accounts[0];
-    await dava.connect(deployer).mint(avatarOwner.address, 0);
+    mintedAvatarId = 0;
+    await dava.connect(deployer).mint(avatarOwner.address, mintedAvatarId);
     mintedAvatar = AvatarV1__factory.connect(
-      await dava.getAvatar(0),
+      await dava.getAvatar(mintedAvatarId),
       accounts[0]
     );
 
@@ -151,8 +153,17 @@ describe("Avatar", () => {
         const expectedResult = {
           name: await mintedAvatar.name(),
           creator: ethers.constants.AddressZero,
-          description: "Genesis Avatar",
-          attributes: [],
+          description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
+          attributes: [
+            {
+              trait_type: "Avatar",
+              value: mintedAvatar.address.toLowerCase(),
+            },
+            {
+              trait_type: "Info",
+              value: `${host}/infos/${mintedAvatarId}`,
+            },
+          ],
           raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
           image: expectedImageUri,
         };
@@ -319,11 +330,21 @@ describe("Avatar", () => {
         const expectedResult = {
           name: await mintedAvatar.name(),
           creator: ethers.constants.AddressZero,
-          description: "Genesis Avatar",
-          attributes: layers.map(({ collectionTitle, assetTitle }) => ({
-            trait_type: collectionTitle,
-            value: assetTitle,
-          })),
+          description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
+          attributes: [
+            ...layers.map(({ collectionTitle, assetTitle }) => ({
+              trait_type: collectionTitle,
+              value: assetTitle,
+            })),
+            {
+              trait_type: "Avatar",
+              value: mintedAvatar.address.toLowerCase(),
+            },
+            {
+              trait_type: "Info",
+              value: `${host}/infos/${mintedAvatarId}`,
+            },
+          ],
           raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
           image: expectedImageUri,
         };
@@ -376,13 +397,23 @@ describe("Avatar", () => {
         const expectedResult = {
           name: await mintedAvatar.name(),
           creator: ethers.constants.AddressZero,
-          description: "Genesis Avatar",
-          attributes: [layers[1], layers[2], layers[4]].map(
-            ({ collectionTitle, assetTitle }) => ({
-              trait_type: collectionTitle,
-              value: assetTitle,
-            })
-          ),
+          description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
+          attributes: [
+            ...[layers[1], layers[2], layers[4]].map(
+              ({ collectionTitle, assetTitle }) => ({
+                trait_type: collectionTitle,
+                value: assetTitle,
+              })
+            ),
+            {
+              trait_type: "Avatar",
+              value: mintedAvatar.address.toLowerCase(),
+            },
+            {
+              trait_type: "Info",
+              value: `${host}/infos/${mintedAvatarId}`,
+            },
+          ],
           raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
           image: expectedImageUri,
         };

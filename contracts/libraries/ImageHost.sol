@@ -8,13 +8,20 @@ library ImageHost {
         string value;
     }
 
-    function getFullUri(string memory host, Query[] memory queries)
-        internal
-        pure
-        returns (string memory)
-    {
+    function getFullUri(
+        string memory host,
+        string[] memory params,
+        Query[] memory queries
+    ) internal pure returns (string memory) {
         string memory queryString;
+        for (uint256 i = 0; i < params.length; i += 1) {
+            host = string(abi.encodePacked(host, "/", params[i]));
+        }
+
         for (uint256 i = 0; i < queries.length; i += 1) {
+            if (i == 0) {
+                queryString = "?";
+            }
             if (i != 0) {
                 queryString = string(abi.encodePacked(queryString, "&"));
             }
@@ -28,6 +35,6 @@ library ImageHost {
             );
         }
 
-        return string(abi.encodePacked(host, "?", queryString));
+        return string(abi.encodePacked(host, queryString));
     }
 }

@@ -5,7 +5,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Dava, DavaOfficial } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
-import { createImage } from "./utils/image";
+import { createImage, createImageUri } from "./utils/image";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -250,7 +250,14 @@ describe("ERC1155Asset", () => {
         raw_image:
           "data:image/svg+xml;utf8," +
           createImage([background.url, assetInfo.uri, foreground.url]),
-        image: `https://api.davaproject.com?${davaOfficialAddress}=${background.tokenId}&${davaOfficialAddress}=${tokenId}&${davaOfficialAddress}=${foreground.tokenId}`,
+        image: createImageUri({
+          host: "https://api.davaproject.com",
+          layers: [
+            { address: davaOfficialAddress, tokenId: background.tokenId },
+            { address: davaOfficialAddress, tokenId },
+            { address: davaOfficialAddress, tokenId: foreground.tokenId },
+          ],
+        }),
       };
 
       const expectedResult =

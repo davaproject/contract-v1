@@ -66,6 +66,9 @@ contract AvatarV1 is AvatarBase {
     }
 
     function getMetadata() external view override returns (string memory) {
+        string memory avatarAddress = uint256(uint160(address(this)))
+            .toHexString();
+
         Asset[] memory assets = allAssets();
 
         IERC1155Collection.Attribute[]
@@ -88,24 +91,22 @@ contract AvatarV1 is AvatarBase {
 
             if (assetAddr != address(0x0)) {
                 if (_dava.isDefaultCollection(assetAddr)) {
-                    bytes32 collectionType = ICollection(assetAddr)
-                        .collectionType();
-                    (, , zIndex) = _dava.getDefaultAsset(collectionType);
-                    isValid = true;
+                    (, , zIndex) = _dava.getDefaultAsset(
+                        ICollection(assetAddr).collectionType()
+                    );
                 } else {
-                    string memory collectionTitle = IERC1155Collection(
-                        assetAddr
-                    ).collectionTitle(assetId);
-                    string memory assetTitle = IERC1155Collection(assetAddr)
-                        .assetTitle(assetId);
                     zIndex = IERC1155Collection(assetAddr).zIndex(assetId);
-
                     attributes[wearingAssetAmount] = IERC1155Collection
-                        .Attribute(collectionTitle, assetTitle);
+                        .Attribute(
+                            IERC1155Collection(assetAddr).collectionTitle(
+                                assetId
+                            ),
+                            IERC1155Collection(assetAddr).assetTitle(assetId)
+                        );
 
                     wearingAssetAmount += 1;
-                    isValid = true;
                 }
+                isValid = true;
             }
 
             if (isValid) {
@@ -122,14 +123,6 @@ contract AvatarV1 is AvatarBase {
             }
         }
 
-        IERC1155Collection.Attribute[]
-            memory wearingAttributes = new IERC1155Collection.Attribute[](
-                wearingAssetAmount
-            );
-        for (uint256 i = 0; i < wearingAssetAmount; i += 1) {
-            wearingAttributes[i] = attributes[i];
-        }
-
         if (validAssetAmount > 1) {
             QuickSort.sort(layers, int256(0), int256(validAssetAmount - 1));
         }
@@ -141,18 +134,43 @@ contract AvatarV1 is AvatarBase {
         }
 
         string memory imgServerHost = IImageHost(dava()).imgServerHost();
-        string memory imgUri = ImageHost.getFullUri(
-            imgServerHost,
-            sortedQueries
+        string[] memory imgParams = new string[](1);
+        imgParams[0] = "images";
+
+        IERC1155Collection.Attribute[]
+            memory wearingAttributes = new IERC1155Collection.Attribute[](
+                wearingAssetAmount + 2
+            );
+        for (uint256 i = 0; i < wearingAssetAmount; i += 1) {
+            wearingAttributes[i] = attributes[i];
+        }
+        wearingAttributes[wearingAssetAmount] = IERC1155Collection.Attribute(
+            "Avatar",
+            avatarAddress
         );
+
+        string[] memory infoParams = new string[](2);
+        infoParams[0] = "infos";
+        infoParams[1] = _props().davaId.toString();
+        wearingAttributes[wearingAssetAmount + 1] = IERC1155Collection
+            .Attribute(
+                "Info",
+                ImageHost.getFullUri(
+                    imgServerHost,
+                    infoParams,
+                    new ImageHost.Query[](0)
+                )
+            );
 
         return
             OnchainMetadata.toMetadata(
                 name(),
                 address(0x0),
-                "Genesis Avatar",
+                string(
+                    abi.encodePacked("Genesis Avatar (", avatarAddress, ")")
+                ),
                 _imgURIs(),
-                imgUri,
+                ImageHost.getFullUri(imgServerHost, imgParams, sortedQueries),
                 wearingAttributes
             );
     }
