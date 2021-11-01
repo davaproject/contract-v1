@@ -51,6 +51,10 @@ contract Dava is
 
     event CollectionRegistered(address collection);
     event CollectionDeregistered(address collection);
+    event DefaultCollectionRegistered(address collection);
+    event DefaultCollectionDeregistered(address collection);
+    event AssetRegistered(bytes32 assetType, address collection);
+    event AssetDeregistered(bytes32 assetType, address collection);
 
     // DAO contract owns this registry
     constructor(address minimalProxy_, string memory imgServerHost_)
@@ -109,6 +113,8 @@ contract Dava is
             "Dava: already registered collection"
         );
         _registeredCollections.add(collection);
+
+        emit CollectionRegistered(collection);
     }
 
     function registerAssetType(address collection, bytes32 assetType)
@@ -128,6 +134,8 @@ contract Dava is
         _assetTypesOfCollection[ICollection(collection)].add(assetType);
         _collectionOfAsset[assetType].add(collection);
         _supportedAssetTypes.add(assetType);
+
+        emit AssetRegistered(assetType, collection);
     }
 
     function registerDefaultCollection(address collection)
@@ -155,6 +163,8 @@ contract Dava is
         _defaultCollections[collectionType] = ICollection(collection);
         _registeredCollections.add(collection);
         _supportedDefaultCollectionTypes.add(collectionType);
+
+        emit DefaultCollectionRegistered(collection);
     }
 
     function deregisterCollection(address collection)
@@ -176,6 +186,8 @@ contract Dava is
         }
 
         _registeredCollections.remove(collection);
+
+        emit CollectionDeregistered(collection);
     }
 
     function deregisterAssetType(bytes32 assetType)
@@ -195,6 +207,7 @@ contract Dava is
         for (uint256 i = 0; i < collections.length(); i += 1) {
             address collection = collections.at(i);
             _assetTypesOfCollection[ICollection(collection)].remove(assetType);
+            emit AssetDeregistered(assetType, collection);
         }
 
         delete _collectionOfAsset[assetType];
@@ -213,6 +226,8 @@ contract Dava is
 
         _supportedDefaultCollectionTypes.remove(collectionType);
         _registeredCollections.remove(collection);
+
+        emit DefaultCollectionDeregistered(collection);
     }
 
     function zap(uint256 tokenId, ZapReq calldata zapReq) public override {
@@ -240,14 +255,14 @@ contract Dava is
         );
     }
 
-    function zap(uint256 tokenId, ZapReq[] calldata zapReqs) public override {
+    function zap(uint256 tokenId, ZapReq[] calldata zapReqs) external override {
         for (uint256 i = 0; i < zapReqs.length; i += 1) {
             zap(tokenId, zapReqs[i]);
         }
     }
 
     function isRegisteredCollection(address collection)
-        public
+        external
         view
         override
         returns (bool)
@@ -256,21 +271,20 @@ contract Dava is
     }
 
     function isDefaultCollection(address collection_)
-        public
+        external
         view
         override
         returns (bool)
     {
-        ICollection collection = ICollection(collection_);
         return
             _registeredCollections.contains(collection_) &&
             _supportedDefaultCollectionTypes.contains(
-                collection.collectionType()
+                ICollection(collection_).collectionType()
             );
     }
 
     function isDavaAsset(address collection, bytes32 assetType)
-        public
+        external
         view
         override
         returns (bool)
@@ -287,7 +301,7 @@ contract Dava is
     }
 
     function getDefaultAsset(bytes32 collectionType)
-        public
+        external
         view
         override
         returns (
@@ -296,18 +310,17 @@ contract Dava is
             uint256 zIndex
         )
     {
-        ICollection defaultCollection = _defaultCollections[collectionType];
-        if (address(defaultCollection) == address(0))
+        if (address(_defaultCollections[collectionType]) == address(0))
             return (address(0), "", 0);
         else {
-            asset = address(defaultCollection);
-            image = defaultCollection.defaultImage();
-            zIndex = defaultCollection.zIndex();
+            asset = address(_defaultCollections[collectionType]);
+            image = _defaultCollections[collectionType].defaultImage();
+            zIndex = _defaultCollections[collectionType].zIndex();
         }
     }
 
     function getAllSupportedAssetTypes()
-        public
+        external
         view
         override
         returns (bytes32[] memory assetTypes)
@@ -316,7 +329,7 @@ contract Dava is
     }
 
     function getAllSupportedDefaultCollectionTypes()
-        public
+        external
         view
         override
         returns (bytes32[] memory collectionTypes)
@@ -325,7 +338,7 @@ contract Dava is
     }
 
     function getAssetTypes(address collection)
-        public
+        external
         view
         override
         returns (bytes32[] memory assetTypes)
@@ -334,7 +347,7 @@ contract Dava is
     }
 
     function getCollections(bytes32 assetType)
-        public
+        external
         view
         override
         returns (address[] memory collections)
@@ -343,7 +356,7 @@ contract Dava is
     }
 
     function getRegisteredCollections()
-        public
+        external
         view
         override
         returns (address[] memory)
@@ -365,7 +378,7 @@ contract Dava is
     }
 
     function getPFP(uint256 tokenId)
-        public
+        external
         view
         override
         returns (string memory)
