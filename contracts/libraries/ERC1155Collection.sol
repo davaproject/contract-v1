@@ -319,7 +319,7 @@ abstract contract ERC1155Collection is
         return _assetInfo.titles[tokenId];
     }
 
-    function assetTypes() public view override returns (bytes32[] memory) {
+    function allAssetTypes() public view override returns (bytes32[] memory) {
         return _supportedAssetTypes.values();
     }
 

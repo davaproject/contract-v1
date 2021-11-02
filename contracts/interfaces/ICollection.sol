@@ -5,7 +5,7 @@ pragma abicoder v2;
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 
 interface ICollection is IERC165 {
-    function assetTypes() external view returns (bytes32[] memory);
+    function allAssetTypes() external view returns (bytes32[] memory);
 
     function defaultImage() external view returns (string memory);
 
