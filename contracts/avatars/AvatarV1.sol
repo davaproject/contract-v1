@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
-import {ImageHost} from "../libraries/ImageHost.sol";
+import {URICompiler} from "../libraries/URICompiler.sol";
 import {IImageHost} from "../interfaces/IImageHost.sol";
 import {ICollection} from "../interfaces/ICollection.sol";
 import {AvatarBase} from "../libraries/AvatarBase.sol";
@@ -78,7 +78,9 @@ contract AvatarV1 is AvatarBase {
 
         QuickSort.Layer[] memory layers = new QuickSort.Layer[](assets.length);
 
-        ImageHost.Query[] memory queries = new ImageHost.Query[](assets.length);
+        URICompiler.Query[] memory queries = new URICompiler.Query[](
+            assets.length
+        );
 
         IDava _dava = IDava(dava());
         uint256 wearingAssetAmount = 0;
@@ -110,7 +112,7 @@ contract AvatarV1 is AvatarBase {
             }
 
             if (isValid) {
-                queries[validAssetAmount] = ImageHost.Query(
+                queries[validAssetAmount] = URICompiler.Query(
                     uint256(uint160(assetAddr)).toHexString(),
                     assetId.toString()
                 );
@@ -126,7 +128,7 @@ contract AvatarV1 is AvatarBase {
         if (validAssetAmount > 1) {
             QuickSort.sort(layers, int256(0), int256(validAssetAmount - 1));
         }
-        ImageHost.Query[] memory sortedQueries = new ImageHost.Query[](
+        URICompiler.Query[] memory sortedQueries = new URICompiler.Query[](
             validAssetAmount
         );
         for (uint256 i = 0; i < validAssetAmount; i += 1) {
@@ -155,10 +157,10 @@ contract AvatarV1 is AvatarBase {
         wearingAttributes[wearingAssetAmount + 1] = IERC1155Collection
             .Attribute(
                 "Info",
-                ImageHost.getFullUri(
+                URICompiler.getFullUri(
                     imgServerHost,
                     infoParams,
-                    new ImageHost.Query[](0)
+                    new URICompiler.Query[](0)
                 )
             );
 
@@ -170,7 +172,7 @@ contract AvatarV1 is AvatarBase {
                     abi.encodePacked("Genesis Avatar (", avatarAddress, ")")
                 ),
                 _imgURIs(),
-                ImageHost.getFullUri(imgServerHost, imgParams, sortedQueries),
+                URICompiler.getFullUri(imgServerHost, imgParams, sortedQueries),
                 wearingAttributes
             );
     }

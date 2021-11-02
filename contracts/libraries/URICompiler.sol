@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-library ImageHost {
+library URICompiler {
     struct Query {
         string key;
         string value;

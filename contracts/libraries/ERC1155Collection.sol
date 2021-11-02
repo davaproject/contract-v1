@@ -13,7 +13,7 @@ import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
 import {ICollection} from "../interfaces/ICollection.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
-import {ImageHost} from "./ImageHost.sol";
+import {URICompiler} from "./URICompiler.sol";
 
 struct AssetInfo {
     mapping(uint256 => string) titles;
@@ -212,12 +212,18 @@ abstract contract ERC1155Collection is
 
         string[] memory params = new string[](1);
         params[0] = "images";
-        ImageHost.Query[] memory queries = new ImageHost.Query[](3);
+        URICompiler.Query[] memory queries = new URICompiler.Query[](3);
         string memory thisAddress = uint256(uint160(address(this)))
             .toHexString();
-        queries[0] = ImageHost.Query(thisAddress, backgroundTokenId.toString());
-        queries[1] = ImageHost.Query(thisAddress, tokenId.toString());
-        queries[2] = ImageHost.Query(thisAddress, foregroundTokenId.toString());
+        queries[0] = URICompiler.Query(
+            thisAddress,
+            backgroundTokenId.toString()
+        );
+        queries[1] = URICompiler.Query(thisAddress, tokenId.toString());
+        queries[2] = URICompiler.Query(
+            thisAddress,
+            foregroundTokenId.toString()
+        );
 
         return
             OnchainMetadata.toMetadata(
@@ -225,7 +231,7 @@ abstract contract ERC1155Collection is
                 _assetInfo.creators[tokenId],
                 _assetInfo.descriptions[tokenId],
                 imgURIs,
-                ImageHost.getFullUri(imgServerHost, params, queries),
+                URICompiler.getFullUri(imgServerHost, params, queries),
                 _assetInfo.attributes[tokenId]
             );
     }
