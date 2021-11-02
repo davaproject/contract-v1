@@ -101,7 +101,7 @@ contract AvatarV1 is AvatarBase {
                     zIndex = IERC1155Collection(assetAddr).zIndex(assetId);
                     attributes[wearingAssetAmount] = IERC1155Collection
                         .Attribute(
-                            IERC1155Collection(assetAddr).collectionTitle(
+                            IERC1155Collection(assetAddr).assetTypeTitle(
                                 assetId
                             ),
                             IERC1155Collection(assetAddr).assetTitle(assetId)

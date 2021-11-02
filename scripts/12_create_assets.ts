@@ -54,11 +54,11 @@ const run: HardhatScript = async () => {
   );
 
   await Object.entries(data.assets).reduce(
-    (acc, [collectionTitle, assetDataList]) =>
+    (acc, [assetTypeTitle, assetDataList]) =>
       acc.then(async () => {
         return await assetDataList.reduce(async (acc_, assetData) => {
           const asset = {
-            collectionType: deployedData[collectionTitle],
+            collectionType: deployedData[assetTypeTitle],
             title: assetData.title,
             creator: assetData.creator || ethers.constants.AddressZero,
             description: assetData.description,

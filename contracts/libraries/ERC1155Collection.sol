@@ -125,7 +125,7 @@ abstract contract ERC1155Collection is
         maxTotalAssetSupply += maxSupply_;
     }
 
-    function createCollection(
+    function createAssetType(
         string memory name_,
         uint256 backgroundImageTokenId_,
         uint256 foregroundImageTokenId_,
@@ -294,7 +294,7 @@ abstract contract ERC1155Collection is
             super.supportsInterface(interfaceId);
     }
 
-    function collectionTitle(uint256 tokenId)
+    function assetTypeTitle(uint256 tokenId)
         public
         view
         override

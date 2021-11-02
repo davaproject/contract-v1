@@ -1,4 +1,4 @@
 import { ethers } from "ethers";
 
-export const collectionType = (collectionTitle: string) =>
-  ethers.utils.keccak256(ethers.utils.toUtf8Bytes(collectionTitle));
+export const collectionType = (assetTypeTitle: string) =>
+  ethers.utils.keccak256(ethers.utils.toUtf8Bytes(assetTypeTitle));

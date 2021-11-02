@@ -1,5 +1,5 @@
 {
-  "imgServerHost": "https://api.davaproject.com/images",
+  "baseURI": "https://api.davaproject.com/images",
   "images": {
     "frames": {
       "frameBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",

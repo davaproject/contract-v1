@@ -14,7 +14,7 @@ import { getData } from "./utils/data-log";
 const network = getNetwork();
 const id = 11;
 
-const createCollection = async ({
+const createAssetType = async ({
   davaOfficial,
   collection,
 }: {
@@ -29,7 +29,7 @@ const createCollection = async ({
   console.log(
     `Start register collection <${collection.name}> to <DavaOfficial>`
   );
-  const tx = await davaOfficial.createCollection(
+  const tx = await davaOfficial.createAssetType(
     collection.name,
     collection.backgroundImageTokenId,
     collection.foregroundImageTokenId,
@@ -91,7 +91,7 @@ const run: HardhatScript = async () => {
           zIndex: data.zIndex,
         };
 
-        const assetType = await createCollection({
+        const assetType = await createAssetType({
           davaOfficial,
           collection,
         });

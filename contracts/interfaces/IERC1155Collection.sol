@@ -21,7 +21,7 @@ interface IERC1155Collection is ICollection, IERC1155 {
         uint256 maxSupply_
     ) external;
 
-    function createCollection(
+    function createAssetType(
         string memory name_,
         uint256 backgroundImageTokenId_,
         uint256 foregroundImageTokenId_,
@@ -30,7 +30,7 @@ interface IERC1155Collection is ICollection, IERC1155 {
 
     function numberOfAssets() external view returns (uint256);
 
-    function collectionTitle(uint256 tokenId_)
+    function assetTypeTitle(uint256 tokenId_)
         external
         view
         returns (string memory);

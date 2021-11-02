@@ -132,7 +132,7 @@ describe("Dava", () => {
         [],
         0
       );
-      await davaOfficial.createCollection(collectionName, 0, 0, 0);
+      await davaOfficial.createAssetType(collectionName, 0, 0, 0);
       assetId = (await davaOfficial.numberOfAssets()).toNumber();
       await davaOfficial.createAsset(
         ethers.utils.keccak256(ethers.utils.toUtf8Bytes(collectionName)),

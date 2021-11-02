@@ -19,7 +19,7 @@ const run: HardhatScript = async () => {
 
   console.log("Start deploying <DavaOfficial>");
   const DavaOfficial = new DavaOfficial__factory(deployer);
-  const davaOfficial = await DavaOfficial.deploy(data.imgServerHost, dava);
+  const davaOfficial = await DavaOfficial.deploy(data.baseURI, dava);
   await davaOfficial.deployed();
   console.log("<DavaOfficial> Contract deployed at:", davaOfficial.address);
 

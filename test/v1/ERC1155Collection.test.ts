@@ -33,7 +33,7 @@ describe("ERC1155Asset", () => {
     await ethers.provider.send("evm_revert", [snapshot]);
   });
 
-  describe("createCollection", () => {
+  describe("createAssetType", () => {
     const collectionName = "test";
     const zIndex = 1;
 
@@ -43,7 +43,7 @@ describe("ERC1155Asset", () => {
       const supportedAssetTypesBefore =
         await davaOfficial.getAllSupportedAssetTypes();
 
-      await davaOfficial.createCollection(
+      await davaOfficial.createAssetType(
         collectionName,
         background.tokenId,
         foreground.tokenId,
@@ -60,7 +60,7 @@ describe("ERC1155Asset", () => {
 
     describe("should be reverted", () => {
       beforeEach(async () => {
-        await davaOfficial.createCollection(
+        await davaOfficial.createAssetType(
           collectionName,
           background.tokenId,
           foreground.tokenId,
@@ -70,7 +70,7 @@ describe("ERC1155Asset", () => {
 
       it("for already registered name", async () => {
         await expect(
-          davaOfficial.createCollection(
+          davaOfficial.createAssetType(
             collectionName,
             background.tokenId,
             foreground.tokenId,
@@ -81,7 +81,7 @@ describe("ERC1155Asset", () => {
 
       it("for already registered zIndex", async () => {
         await expect(
-          davaOfficial.createCollection(
+          davaOfficial.createAssetType(
             collectionName + "test",
             background.tokenId,
             foreground.tokenId,
@@ -92,7 +92,7 @@ describe("ERC1155Asset", () => {
 
       it("for non existent background", async () => {
         await expect(
-          davaOfficial.createCollection(
+          davaOfficial.createAssetType(
             collectionName + "test",
             background.tokenId + 100,
             foreground.tokenId + 100,
@@ -129,7 +129,7 @@ describe("ERC1155Asset", () => {
     };
 
     beforeEach(async () => {
-      await davaOfficial.createCollection(
+      await davaOfficial.createAssetType(
         collectionName,
         background.tokenId,
         foreground.tokenId,
@@ -221,7 +221,7 @@ describe("ERC1155Asset", () => {
     let tokenId: number;
 
     beforeEach(async () => {
-      await davaOfficial.createCollection(
+      await davaOfficial.createAssetType(
         collectionName,
         background.tokenId,
         foreground.tokenId,

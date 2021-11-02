@@ -180,7 +180,7 @@ describe("Avatar", () => {
         tokenId: number;
         zIndex: number;
         uri: string;
-        collectionTitle: string;
+        assetTypeTitle: string;
         assetTitle: string;
       }>;
 
@@ -190,35 +190,35 @@ describe("Avatar", () => {
             tokenId: 0,
             zIndex: defaultAssets.background.zIndex - 1,
             uri: "https://davaproject.com/layer0",
-            collectionTitle: "layer0",
+            assetTypeTitle: "layer0",
             assetTitle: "asset0",
           },
           {
             tokenId: 0,
             zIndex: defaultAssets.background.zIndex + 1,
             uri: "https://davaproject.com/layer1",
-            collectionTitle: "layer1",
+            assetTypeTitle: "layer1",
             assetTitle: "asset1",
           },
           {
             tokenId: 0,
             zIndex: defaultAssets.body.zIndex + 1,
             uri: "https://davaproject.com/layer2",
-            collectionTitle: "layer2",
+            assetTypeTitle: "layer2",
             assetTitle: "asset2",
           },
           {
             tokenId: 0,
             zIndex: defaultAssets.head.zIndex + 1,
             uri: "https://davaproject.com/layer3",
-            collectionTitle: "layer3",
+            assetTypeTitle: "layer3",
             assetTitle: "asset3",
           },
           {
             tokenId: 0,
             zIndex: defaultAssets.signature.zIndex + 1,
             uri: "https://davaproject.com/layer4",
-            collectionTitle: "layer4",
+            assetTypeTitle: "layer4",
             assetTitle: "asset4",
           },
         ];
@@ -226,12 +226,12 @@ describe("Avatar", () => {
         await layers.reduce(
           (acc, layer) =>
             acc.then(async () => {
-              const { zIndex, uri, collectionTitle, assetTitle } = layer;
-              const name = collectionTitle;
+              const { zIndex, uri, assetTypeTitle, assetTitle } = layer;
+              const name = assetTypeTitle;
               const collectionType = ethers.utils.keccak256(
                 ethers.utils.toUtf8Bytes(name)
               );
-              await davaOfficial.createCollection(
+              await davaOfficial.createAssetType(
                 name,
                 background.tokenId,
                 foreground.tokenId,
@@ -332,8 +332,8 @@ describe("Avatar", () => {
           creator: ethers.constants.AddressZero,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
-            ...layers.map(({ collectionTitle, assetTitle }) => ({
-              trait_type: collectionTitle,
+            ...layers.map(({ assetTypeTitle, assetTitle }) => ({
+              trait_type: assetTypeTitle,
               value: assetTitle,
             })),
             {
@@ -360,10 +360,10 @@ describe("Avatar", () => {
           [],
           [
             ethers.utils.keccak256(
-              ethers.utils.toUtf8Bytes(layers[0].collectionTitle)
+              ethers.utils.toUtf8Bytes(layers[0].assetTypeTitle)
             ),
             ethers.utils.keccak256(
-              ethers.utils.toUtf8Bytes(layers[3].collectionTitle)
+              ethers.utils.toUtf8Bytes(layers[3].assetTypeTitle)
             ),
           ]
         );
@@ -400,8 +400,8 @@ describe("Avatar", () => {
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
             ...[layers[1], layers[2], layers[4]].map(
-              ({ collectionTitle, assetTitle }) => ({
-                trait_type: collectionTitle,
+              ({ assetTypeTitle, assetTitle }) => ({
+                trait_type: assetTypeTitle,
                 value: assetTitle,
               })
             ),
@@ -436,15 +436,15 @@ describe("Avatar", () => {
     before(async () => {
       await Promise.all(
         [null, null].map(async (_, i) => {
-          const collectionTitle = `test${Date.now()}${i}`;
-          await davaOfficial.createCollection(
-            collectionTitle,
+          const assetTypeTitle = `test${Date.now()}${i}`;
+          await davaOfficial.createAssetType(
+            assetTypeTitle,
             background.tokenId,
             foreground.tokenId,
             i + 1000
           );
 
-          const assetType = collectionType(collectionTitle);
+          const assetType = collectionType(assetTypeTitle);
           await dava.registerAssetType(davaOfficial.address, assetType);
 
           const assetId = (await davaOfficial.numberOfAssets()).toNumber();

@@ -10,7 +10,7 @@ contract DavaFrameBackground is DefaultImageAsset {
         return "frame-background";
     }
 
-    function assetTypes() public pure override returns (bytes32[] memory) {
+    function allAssetTypes() public pure override returns (bytes32[] memory) {
         return new bytes32[](0);
     }
 
