@@ -40,6 +40,11 @@ interface IDava is IERC721Enumerable, IImageHost {
         view
         returns (bool);
 
+    function isSupportedAssetType(bytes32 assetType)
+        external
+        view
+        returns (bool);
+
     function isDavaAsset(address collection, bytes32 assetType)
         external
         view

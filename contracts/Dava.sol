@@ -283,6 +283,15 @@ contract Dava is
             );
     }
 
+    function isSupportedAssetType(bytes32 assetType)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _supportedAssetTypes.contains(assetType);
+    }
+
     function isDavaAsset(address collection, bytes32 assetType)
         external
         view
