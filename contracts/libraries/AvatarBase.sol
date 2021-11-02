@@ -29,15 +29,17 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         _props().name = name_;
     }
 
-    function dress(
-        Asset[] calldata putOnRequest,
-        bytes32[] calldata takeOffAssetTypes
-    ) external virtual override onlyOwner {
-        for (uint256 i = 0; i < putOnRequest.length; i += 1) {
-            _putOn(putOnRequest[i]);
+    function dress(Asset[] calldata assetsOn, bytes32[] calldata assetsOff)
+        external
+        virtual
+        override
+        onlyOwner
+    {
+        for (uint256 i = 0; i < assetsOn.length; i += 1) {
+            _putOn(assetsOn[i]);
         }
-        for (uint256 i = 0; i < takeOffAssetTypes.length; i += 1) {
-            _takeOff(takeOffAssetTypes[i]);
+        for (uint256 i = 0; i < assetsOff.length; i += 1) {
+            _takeOff(assetsOff[i]);
         }
     }
 

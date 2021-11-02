@@ -16,17 +16,18 @@ import {QuickSort} from "../libraries/QuickSort.sol";
 contract AvatarV1 is AvatarBase {
     using Strings for uint256;
 
-    function dress(
-        Asset[] calldata putOnRequest,
-        bytes32[] calldata takeOffAssetTypes
-    ) external override onlyOwner {
-        IDava.ZapReq[] memory zapReqs = new IDava.ZapReq[](putOnRequest.length);
+    function dress(Asset[] calldata assetsOn, bytes32[] calldata assetsOff)
+        external
+        override
+        onlyOwner
+    {
+        IDava.ZapReq[] memory zapReqs = new IDava.ZapReq[](assetsOn.length);
         uint256 zapAmount = 0;
-        for (uint256 i = 0; i < putOnRequest.length; i += 1) {
-            if (!_isEligible(putOnRequest[i])) {
+        for (uint256 i = 0; i < assetsOn.length; i += 1) {
+            if (!_isEligible(assetsOn[i])) {
                 zapReqs[zapAmount] = IDava.ZapReq(
-                    putOnRequest[i].assetAddr,
-                    putOnRequest[i].id,
+                    assetsOn[i].assetAddr,
+                    assetsOn[i].id,
                     1
                 );
                 zapAmount += 1;
@@ -38,14 +39,14 @@ contract AvatarV1 is AvatarBase {
         }
         IDava(dava()).zap(_props().davaId, validZapReqs);
 
-        for (uint256 i = 0; i < putOnRequest.length; i += 1) {
-            _putOn(Asset(putOnRequest[i].assetAddr, putOnRequest[i].id));
+        for (uint256 i = 0; i < assetsOn.length; i += 1) {
+            _putOn(Asset(assetsOn[i].assetAddr, assetsOn[i].id));
         }
 
-        for (uint256 i = 0; i < takeOffAssetTypes.length; i += 1) {
-            Asset memory equippedAsset = asset(takeOffAssetTypes[i]);
+        for (uint256 i = 0; i < assetsOff.length; i += 1) {
+            Asset memory equippedAsset = asset(assetsOff[i]);
             if (equippedAsset.assetAddr != address(0x0)) {
-                _takeOff(takeOffAssetTypes[i]);
+                _takeOff(assetsOff[i]);
                 IERC1155Collection(equippedAsset.assetAddr).safeTransferFrom(
                     address(this),
                     msg.sender,
