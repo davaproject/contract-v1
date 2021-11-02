@@ -55,7 +55,7 @@ abstract contract ERC1155Collection is
 
     address public dava;
 
-    string public imgServerHost;
+    string public baseURI;
 
     AssetInfo private _assetInfo;
     CollectionInfo private _collectionInfo;
@@ -66,11 +66,8 @@ abstract contract ERC1155Collection is
 
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
 
-    constructor(string memory imgServerHost_, address dava_)
-        ERC1155("")
-        Ownable()
-    {
-        imgServerHost = imgServerHost_;
+    constructor(string memory baseURI_, address dava_) ERC1155("") Ownable() {
+        baseURI = baseURI_;
         dava = dava_;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -82,8 +79,8 @@ abstract contract ERC1155Collection is
         _supportedAssetTypes.add(DEFAULT_ASSET_TYPE);
     }
 
-    function setHost(string memory imgServerHost_) external onlyOwner {
-        imgServerHost = imgServerHost_;
+    function setBaseURI(string memory baseURI_) external onlyOwner {
+        baseURI = baseURI_;
     }
 
     function createAsset(
@@ -231,7 +228,7 @@ abstract contract ERC1155Collection is
                 _assetInfo.creators[tokenId],
                 _assetInfo.descriptions[tokenId],
                 imgURIs,
-                URICompiler.getFullUri(imgServerHost, params, queries),
+                URICompiler.getFullUri(baseURI, params, queries),
                 _assetInfo.attributes[tokenId]
             );
     }

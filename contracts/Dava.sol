@@ -32,7 +32,7 @@ contract Dava is
     bytes32 public constant UPGRADE_MANAGER_ROLE =
         keccak256("UPGRADE_MANAGER_ROLE");
 
-    string public override imgServerHost;
+    string public override baseURI;
 
     // collection => assetTypes[]
     mapping(ICollection => EnumerableSet.Bytes32Set)
@@ -57,13 +57,13 @@ contract Dava is
     event AssetDeregistered(bytes32 assetType, address collection);
 
     // DAO contract owns this registry
-    constructor(address minimalProxy_, string memory imgServerHost_)
+    constructor(address minimalProxy_, string memory baseURI_)
         ERC721("Dava", "DAVA")
         UpgradeableBeacon(minimalProxy_)
         Ownable()
     {
         _minimalProxy = minimalProxy_;
-        imgServerHost = imgServerHost_;
+        baseURI = baseURI_;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
@@ -74,11 +74,11 @@ contract Dava is
         _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
-    function setHost(string memory imgServerHost_)
+    function setBaseURI(string memory baseURI_)
         external
         onlyRole(UPGRADE_MANAGER_ROLE)
     {
-        imgServerHost = imgServerHost_;
+        baseURI = baseURI_;
     }
 
     function upgradeTo(address newImplementation)

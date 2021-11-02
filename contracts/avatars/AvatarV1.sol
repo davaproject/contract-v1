@@ -5,7 +5,7 @@ pragma abicoder v2;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
 import {URICompiler} from "../libraries/URICompiler.sol";
-import {IImageHost} from "../interfaces/IImageHost.sol";
+import {IHost} from "../interfaces/IHost.sol";
 import {ICollection} from "../interfaces/ICollection.sol";
 import {AvatarBase} from "../libraries/AvatarBase.sol";
 import {Asset} from "../interfaces/IAvatar.sol";
@@ -135,7 +135,7 @@ contract AvatarV1 is AvatarBase {
             sortedQueries[i] = queries[layers[i].value];
         }
 
-        string memory imgServerHost = IImageHost(dava()).imgServerHost();
+        string memory baseURI = IHost(dava()).baseURI();
         string[] memory imgParams = new string[](1);
         imgParams[0] = "images";
 
@@ -158,7 +158,7 @@ contract AvatarV1 is AvatarBase {
             .Attribute(
                 "Info",
                 URICompiler.getFullUri(
-                    imgServerHost,
+                    baseURI,
                     infoParams,
                     new URICompiler.Query[](0)
                 )
@@ -172,7 +172,7 @@ contract AvatarV1 is AvatarBase {
                     abi.encodePacked("Genesis Avatar (", avatarAddress, ")")
                 ),
                 _imgURIs(),
-                URICompiler.getFullUri(imgServerHost, imgParams, sortedQueries),
+                URICompiler.getFullUri(baseURI, imgParams, sortedQueries),
                 wearingAttributes
             );
     }

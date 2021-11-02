@@ -3,9 +3,9 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 import {IERC721Enumerable} from "@openzeppelin/contracts/interfaces/IERC721Enumerable.sol";
-import {IImageHost} from "../interfaces/IImageHost.sol";
+import {IHost} from "../interfaces/IHost.sol";
 
-interface IDava is IERC721Enumerable, IImageHost {
+interface IDava is IERC721Enumerable, IHost {
     struct ZapReq {
         address collection;
         uint256 assetId;
