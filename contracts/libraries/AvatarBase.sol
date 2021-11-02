@@ -7,11 +7,11 @@ import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Account} from "./Account.sol";
 import {MinimalProxy, Proxy} from "./MinimalProxy.sol";
-import {ICollection} from "../interfaces/ICollection.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
 import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
+import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 
 abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     using Strings for uint256;
@@ -75,7 +75,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         // Try to retrieve from the storage
         Asset memory asset_ = _props().assets[assetType];
         if (asset_.assetAddr == address(0x0)) {
-            return Asset(asset_.assetAddr, 0);
+            return Asset(address(0x0), 0);
         }
 
         // Check the balance
@@ -84,7 +84,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         if (owning) {
             return asset_;
         } else {
-            return Asset(asset_.assetAddr, 0);
+            return Asset(address(0x0), 0);
         }
     }
 
@@ -95,21 +95,12 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         override
         returns (Asset[] memory assets)
     {
-        bytes32[] memory allTypes = IDava(dava()).getAllSupportedAssetTypes();
-        bytes32[] memory allDefaultCollectionTypes = IDava(dava())
-            .getAllSupportedDefaultCollectionTypes();
+        IDava _dava = IDava(dava());
+        bytes32[] memory allTypes = _dava.getAllSupportedAssetTypes();
 
-        assets = new Asset[](
-            allTypes.length + allDefaultCollectionTypes.length
-        );
+        assets = new Asset[](allTypes.length);
         for (uint256 i = 0; i < allTypes.length; i += 1) {
             assets[i] = asset(allTypes[i]);
-        }
-        for (uint256 i = 0; i < allDefaultCollectionTypes.length; i += 1) {
-            (address assetAddr, , ) = IDava(dava()).getDefaultAsset(
-                allDefaultCollectionTypes[i]
-            );
-            assets[i + allTypes.length] = Asset(assetAddr, 0);
         }
     }
 

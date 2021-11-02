@@ -12,7 +12,8 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
 import {Asset, IAvatar} from "./interfaces/IAvatar.sol";
-import {ICollection} from "./interfaces/ICollection.sol";
+import {IFrameCollection} from "./interfaces/IFrameCollection.sol";
+import {IERC1155Collection} from "./interfaces/IERC1155Collection.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
 contract Dava is
@@ -33,14 +34,7 @@ contract Dava is
         keccak256("UPGRADE_MANAGER_ROLE");
 
     string public override baseURI;
-
-    // collection => assetTypes[]
-    mapping(ICollection => EnumerableSet.Bytes32Set)
-        private _assetTypesOfCollection;
-    // asset types => collection
-    mapping(bytes32 => EnumerableSet.AddressSet) private _collectionOfAsset;
-    // collection types => collection
-    mapping(bytes32 => ICollection) private _defaultCollections;
+    address public override frameCollection;
 
     EnumerableSet.AddressSet private _registeredCollections;
     EnumerableSet.Bytes32Set private _supportedDefaultCollectionTypes;
@@ -104,9 +98,9 @@ contract Dava is
     {
         require(
             IERC165(collection).supportsInterface(
-                type(ICollection).interfaceId
+                type(IERC1155Collection).interfaceId
             ),
-            "Dava: Does not support ICollection interface"
+            "Dava: Does not support IERC1155Collection interface"
         );
         require(
             !_registeredCollections.contains(collection),
@@ -117,52 +111,33 @@ contract Dava is
         emit CollectionRegistered(collection);
     }
 
-    function registerAssetType(address collection, bytes32 assetType)
+    function registerAssetType(bytes32 assetType)
         external
         override
         onlyRole(ASSET_MANAGER_ROLE)
     {
         require(
-            _registeredCollections.contains(collection),
-            "Dava: collection is not registered"
-        );
-
-        require(
             !_supportedAssetTypes.contains(assetType),
             "Dava: assetType is already registered"
         );
-        _assetTypesOfCollection[ICollection(collection)].add(assetType);
-        _collectionOfAsset[assetType].add(collection);
         _supportedAssetTypes.add(assetType);
 
-        emit AssetRegistered(assetType, collection);
+        // emit AssetRegistered(assetType);
     }
 
-    function registerDefaultCollection(address collection)
+    function registerFrameCollection(address collection)
         external
         override
         onlyRole(ASSET_MANAGER_ROLE)
     {
         require(
             IERC165(collection).supportsInterface(
-                type(ICollection).interfaceId
+                type(IFrameCollection).interfaceId
             ),
-            "Dava: Does not support ICollection interface"
+            "Dava: Does not support IFrameCollection interface"
         );
 
-        bytes32 collectionType = ICollection(collection).collectionType();
-        require(
-            !_supportedDefaultCollectionTypes.contains(collectionType),
-            "Dava: already registered default collection"
-        );
-        require(
-            !_registeredCollections.contains(collection),
-            "Dava: collection is registered as normal collection"
-        );
-
-        _defaultCollections[collectionType] = ICollection(collection);
-        _registeredCollections.add(collection);
-        _supportedDefaultCollectionTypes.add(collectionType);
+        frameCollection = collection;
 
         emit DefaultCollectionRegistered(collection);
     }
@@ -176,14 +151,6 @@ contract Dava is
             _registeredCollections.contains(collection),
             "Dava: Not registered collection"
         );
-
-        EnumerableSet.Bytes32Set storage assetTypes = _assetTypesOfCollection[
-            ICollection(collection)
-        ];
-        for (uint256 i = 0; i < assetTypes.length(); i += 1) {
-            _supportedAssetTypes.remove(assetTypes.at(i));
-            _collectionOfAsset[assetTypes.at(i)].remove(collection);
-        }
 
         _registeredCollections.remove(collection);
 
@@ -200,34 +167,6 @@ contract Dava is
             "Dava: non registered assetType"
         );
         _supportedAssetTypes.remove(assetType);
-
-        EnumerableSet.AddressSet storage collections = _collectionOfAsset[
-            assetType
-        ];
-        for (uint256 i = 0; i < collections.length(); i += 1) {
-            address collection = collections.at(i);
-            _assetTypesOfCollection[ICollection(collection)].remove(assetType);
-            emit AssetDeregistered(assetType, collection);
-        }
-
-        delete _collectionOfAsset[assetType];
-    }
-
-    function deregisterDefaultCollection(address collection)
-        external
-        override
-        onlyRole(ASSET_MANAGER_ROLE)
-    {
-        bytes32 collectionType = ICollection(collection).collectionType();
-        require(
-            _supportedDefaultCollectionTypes.contains(collectionType),
-            "Dava: Not registered"
-        );
-
-        _supportedDefaultCollectionTypes.remove(collectionType);
-        _registeredCollections.remove(collection);
-
-        emit DefaultCollectionDeregistered(collection);
     }
 
     function zap(uint256 tokenId, ZapReq calldata zapReq) public override {
@@ -270,19 +209,6 @@ contract Dava is
         return _registeredCollections.contains(collection);
     }
 
-    function isDefaultCollection(address collection_)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return
-            _registeredCollections.contains(collection_) &&
-            _supportedDefaultCollectionTypes.contains(
-                ICollection(collection_).collectionType()
-            );
-    }
-
     function isSupportedAssetType(bytes32 assetType)
         external
         view
@@ -298,7 +224,9 @@ contract Dava is
         override
         returns (bool)
     {
-        return _collectionOfAsset[assetType].contains(collection);
+        return
+            _registeredCollections.contains(collection) &&
+            _supportedAssetTypes.contains(assetType);
     }
 
     function getAvatar(uint256 tokenId) public view override returns (address) {
@@ -309,25 +237,6 @@ contract Dava is
             );
     }
 
-    function getDefaultAsset(bytes32 collectionType)
-        external
-        view
-        override
-        returns (
-            address asset,
-            string memory image,
-            uint256 zIndex
-        )
-    {
-        if (address(_defaultCollections[collectionType]) == address(0))
-            return (address(0), "", 0);
-        else {
-            asset = address(_defaultCollections[collectionType]);
-            image = _defaultCollections[collectionType].defaultImage();
-            zIndex = _defaultCollections[collectionType].zIndex();
-        }
-    }
-
     function getAllSupportedAssetTypes()
         external
         view
@@ -335,33 +244,6 @@ contract Dava is
         returns (bytes32[] memory assetTypes)
     {
         return _supportedAssetTypes.values();
-    }
-
-    function getAllSupportedDefaultCollectionTypes()
-        external
-        view
-        override
-        returns (bytes32[] memory collectionTypes)
-    {
-        return _supportedDefaultCollectionTypes.values();
-    }
-
-    function getAssetTypes(address collection)
-        external
-        view
-        override
-        returns (bytes32[] memory assetTypes)
-    {
-        return _assetTypesOfCollection[ICollection(collection)].values();
-    }
-
-    function getCollections(bytes32 assetType)
-        external
-        view
-        override
-        returns (address[] memory collections)
-    {
-        return _collectionOfAsset[assetType].values();
     }
 
     function getRegisteredCollections()

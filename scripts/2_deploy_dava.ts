@@ -3,7 +3,7 @@ import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
 import { Dava__factory } from "../types";
-import data from "./data.json";
+import data from "../data.json";
 
 const network = getNetwork();
 const id = 2;

@@ -4,7 +4,6 @@ pragma abicoder v2;
 
 import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {ICollection} from "../interfaces/ICollection.sol";
 import {AvatarBase} from "../libraries/AvatarBase.sol";
 
 contract AvatarV2Draft is AvatarBase {

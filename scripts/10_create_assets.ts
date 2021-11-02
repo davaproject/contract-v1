@@ -3,11 +3,11 @@ import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { getDeployed } from "./utils/deploy-log";
 import { DavaOfficial, DavaOfficial__factory } from "../types";
-import data from "./data.json";
+import data from "../data.json";
 import { getData } from "./utils/data-log";
 
 const network = getNetwork();
-const id = 12;
+const id = 10;
 
 const createAsset = async ({
   davaOfficial,

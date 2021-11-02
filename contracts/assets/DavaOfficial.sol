@@ -8,15 +8,7 @@ contract DavaOfficial is ERC1155Collection {
         ERC1155Collection(baseURI_, dava_)
     {}
 
-    function name() public pure override returns (string memory) {
+    function name() public pure returns (string memory) {
         return "dava-official";
-    }
-
-    function collectionType() public pure override returns (bytes32) {
-        return keccak256("dava.official");
-    }
-
-    function zIndex() public pure override returns (uint256) {
-        return 0;
     }
 }

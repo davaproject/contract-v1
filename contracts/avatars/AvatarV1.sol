@@ -6,7 +6,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
 import {URICompiler} from "../libraries/URICompiler.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {ICollection} from "../interfaces/ICollection.sol";
+import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 import {AvatarBase} from "../libraries/AvatarBase.sol";
 import {Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
@@ -67,72 +67,67 @@ contract AvatarV1 is AvatarBase {
     }
 
     function getMetadata() external view override returns (string memory) {
-        string memory avatarAddress = uint256(uint160(address(this)))
-            .toHexString();
+        IDava _dava = IDava(dava());
 
         Asset[] memory assets = allAssets();
+        address frameCollection = _dava.frameCollection();
+        IFrameCollection.Frame[] memory frames = IFrameCollection(
+            frameCollection
+        ).getAllFrames();
+
+        QuickSort.Layer[] memory layers = new QuickSort.Layer[](
+            assets.length + frames.length
+        );
 
         IERC1155Collection.Attribute[]
             memory attributes = new IERC1155Collection.Attribute[](
                 assets.length
             );
-
-        QuickSort.Layer[] memory layers = new QuickSort.Layer[](assets.length);
-
         URICompiler.Query[] memory queries = new URICompiler.Query[](
-            assets.length
+            assets.length + frames.length
         );
 
-        IDava _dava = IDava(dava());
+        for (uint256 i = 0; i < frames.length; i += 1) {
+            queries[i] = URICompiler.Query(
+                uint256(uint160(frameCollection)).toHexString(),
+                frames[i].id.toString()
+            );
+            layers[i] = QuickSort.Layer(i, frames[i].zIndex);
+        }
+
         uint256 wearingAssetAmount = 0;
-        uint256 validAssetAmount = 0;
+        uint256 layerAmount = frames.length;
         for (uint256 i = 0; i < assets.length; i += 1) {
-            bool isValid = false;
-            address assetAddr = assets[i].assetAddr;
-            uint256 assetId = assets[i].id;
-            uint256 zIndex;
-
-            if (assetAddr != address(0x0)) {
-                if (_dava.isDefaultCollection(assetAddr)) {
-                    (, , zIndex) = _dava.getDefaultAsset(
-                        ICollection(assetAddr).collectionType()
-                    );
-                } else {
-                    zIndex = IERC1155Collection(assetAddr).zIndex(assetId);
-                    attributes[wearingAssetAmount] = IERC1155Collection
-                        .Attribute(
-                            IERC1155Collection(assetAddr).assetTypeTitle(
-                                assetId
-                            ),
-                            IERC1155Collection(assetAddr).assetTitle(assetId)
-                        );
-
-                    wearingAssetAmount += 1;
-                }
-                isValid = true;
-            }
-
-            if (isValid) {
-                queries[validAssetAmount] = URICompiler.Query(
-                    uint256(uint160(assetAddr)).toHexString(),
-                    assetId.toString()
-                );
-                layers[validAssetAmount] = QuickSort.Layer(
-                    validAssetAmount,
-                    zIndex
+            if (assets[i].assetAddr != address(0x0)) {
+                attributes[wearingAssetAmount] = IERC1155Collection.Attribute(
+                    IERC1155Collection(assets[i].assetAddr).assetTypeTitle(
+                        assets[i].id
+                    ),
+                    IERC1155Collection(assets[i].assetAddr).assetTitle(
+                        assets[i].id
+                    )
                 );
 
-                validAssetAmount += 1;
+                queries[layerAmount] = URICompiler.Query(
+                    uint256(uint160(assets[i].assetAddr)).toHexString(),
+                    assets[i].id.toString()
+                );
+                layers[layerAmount] = QuickSort.Layer(
+                    layerAmount,
+                    IERC1155Collection(assets[i].assetAddr).zIndex(assets[i].id)
+                );
+                layerAmount += 1;
+                wearingAssetAmount += 1;
             }
         }
 
-        if (validAssetAmount > 1) {
-            QuickSort.sort(layers, int256(0), int256(validAssetAmount - 1));
+        if (layerAmount > 1) {
+            QuickSort.sort(layers, int256(0), int256(layerAmount - 1));
         }
         URICompiler.Query[] memory sortedQueries = new URICompiler.Query[](
-            validAssetAmount
+            layerAmount
         );
-        for (uint256 i = 0; i < validAssetAmount; i += 1) {
+        for (uint256 i = 0; i < layerAmount; i += 1) {
             sortedQueries[i] = queries[layers[i].value];
         }
 
@@ -149,7 +144,7 @@ contract AvatarV1 is AvatarBase {
         }
         wearingAttributes[wearingAssetAmount] = IERC1155Collection.Attribute(
             "Avatar",
-            avatarAddress
+            uint256(uint160(address(this))).toHexString()
         );
 
         string[] memory infoParams = new string[](2);
@@ -170,7 +165,11 @@ contract AvatarV1 is AvatarBase {
                 name(),
                 address(0x0),
                 string(
-                    abi.encodePacked("Genesis Avatar (", avatarAddress, ")")
+                    abi.encodePacked(
+                        "Genesis Avatar (",
+                        uint256(uint160(address(this))).toHexString(),
+                        ")"
+                    )
                 ),
                 _imgURIs(),
                 URICompiler.getFullUri(baseURI, imgParams, sortedQueries),
@@ -179,39 +178,42 @@ contract AvatarV1 is AvatarBase {
     }
 
     function _imgURIs() private view returns (string[] memory) {
-        Asset[] memory assets = allAssets();
-        QuickSort.Layer[] memory layers = new QuickSort.Layer[](assets.length);
-
         IDava _dava = IDava(dava());
-        string[] memory imgURIs = new string[](assets.length);
-        uint256 validAssets = 0;
-        for (uint256 i = 0; i < assets.length; i += 1) {
-            address addr = assets[i].assetAddr;
-            string memory img;
-            uint256 zIndex;
 
-            if (addr != address(0x0)) {
-                if (_dava.isDefaultCollection(addr)) {
-                    bytes32 collectionType = ICollection(addr).collectionType();
-                    (, img, zIndex) = _dava.getDefaultAsset(collectionType);
-                } else {
-                    img = IERC1155Collection(addr).imageUri(assets[i].id);
-                    zIndex = IERC1155Collection(addr).zIndex(assets[i].id);
-                }
-                if (bytes(img).length != 0) {
-                    layers[validAssets] = QuickSort.Layer(validAssets, zIndex);
-                    imgURIs[validAssets] = img;
-                    validAssets += 1;
-                }
+        Asset[] memory assets = allAssets();
+        address frameCollection = _dava.frameCollection();
+        IFrameCollection.Frame[] memory frames = IFrameCollection(
+            frameCollection
+        ).getAllFrames();
+
+        uint256 totalLayers = frames.length + assets.length;
+        uint256 validLayers = frames.length;
+
+        QuickSort.Layer[] memory layers = new QuickSort.Layer[](totalLayers);
+        string[] memory imgURIs = new string[](totalLayers);
+        for (uint256 i = 0; i < frames.length; i += 1) {
+            imgURIs[i] = frames[i].imgUri;
+            layers[i] = QuickSort.Layer(i, frames[i].zIndex);
+        }
+
+        for (uint256 i = 0; i < assets.length; i += 1) {
+            if (assets[i].assetAddr != address(0x0)) {
+                imgURIs[validLayers] = IERC1155Collection(assets[i].assetAddr)
+                    .imageUri(assets[i].id);
+                layers[validLayers] = QuickSort.Layer(
+                    validLayers,
+                    IERC1155Collection(assets[i].assetAddr).zIndex(assets[i].id)
+                );
+                validLayers += 1;
             }
         }
 
-        if (validAssets > 1) {
-            QuickSort.sort(layers, int256(0), int256(validAssets - 1));
+        if (validLayers > 1) {
+            QuickSort.sort(layers, int256(0), int256(validLayers - 1));
         }
 
-        string[] memory sortedImgURIs = new string[](validAssets);
-        for (uint256 i = 0; i < validAssets; i += 1) {
+        string[] memory sortedImgURIs = new string[](validLayers);
+        for (uint256 i = 0; i < validLayers; i += 1) {
             sortedImgURIs[i] = imgURIs[layers[i].value];
         }
 

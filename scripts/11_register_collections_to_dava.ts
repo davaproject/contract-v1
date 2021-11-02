@@ -5,7 +5,7 @@ import { getDeployed } from "./utils/deploy-log";
 import { Dava__factory } from "../types";
 
 const network = getNetwork();
-const id = 13;
+const id = 11;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
@@ -18,33 +18,20 @@ const run: HardhatScript = async () => {
   const Dava = new Dava__factory(deployer);
   const dava = Dava.attach(davaAddress);
 
-  const defaultCollections = [
-    "DavaFrameBackground",
-    "DavaFrameBody",
-    "DavaFrameHead",
-    "DavaSignature",
-  ];
-  await defaultCollections.reduce(
-    (acc, title) =>
-      acc.then(async () => {
-        const defaultCollection = getDeployed(network, title);
-        if (!defaultCollection) {
-          throw Error(`${title} is not deployed yet`);
-        }
-        const tx = await dava.registerDefaultCollection(defaultCollection);
-        await tx.wait(1);
-        return;
-      }),
-    Promise.resolve()
-  );
+  const davaFrame = getDeployed(network, "DavaFrame");
+  if (!davaFrame) {
+    throw Error(`${davaFrame} is not deployed yet`);
+  }
+  const tx1 = await dava.registerFrameCollection(davaFrame);
+  await tx1.wait(1);
 
   const davaOfficial = getDeployed(network, "DavaOfficial");
   if (!davaOfficial) {
     throw Error(`${davaOfficial} is not deployed yet`);
   }
 
-  const tx = await dava.registerCollection(davaOfficial);
-  await tx.wait(1);
+  const tx2 = await dava.registerCollection(davaOfficial);
+  await tx2.wait(1);
 
   return {};
 };

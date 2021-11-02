@@ -6,14 +6,8 @@ import {
   Dava,
   DavaOfficial,
   DavaOfficial__factory,
-  DavaFrameBackground,
-  DavaFrameBackground__factory,
-  DavaFrameBody,
-  DavaFrameBody__factory,
-  DavaFrameHead,
-  DavaFrameHead__factory,
-  DavaSignature,
-  DavaSignature__factory,
+  DavaFrame,
+  DavaFrame__factory,
   Dava__factory,
   MinimalProxy,
   MinimalProxy__factory,
@@ -22,7 +16,7 @@ import {
   Sale,
   Sale__factory,
 } from "../../types";
-import data from "../data.json";
+import data from "../../data.json";
 
 export type Assets = {
   defaultAsset: {
@@ -44,12 +38,7 @@ export type Contracts = {
   avatarV1: AvatarV1;
   assets: {
     davaOfficial: DavaOfficial;
-
-    // Dummy Assets (for mannequin)
-    davaFrameBackground: DavaFrameBackground;
-    davaFrameBody: DavaFrameBody;
-    davaFrameHead: DavaFrameHead;
-    davaSignature: DavaSignature;
+    davaFrame: DavaFrame;
   };
   sale: Sale;
   randomBox: RandomBox;
@@ -71,14 +60,14 @@ const registerCollection = async ({
   await tx.wait(1);
 };
 
-const registerDefaultCollection = async ({
+const registerFrameCollection = async ({
   dava,
   collection,
 }: {
   dava: Dava;
   collection: string;
 }): Promise<void> => {
-  const tx = await dava.registerDefaultCollection(collection);
+  const tx = await dava.registerFrameCollection(collection);
   await tx.wait(1);
 };
 
@@ -109,42 +98,23 @@ export const fixtures = async (): Promise<Fixture> => {
   await tx.wait(1);
   // Finish upgrading <Dava> with <AvatarV1>
 
-  // Start deploying <DavaFrameBackground>
-  const DavaFrameBackgroundContract = new DavaFrameBackground__factory(
-    deployer
-  );
-  const davaFrameBackground = await DavaFrameBackgroundContract.deploy(
-    data.images.frames.frameBackground
-  );
-  await davaFrameBackground.deployed();
-  await registerDefaultCollection({
+  // Start deploying <DavaFrame>
+  const DavaFrameContract = new DavaFrame__factory(deployer);
+  const davaFrame = await DavaFrameContract.deploy();
+  await davaFrame.deployed();
+  await registerFrameCollection({
     dava,
-    collection: davaFrameBackground.address,
+    collection: davaFrame.address,
   });
 
-  // Start deploying <DavaFrameBody>
-  const DavaFrameBodyContract = new DavaFrameBody__factory(deployer);
-  const davaFrameBody = await DavaFrameBodyContract.deploy(
-    data.images.frames.frameBody
+  // Start registering frames into <DavaFrame>
+  await Object.values(data.frames).reduce(
+    (acc, { image, zIndex }) =>
+      acc.then(async () => {
+        await davaFrame.registerFrame(image, zIndex);
+      }),
+    Promise.resolve()
   );
-  await davaFrameBody.deployed();
-  await registerDefaultCollection({ dava, collection: davaFrameBody.address });
-
-  // Start deploying <DavaFrameHead>
-  const DavaFrameHeadContract = new DavaFrameHead__factory(deployer);
-  const davaFrameHead = await DavaFrameHeadContract.deploy(
-    data.images.frames.frameHead
-  );
-  await davaFrameHead.deployed();
-  await registerDefaultCollection({ dava, collection: davaFrameHead.address });
-
-  // Start deploying <DavaSignature>
-  const DavaSignatureContract = new DavaSignature__factory(deployer);
-  const davaSignature = await DavaSignatureContract.deploy(
-    data.images.frames.signature
-  );
-  await davaSignature.deployed();
-  await registerDefaultCollection({ dava, collection: davaSignature.address });
 
   // Start deploying <DavaOfficial>
   const DavaOfficialContract = new DavaOfficial__factory(deployer);
@@ -213,14 +183,7 @@ export const fixtures = async (): Promise<Fixture> => {
       avatarV1,
       assets: {
         davaOfficial,
-
-        // Dummy Assets (for mannequin)
-        davaFrameBackground,
-        davaFrameBody,
-        davaFrameHead,
-        davaSignature,
-
-        // Real Assets
+        davaFrame,
       },
       sale,
       randomBox,

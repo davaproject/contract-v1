@@ -16,6 +16,24 @@
       "emptyHead": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_Head.png"
     }
   },
+  "frames": {
+    "background": {
+      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "zIndex": 5000
+    },
+    "body": {
+      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
+      "zIndex": 25000
+    },
+    "head": {
+      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png",
+      "zIndex": 35000
+    },
+    "signature": {
+      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
+      "zIndex": 70000
+    }
+  },
   "collections": {
     "background": {
       "backgroundImage": "empty",

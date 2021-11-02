@@ -2,13 +2,20 @@ import chai from "chai";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { AvatarV1, AvatarV1__factory, Dava, DavaOfficial } from "../../types";
+import {
+  AvatarV1,
+  AvatarV1__factory,
+  Dava,
+  DavaFrame,
+  DavaOfficial,
+} from "../../types";
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { parseEther } from "@ethersproject/units";
 import { createImage, createImageUri } from "./utils/image";
 import { collectionType } from "./utils/asset";
 import { checkChange } from "./utils/compare";
+import data from "../../data.json";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -22,6 +29,7 @@ describe("Avatar", () => {
   let [deployer, ...accounts]: SignerWithAddress[] = [];
 
   let davaOfficial: DavaOfficial;
+  let davaFrame: DavaFrame;
 
   let host: string;
   let background: { tokenId: number; url: string };
@@ -31,12 +39,6 @@ describe("Avatar", () => {
     img: string;
     zIndex: number;
   }
-  let defaultAssets: {
-    background: Asset;
-    body: Asset;
-    head: Asset;
-    signature: Asset;
-  };
 
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
@@ -53,37 +55,7 @@ describe("Avatar", () => {
 
     ({ host } = assets);
     ({ background, foreground } = assets.defaultAsset);
-    ({ davaOfficial } = contracts.assets);
-    defaultAssets = {
-      background: {
-        address: contracts.assets.davaFrameBackground.address,
-        img: await contracts.assets.davaFrameBackground.defaultImage(),
-        zIndex: await (
-          await contracts.assets.davaFrameBackground.zIndex()
-        ).toNumber(),
-      },
-      body: {
-        address: contracts.assets.davaFrameBody.address,
-        img: await contracts.assets.davaFrameBody.defaultImage(),
-        zIndex: await (
-          await contracts.assets.davaFrameBody.zIndex()
-        ).toNumber(),
-      },
-      head: {
-        address: contracts.assets.davaFrameHead.address,
-        img: await contracts.assets.davaFrameHead.defaultImage(),
-        zIndex: await (
-          await contracts.assets.davaFrameHead.zIndex()
-        ).toNumber(),
-      },
-      signature: {
-        address: contracts.assets.davaSignature.address,
-        img: await contracts.assets.davaSignature.defaultImage(),
-        zIndex: await (
-          await contracts.assets.davaSignature.zIndex()
-        ).toNumber(),
-      },
-    };
+    ({ davaOfficial, davaFrame } = contracts.assets);
   });
 
   beforeEach(async () => {
@@ -135,7 +107,7 @@ describe("Avatar", () => {
     describe("without asset", () => {
       it("should return default pfp", async () => {
         const expectedPfp = createImage(
-          Object.values(Object.values(defaultAssets).map(({ img }) => img))
+          Object.values(Object.values(data.frames).map(({ image }) => image))
         );
         const pfp = await mintedAvatar.getPFP();
 
@@ -145,9 +117,9 @@ describe("Avatar", () => {
       it("should return default metadata", async () => {
         const expectedImageUri = createImageUri({
           host,
-          layers: Object.values(defaultAssets).map(({ address }) => ({
-            address: address.toLowerCase(),
-            tokenId: 0,
+          layers: Object.keys(data.frames).map((_, i) => ({
+            address: davaFrame.address.toLowerCase(),
+            tokenId: i,
           })),
         });
         const expectedResult = {
@@ -188,35 +160,35 @@ describe("Avatar", () => {
         layers = [
           {
             tokenId: 0,
-            zIndex: defaultAssets.background.zIndex - 1,
+            zIndex: data.frames.background.zIndex - 1,
             uri: "https://davaproject.com/layer0",
             assetTypeTitle: "layer0",
             assetTitle: "asset0",
           },
           {
             tokenId: 0,
-            zIndex: defaultAssets.background.zIndex + 1,
+            zIndex: data.frames.background.zIndex + 1,
             uri: "https://davaproject.com/layer1",
             assetTypeTitle: "layer1",
             assetTitle: "asset1",
           },
           {
             tokenId: 0,
-            zIndex: defaultAssets.body.zIndex + 1,
+            zIndex: data.frames.body.zIndex + 1,
             uri: "https://davaproject.com/layer2",
             assetTypeTitle: "layer2",
             assetTitle: "asset2",
           },
           {
             tokenId: 0,
-            zIndex: defaultAssets.head.zIndex + 1,
+            zIndex: data.frames.head.zIndex + 1,
             uri: "https://davaproject.com/layer3",
             assetTypeTitle: "layer3",
             assetTitle: "asset3",
           },
           {
             tokenId: 0,
-            zIndex: defaultAssets.signature.zIndex + 1,
+            zIndex: data.frames.signature.zIndex + 1,
             uri: "https://davaproject.com/layer4",
             assetTypeTitle: "layer4",
             assetTitle: "asset4",
@@ -228,7 +200,7 @@ describe("Avatar", () => {
             acc.then(async () => {
               const { zIndex, uri, assetTypeTitle, assetTitle } = layer;
               const name = assetTypeTitle;
-              const collectionType = ethers.utils.keccak256(
+              const assetType = ethers.utils.keccak256(
                 ethers.utils.toUtf8Bytes(name)
               );
               await davaOfficial.createAssetType(
@@ -237,14 +209,11 @@ describe("Avatar", () => {
                 foreground.tokenId,
                 zIndex
               );
-              await dava.registerAssetType(
-                davaOfficial.address,
-                collectionType
-              );
+              await dava.registerAssetType(assetType);
 
               layer.tokenId = (await davaOfficial.numberOfAssets()).toNumber();
               await davaOfficial.createAsset(
-                collectionType,
+                assetType,
                 assetTitle,
                 ethers.constants.AddressZero,
                 "",
@@ -278,13 +247,13 @@ describe("Avatar", () => {
       it("should return compiled pfp", async () => {
         const expectedPfp = createImage([
           layers[0].uri,
-          defaultAssets.background.img,
+          data.frames.background.image,
           layers[1].uri,
-          defaultAssets.body.img,
+          data.frames.body.image,
           layers[2].uri,
-          defaultAssets.head.img,
+          data.frames.head.image,
           layers[3].uri,
-          defaultAssets.signature.img,
+          data.frames.signature.image,
           layers[4].uri,
         ]);
         const pfp = await mintedAvatar.getPFP();
@@ -300,26 +269,26 @@ describe("Avatar", () => {
               tokenId: layers[0].tokenId,
             },
             {
-              address: defaultAssets.background.address.toLowerCase(),
+              address: davaFrame.address.toLowerCase(),
               tokenId: 0,
             },
             {
               address: davaOfficial.address.toLowerCase(),
               tokenId: layers[1].tokenId,
             },
-            { address: defaultAssets.body.address.toLowerCase(), tokenId: 0 },
+            { address: davaFrame.address.toLowerCase(), tokenId: 1 },
             {
               address: davaOfficial.address.toLowerCase(),
               tokenId: layers[2].tokenId,
             },
-            { address: defaultAssets.head.address.toLowerCase(), tokenId: 0 },
+            { address: davaFrame.address.toLowerCase(), tokenId: 2 },
             {
               address: davaOfficial.address.toLowerCase(),
               tokenId: layers[3].tokenId,
             },
             {
-              address: defaultAssets.signature.address.toLowerCase(),
-              tokenId: 0,
+              address: davaFrame.address.toLowerCase(),
+              tokenId: 3,
             },
             {
               address: davaOfficial.address.toLowerCase(),
@@ -371,22 +340,22 @@ describe("Avatar", () => {
           host,
           layers: [
             {
-              address: defaultAssets.background.address.toLowerCase(),
+              address: davaFrame.address.toLowerCase(),
               tokenId: 0,
             },
             {
               address: davaOfficial.address.toLowerCase(),
               tokenId: layers[1].tokenId,
             },
-            { address: defaultAssets.body.address.toLowerCase(), tokenId: 0 },
+            { address: davaFrame.address.toLowerCase(), tokenId: 1 },
             {
               address: davaOfficial.address.toLowerCase(),
               tokenId: layers[2].tokenId,
             },
-            { address: defaultAssets.head.address.toLowerCase(), tokenId: 0 },
+            { address: davaFrame.address.toLowerCase(), tokenId: 2 },
             {
-              address: defaultAssets.signature.address.toLowerCase(),
-              tokenId: 0,
+              address: davaFrame.address.toLowerCase(),
+              tokenId: 3,
             },
             {
               address: davaOfficial.address.toLowerCase(),
@@ -445,7 +414,7 @@ describe("Avatar", () => {
           );
 
           const assetType = collectionType(assetTypeTitle);
-          await dava.registerAssetType(davaOfficial.address, assetType);
+          await dava.registerAssetType(assetType);
 
           const assetId = (await davaOfficial.numberOfAssets()).toNumber();
           await davaOfficial.createAsset(

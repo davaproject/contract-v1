@@ -8,11 +8,11 @@ import {
   DavaOfficial,
   DavaOfficial__factory,
 } from "../types";
-import data from "./data.json";
+import data from "../data.json";
 import { getData } from "./utils/data-log";
 
 const network = getNetwork();
-const id = 11;
+const id = 9;
 
 const createAssetType = async ({
   davaOfficial,
@@ -46,15 +46,13 @@ const createAssetType = async ({
 
 const registerAssetType = async ({
   dava,
-  collection,
   assetType,
 }: {
   dava: Dava;
-  collection: string;
   assetType: string;
 }) => {
   console.log(`Start register assetType <${assetType}> to <Dava>`);
-  const tx = await dava.registerAssetType(collection, assetType);
+  const tx = await dava.registerAssetType(assetType);
   await tx.wait(1);
 
   console.log(`assetType <${assetType}> is registered in <Dava>`);
@@ -99,7 +97,6 @@ const run: HardhatScript = async () => {
 
         await registerAssetType({
           dava,
-          collection: davaOfficialAddress,
           assetType: assetType,
         });
       }),

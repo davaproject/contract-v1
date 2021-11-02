@@ -16,26 +16,21 @@ interface IDava is IERC721Enumerable, IHost {
 
     function registerCollection(address collection) external;
 
-    function registerAssetType(address collection, bytes32 assetType) external;
+    function registerAssetType(bytes32 assetType) external;
 
-    function registerDefaultCollection(address collection) external;
+    function registerFrameCollection(address collection) external;
 
     function deregisterCollection(address collection) external;
 
     function deregisterAssetType(bytes32 assetType) external;
 
-    function deregisterDefaultCollection(address collection) external;
-
     function zap(uint256 tokenId, ZapReq calldata zapReq) external;
 
     function zap(uint256 tokenId, ZapReq[] calldata zapReqs) external;
 
-    function isRegisteredCollection(address collection)
-        external
-        view
-        returns (bool);
+    function frameCollection() external view returns (address);
 
-    function isDefaultCollection(address collection)
+    function isRegisteredCollection(address collection)
         external
         view
         returns (bool);
@@ -52,34 +47,10 @@ interface IDava is IERC721Enumerable, IHost {
 
     function getAvatar(uint256 id) external view returns (address);
 
-    function getDefaultAsset(bytes32 collectionType)
-        external
-        view
-        returns (
-            address asset,
-            string memory image,
-            uint256 zIndex
-        );
-
     function getAllSupportedAssetTypes()
         external
         view
         returns (bytes32[] memory);
-
-    function getAllSupportedDefaultCollectionTypes()
-        external
-        view
-        returns (bytes32[] memory);
-
-    function getAssetTypes(address collection)
-        external
-        view
-        returns (bytes32[] memory assetTypes);
-
-    function getCollections(bytes32 assetType)
-        external
-        view
-        returns (address[] memory collections);
 
     function getRegisteredCollections()
         external

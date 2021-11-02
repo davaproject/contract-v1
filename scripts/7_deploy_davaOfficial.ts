@@ -1,11 +1,12 @@
 import { ethers } from "hardhat";
-import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
+import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
+import data from "../data.json";
+import { DavaOfficial__factory } from "../types";
 import { getDeployed } from "./utils/deploy-log";
-import { Sale, Sale__factory } from "../types";
 
 const network = getNetwork();
-const id = 14;
+const id = 7;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
@@ -16,23 +17,16 @@ const run: HardhatScript = async () => {
     throw Error("Dava is not deployed yet");
   }
 
-  console.log("Start deploying <Sale>");
-  const Sale = new Sale__factory(deployer);
-
-  let sale: Sale;
-  if (network == "rinkeby") {
-    sale = await Sale.deploy(dava, 0, 2635379200, 0);
-  } else {
-    sale = await Sale.deploy(dava, 0, 1635379200, 0);
-  }
-
-  await sale.deployed();
-  console.log("<Sale> Contract deployed at:", sale.address);
+  console.log("Start deploying <DavaOfficial>");
+  const DavaOfficial = new DavaOfficial__factory(deployer);
+  const davaOfficial = await DavaOfficial.deploy(data.baseURI, dava);
+  await davaOfficial.deployed();
+  console.log("<DavaOfficial> Contract deployed at:", davaOfficial.address);
 
   return {
     deployedContract: {
-      contractName: "Sale",
-      address: sale.address,
+      contractName: "DavaOfficial",
+      address: davaOfficial.address,
     },
   };
 };

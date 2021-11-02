@@ -10,7 +10,6 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
-import {ICollection} from "../interfaces/ICollection.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
 import {URICompiler} from "./URICompiler.sol";
@@ -290,7 +289,6 @@ abstract contract ERC1155Collection is
     {
         return
             interfaceId == type(IERC1155Collection).interfaceId ||
-            interfaceId == type(ICollection).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -348,13 +346,4 @@ abstract contract ERC1155Collection is
     {
         return super.isApprovedForAll(account, operator) || operator == dava;
     }
-
-    function defaultImage() external pure override returns (string memory) {}
-
-    /**
-     * @dev Return this asset class's own name.
-     */
-    function name() public pure virtual override returns (string memory);
-
-    function zIndex() public pure virtual override returns (uint256);
 }
