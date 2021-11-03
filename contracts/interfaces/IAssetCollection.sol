@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 
-interface IERC1155Collection is IERC1155 {
+interface IAssetCollection is IERC1155 {
     struct Attribute {
         string trait_type;
         string value;
@@ -28,8 +28,6 @@ interface IERC1155Collection is IERC1155 {
     ) external;
 
     function numberOfAssets() external view returns (uint256);
-
-    function allAssetTypes() external view returns (bytes32[] memory);
 
     function imageUri(uint256 tokenId_) external view returns (string memory);
 

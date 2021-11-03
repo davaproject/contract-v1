@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { ERC1155Collection } from "../../types";
+import { AssetCollection } from "../../types";
 
 interface Attribute {
   trait_type: string;
@@ -20,7 +20,7 @@ export const registerAsset = async ({
   collection,
   assetData,
 }: {
-  collection: ERC1155Collection;
+  collection: AssetCollection;
   assetData: AssetData;
 }): Promise<void> => {
   console.log(

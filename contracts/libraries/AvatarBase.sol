@@ -10,7 +10,7 @@ import {MinimalProxy, Proxy} from "./MinimalProxy.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
-import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
+import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 
 abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
@@ -128,7 +128,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         returns (string memory);
 
     function _putOn(Asset memory asset_) internal {
-        bytes32 assetType = IERC1155Collection(asset_.assetAddr).assetType(
+        bytes32 assetType = IAssetCollection(asset_.assetAddr).assetType(
             asset_.id
         );
         require(_isEligible(asset_), "Avatar: does not have the asset.");
@@ -152,7 +152,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         require(
             IDava(dava()).isDavaAsset(
                 asset_.assetAddr,
-                IERC1155Collection(asset_.assetAddr).assetType(asset_.id)
+                IAssetCollection(asset_.assetAddr).assetType(asset_.id)
             ),
             "Avatar: not a registered asset."
         );

@@ -13,7 +13,7 @@ import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { parseEther } from "@ethersproject/units";
 import { createImage, createImageUri } from "./utils/image";
-import { collectionType } from "./utils/asset";
+import { assetType } from "./utils/asset";
 import { checkChange } from "./utils/compare";
 import data from "../../data.json";
 
@@ -413,12 +413,12 @@ describe("Avatar", () => {
             i + 1000
           );
 
-          const assetType = collectionType(assetTypeTitle);
-          await dava.registerAssetType(assetType);
+          const _assetType = assetType(assetTypeTitle);
+          await dava.registerAssetType(_assetType);
 
           const assetId = (await davaOfficial.numberOfAssets()).toNumber();
           await davaOfficial.createAsset(
-            assetType,
+            _assetType,
             `asset-${i}`,
             deployer.address,
             "",
@@ -427,7 +427,7 @@ describe("Avatar", () => {
             10
           );
 
-          assets.push({ assetType, id: assetId });
+          assets.push({ assetType: _assetType, id: assetId });
         })
       );
     });

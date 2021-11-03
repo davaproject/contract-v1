@@ -9,7 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
+import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
 import {URICompiler} from "./URICompiler.sol";
@@ -20,7 +20,7 @@ struct AssetInfo {
     mapping(uint256 => string) descriptions;
     mapping(uint256 => string) imgURIs;
     mapping(uint256 => uint256) maxSupply;
-    mapping(uint256 => IERC1155Collection.Attribute[]) attributes;
+    mapping(uint256 => IAssetCollection.Attribute[]) attributes;
     mapping(uint256 => bytes32) assetTypes;
 }
 
@@ -37,11 +37,11 @@ struct CollectionInfo {
     mapping(uint256 => bool) zIndexExists;
 }
 
-abstract contract ERC1155Collection is
+abstract contract AssetCollection is
     AccessControl,
     Ownable,
     ERC1155Supply,
-    IERC1155Collection
+    IAssetCollection
 {
     using Strings for uint256;
     using Address for address;
@@ -101,17 +101,17 @@ abstract contract ERC1155Collection is
         // default asset
         require(
             _supportedAssetTypes.contains(assetType_),
-            "ERC1155Asset: non existent collection"
+            "Asset: non existent assetType"
         );
         if (assetType_ == DEFAULT_ASSET_TYPE) {
             require(
                 maxSupply_ == 0,
-                "ERC1155Asset: maxSupply of default asset should be zero"
+                "Asset: maxSupply of default asset should be zero"
             );
         } else {
             require(
                 maxSupply_ != 0,
-                "ERC1155Asset: maxSupply should be greater than zero"
+                "Asset: maxSupply should be greater than zero"
             );
         }
         _assetInfo.assetTypes[tokenId] = assetType_;
@@ -133,11 +133,11 @@ abstract contract ERC1155Collection is
         bytes32 _assetType = keccak256(abi.encodePacked(name_));
         require(
             !_supportedAssetTypes.contains(_assetType),
-            "ERC1155Asset: already exists collection"
+            "Asset: already exists assetType"
         );
         require(
             !_collectionInfo.zIndexExists[zIndex_],
-            "ERC1155Asset: already used zIndex"
+            "Asset: already used zIndex"
         );
 
         require(
@@ -145,7 +145,7 @@ abstract contract ERC1155Collection is
                 DEFAULT_ASSET_TYPE &&
                 _assetInfo.assetTypes[foregroundImageTokenId_] ==
                 DEFAULT_ASSET_TYPE,
-            "ERC1155Asset: background image is not created"
+            "Asset: background image is not created"
         );
 
         _collectionInfo.zIndex[_assetType] = zIndex_;
@@ -288,7 +288,7 @@ abstract contract ERC1155Collection is
         returns (bool)
     {
         return
-            interfaceId == type(IERC1155Collection).interfaceId ||
+            interfaceId == type(IAssetCollection).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -312,10 +312,6 @@ abstract contract ERC1155Collection is
         returns (string memory)
     {
         return _assetInfo.titles[tokenId];
-    }
-
-    function allAssetTypes() public view override returns (bytes32[] memory) {
-        return _supportedAssetTypes.values();
     }
 
     function assetType(uint256 tokenId) public view override returns (bytes32) {

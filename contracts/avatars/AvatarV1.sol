@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
+import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
 import {URICompiler} from "../libraries/URICompiler.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
@@ -47,7 +47,7 @@ contract AvatarV1 is AvatarBase {
             Asset memory equippedAsset = asset(assetsOff[i]);
             if (equippedAsset.assetAddr != address(0x0)) {
                 _takeOff(assetsOff[i]);
-                IERC1155Collection(equippedAsset.assetAddr).safeTransferFrom(
+                IAssetCollection(equippedAsset.assetAddr).safeTransferFrom(
                     address(this),
                     msg.sender,
                     equippedAsset.id,
@@ -79,10 +79,8 @@ contract AvatarV1 is AvatarBase {
             assets.length + frames.length
         );
 
-        IERC1155Collection.Attribute[]
-            memory attributes = new IERC1155Collection.Attribute[](
-                assets.length
-            );
+        IAssetCollection.Attribute[]
+            memory attributes = new IAssetCollection.Attribute[](assets.length);
         URICompiler.Query[] memory queries = new URICompiler.Query[](
             assets.length + frames.length
         );
@@ -99,11 +97,11 @@ contract AvatarV1 is AvatarBase {
         uint256 layerAmount = frames.length;
         for (uint256 i = 0; i < assets.length; i += 1) {
             if (assets[i].assetAddr != address(0x0)) {
-                attributes[wearingAssetAmount] = IERC1155Collection.Attribute(
-                    IERC1155Collection(assets[i].assetAddr).assetTypeTitle(
+                attributes[wearingAssetAmount] = IAssetCollection.Attribute(
+                    IAssetCollection(assets[i].assetAddr).assetTypeTitle(
                         assets[i].id
                     ),
-                    IERC1155Collection(assets[i].assetAddr).assetTitle(
+                    IAssetCollection(assets[i].assetAddr).assetTitle(
                         assets[i].id
                     )
                 );
@@ -114,7 +112,7 @@ contract AvatarV1 is AvatarBase {
                 );
                 layers[layerAmount] = QuickSort.Layer(
                     layerAmount,
-                    IERC1155Collection(assets[i].assetAddr).zIndex(assets[i].id)
+                    IAssetCollection(assets[i].assetAddr).zIndex(assets[i].id)
                 );
                 layerAmount += 1;
                 wearingAssetAmount += 1;
@@ -135,14 +133,14 @@ contract AvatarV1 is AvatarBase {
         string[] memory imgParams = new string[](1);
         imgParams[0] = "images";
 
-        IERC1155Collection.Attribute[]
-            memory wearingAttributes = new IERC1155Collection.Attribute[](
+        IAssetCollection.Attribute[]
+            memory wearingAttributes = new IAssetCollection.Attribute[](
                 wearingAssetAmount + 2
             );
         for (uint256 i = 0; i < wearingAssetAmount; i += 1) {
             wearingAttributes[i] = attributes[i];
         }
-        wearingAttributes[wearingAssetAmount] = IERC1155Collection.Attribute(
+        wearingAttributes[wearingAssetAmount] = IAssetCollection.Attribute(
             "Avatar",
             uint256(uint160(address(this))).toHexString()
         );
@@ -150,15 +148,14 @@ contract AvatarV1 is AvatarBase {
         string[] memory infoParams = new string[](2);
         infoParams[0] = "infos";
         infoParams[1] = _props().davaId.toString();
-        wearingAttributes[wearingAssetAmount + 1] = IERC1155Collection
-            .Attribute(
-                "Info",
-                URICompiler.getFullUri(
-                    baseURI,
-                    infoParams,
-                    new URICompiler.Query[](0)
-                )
-            );
+        wearingAttributes[wearingAssetAmount + 1] = IAssetCollection.Attribute(
+            "Info",
+            URICompiler.getFullUri(
+                baseURI,
+                infoParams,
+                new URICompiler.Query[](0)
+            )
+        );
 
         return
             OnchainMetadata.toMetadata(
@@ -198,11 +195,11 @@ contract AvatarV1 is AvatarBase {
 
         for (uint256 i = 0; i < assets.length; i += 1) {
             if (assets[i].assetAddr != address(0x0)) {
-                imgURIs[validLayers] = IERC1155Collection(assets[i].assetAddr)
+                imgURIs[validLayers] = IAssetCollection(assets[i].assetAddr)
                     .imageUri(assets[i].id);
                 layers[validLayers] = QuickSort.Layer(
                     validLayers,
-                    IERC1155Collection(assets[i].assetAddr).zIndex(assets[i].id)
+                    IAssetCollection(assets[i].assetAddr).zIndex(assets[i].id)
                 );
                 validLayers += 1;
             }

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import {IERC1155Collection} from "../interfaces/IERC1155Collection.sol";
+import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
 import {OnchainMetadata} from "../libraries/OnchainMetadata.sol";
 
 contract TestOnchainMetadata {
@@ -11,7 +11,7 @@ contract TestOnchainMetadata {
         string memory description,
         string[] memory imgURIs,
         string memory externalImgUri,
-        IERC1155Collection.Attribute[] memory attributes
+        IAssetCollection.Attribute[] memory attributes
     ) external pure returns (string memory) {
         return
             OnchainMetadata.toMetadata(

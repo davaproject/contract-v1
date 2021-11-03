@@ -13,7 +13,7 @@ import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
 import {Asset, IAvatar} from "./interfaces/IAvatar.sol";
 import {IFrameCollection} from "./interfaces/IFrameCollection.sol";
-import {IERC1155Collection} from "./interfaces/IERC1155Collection.sol";
+import {IAssetCollection} from "./interfaces/IAssetCollection.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
 contract Dava is
@@ -96,9 +96,9 @@ contract Dava is
     {
         require(
             IERC165(collection).supportsInterface(
-                type(IERC1155Collection).interfaceId
+                type(IAssetCollection).interfaceId
             ),
-            "Dava: Does not support IERC1155Collection interface"
+            "Dava: Does not support IAssetCollection interface"
         );
         require(
             !_registeredCollections.contains(collection),
