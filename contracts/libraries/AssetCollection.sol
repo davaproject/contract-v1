@@ -65,6 +65,14 @@ abstract contract AssetCollection is
 
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
 
+    event AssetCreated(
+        bytes32 assetType,
+        string title,
+        address creator,
+        string uri,
+        uint256 maxSupply
+    );
+
     constructor(string memory baseURI_, address dava_) ERC1155("") Ownable() {
         baseURI = baseURI_;
         dava = dava_;
@@ -122,6 +130,8 @@ abstract contract AssetCollection is
 
         numberOfAssets += 1;
         maxTotalAssetSupply += maxSupply_;
+
+        emit AssetCreated(assetType_, title_, creator_, uri_, maxSupply_);
     }
 
     function createAssetType(
