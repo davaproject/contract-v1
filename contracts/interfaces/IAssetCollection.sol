@@ -27,6 +27,8 @@ interface IAssetCollection is IERC1155 {
         uint256 zIndex_
     ) external;
 
+    function dava() external view returns (address);
+
     function numberOfAssets() external view returns (uint256);
 
     function description(uint256 tokenId) external view returns (string memory);

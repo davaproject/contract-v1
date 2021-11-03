@@ -52,7 +52,7 @@ abstract contract AssetCollection is
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
 
-    address public dava;
+    address public override dava;
 
     string public baseURI;
 
