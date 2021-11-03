@@ -34,11 +34,6 @@ describe("Avatar", () => {
   let host: string;
   let background: { tokenId: number; url: string };
   let foreground: { tokenId: number; url: string };
-  interface Asset {
-    address: string;
-    img: string;
-    zIndex: number;
-  }
 
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
@@ -66,10 +61,137 @@ describe("Avatar", () => {
     await ethers.provider.send("evm_revert", [snapshot]);
   });
 
-  describe("receive()", () => {
-    const tokenId = 0;
-    beforeEach(async () => {});
+  describe("setName", () => {
+    it("should set name", async () => {
+      const name = "test";
+      await checkChange({
+        status: () => mintedAvatar.name(),
+        process: () => mintedAvatar.setName(name),
+        expectedBefore: `DAVA #${mintedAvatarId}`,
+        expectedAfter: name,
+      });
+    });
+  });
 
+  describe("name", () => {
+    it("should return name", async () => {
+      const name = "test";
+      await mintedAvatar.setName(name);
+
+      const result = await mintedAvatar.name();
+      expect(result).to.equal(name);
+    });
+  });
+
+  describe("owner", () => {
+    it("should return DAVA token owner", async () => {
+      const ownerOfDava = await dava.ownerOf(mintedAvatarId);
+      const ownerOfAvatar = await mintedAvatar.owner();
+
+      expect(ownerOfDava).to.equal(ownerOfAvatar);
+    });
+  });
+
+  describe("dava", () => {
+    it("should return DAVA address", async () => {
+      const result = await mintedAvatar.dava();
+      expect(result).to.equal(dava.address);
+    });
+  });
+
+  describe("asset", () => {
+    const name = "test";
+    const registeredAssetType = assetType(name);
+    let assetId: number;
+    let assetOwner: SignerWithAddress;
+    before(async () => {
+      assetOwner = accounts[3];
+
+      await davaOfficial.createAssetType(name, 0, 0, 0);
+      assetId = (await davaOfficial.numberOfAssets()).toNumber();
+      await davaOfficial.createAsset(
+        registeredAssetType,
+        "test",
+        ethers.constants.AddressZero,
+        "",
+        "",
+        [],
+        1
+      );
+      await dava.registerAssetType(registeredAssetType);
+      await davaOfficial.mint(assetOwner.address, assetId, 1, "0x");
+    });
+
+    it("should return empty asset if not put on", async () => {
+      const result = await mintedAvatar.asset(registeredAssetType);
+      expect(result.assetAddr).to.equal(ethers.constants.AddressZero);
+      expect(result.id).to.equal(0);
+    });
+
+    it("should return proper asset", async () => {
+      await davaOfficial
+        .connect(assetOwner)
+        .safeTransferFrom(
+          assetOwner.address,
+          mintedAvatar.address,
+          assetId,
+          1,
+          "0x"
+        );
+      await mintedAvatar.dress(
+        [{ assetAddr: davaOfficial.address, id: assetId }],
+        []
+      );
+      const result = await mintedAvatar.asset(registeredAssetType);
+      expect(result.assetAddr).to.equal(davaOfficial.address);
+      expect(result.id).to.equal(assetId);
+    });
+  });
+
+  describe("allAssets", () => {
+    const name = "test0987654321";
+    const registeredAssetType = assetType(name);
+    before(async () => {
+      await davaOfficial.createAssetType(name, 0, 0, 9999);
+      const assetId = await davaOfficial.numberOfAssets();
+      await davaOfficial.createAsset(
+        registeredAssetType,
+        "test",
+        ethers.constants.AddressZero,
+        "",
+        "",
+        [],
+        1
+      );
+      await dava.registerAssetType(registeredAssetType);
+      await davaOfficial.mint(mintedAvatar.address, assetId, 1, "0x");
+      await mintedAvatar.dress(
+        [{ assetAddr: davaOfficial.address, id: assetId }],
+        []
+      );
+    });
+
+    after(async () => {
+      await mintedAvatar.dress([], [registeredAssetType]);
+    });
+
+    it("return all assets that avatar currently put on", async () => {
+      await checkChange({
+        status: async () => {
+          const assets = await mintedAvatar.allAssets();
+          const putOnAmount = assets.filter(
+            (v) => v[0] != ethers.constants.AddressZero
+          ).length;
+          return putOnAmount;
+        },
+        process: () => mintedAvatar.dress([], [registeredAssetType]),
+        expectedBefore: 1,
+        expectedAfter: 0,
+      });
+    });
+  });
+
+  describe("receive()", () => {
     it("should allow receiving ETH", async () => {
       await accounts[0].sendTransaction({
         to: mintedAvatar.address,
