@@ -45,9 +45,8 @@ contract Dava is
     event CollectionRegistered(address collection);
     event CollectionDeregistered(address collection);
     event DefaultCollectionRegistered(address collection);
-    event DefaultCollectionDeregistered(address collection);
-    event AssetRegistered(bytes32 assetType, address collection);
-    event AssetDeregistered(bytes32 assetType, address collection);
+    event AssetRegistered(bytes32 assetType);
+    event AssetDeregistered(bytes32 assetType);
 
     // DAO contract owns this registry
     constructor(address minimalProxy_, string memory baseURI_)
@@ -121,7 +120,7 @@ contract Dava is
         );
         _supportedAssetTypes.add(assetType);
 
-        // emit AssetRegistered(assetType);
+        emit AssetRegistered(assetType);
     }
 
     function registerFrameCollection(address collection)
@@ -166,6 +165,8 @@ contract Dava is
             "Dava: non registered assetType"
         );
         _supportedAssetTypes.remove(assetType);
+
+        emit AssetDeregistered(assetType);
     }
 
     function zap(uint256 tokenId, ZapReq calldata zapReq) public override {
