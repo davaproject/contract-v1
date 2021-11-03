@@ -41,10 +41,10 @@ interface IAssetCollection is IERC1155 {
         external
         view
         returns (
-            string memory name,
-            uint256 backgroundImgTokenId,
-            uint256 foregroundImgTokenId,
-            uint256 zIndex
+            string memory name_,
+            uint256 backgroundImgTokenId_,
+            uint256 foregroundImgTokenId_,
+            uint256 zIndex_
         );
 
     function assetType(uint256 tokenId_) external view returns (bytes32);

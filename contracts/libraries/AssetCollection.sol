@@ -334,16 +334,20 @@ abstract contract AssetCollection is
         view
         override
         returns (
-            string memory name,
-            uint256 backgroundImgTokenId,
-            uint256 foregroundImgTokenId,
-            uint256 zIndex
+            string memory name_,
+            uint256 backgroundImgTokenId_,
+            uint256 foregroundImgTokenId_,
+            uint256 zIndex_
         )
     {
-        name = _collectionInfo.name[assetType_];
-        backgroundImgTokenId = _collectionInfo.backgroundImageAsset[assetType_];
-        foregroundImgTokenId = _collectionInfo.foregroundImageAsset[assetType_];
-        zIndex = _collectionInfo.zIndex[assetType_];
+        name_ = _collectionInfo.name[assetType_];
+        backgroundImgTokenId_ = _collectionInfo.backgroundImageAsset[
+            assetType_
+        ];
+        foregroundImgTokenId_ = _collectionInfo.foregroundImageAsset[
+            assetType_
+        ];
+        zIndex_ = _collectionInfo.zIndex[assetType_];
     }
 
     function assetType(uint256 tokenId) public view override returns (bytes32) {
