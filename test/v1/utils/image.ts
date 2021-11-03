@@ -1,10 +1,13 @@
 export const createImage = (imgURIs: string[]): string => {
   return (
     "<svg xmlns='http://www.w3.org/2000/svg' width='1000' height='1000' viewBox='0 0 1000 1000'>" +
-    imgURIs.map((uri) => `<image href='${uri}' width='100%'/>`).join("") +
+    imgURIs.map(wrapImageWihtSvg).join("") +
     "</svg>"
   );
 };
+
+export const wrapImageWihtSvg = (imgUri: string): string =>
+  `<image href='${imgUri}' width='100%'/>`;
 
 interface Layer {
   address: string;
