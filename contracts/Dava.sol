@@ -37,7 +37,6 @@ contract Dava is
     address public override frameCollection;
 
     EnumerableSet.AddressSet private _registeredCollections;
-    EnumerableSet.Bytes32Set private _supportedDefaultCollectionTypes;
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
     address private _minimalProxy;
 
