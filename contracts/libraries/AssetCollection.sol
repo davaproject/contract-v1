@@ -167,7 +167,10 @@ abstract contract AssetCollection is
         uint256 amount,
         bytes memory data
     ) public onlyRole(MINTER_ROLE) {
-        require(totalSupply(id) + amount <= maxSupply(id), "Out of stock.");
+        require(
+            totalSupply(id) + amount <= maxSupply(id),
+            "Asset: Out of stock."
+        );
 
         totalAssetSupply += amount;
         return super._mint(account, id, amount, data);
@@ -182,7 +185,10 @@ abstract contract AssetCollection is
         for (uint256 i = 0; i < ids.length; i += 1) {
             uint256 id = ids[i];
             uint256 amount = amounts[i];
-            require(totalSupply(id) + amount <= maxSupply(id), "Out of stock.");
+            require(
+                totalSupply(id) + amount <= maxSupply(id),
+                "Asset: Out of stock."
+            );
 
             totalAssetSupply += amount;
         }
@@ -192,7 +198,7 @@ abstract contract AssetCollection is
     // viewers
 
     function uri(uint256 tokenId) public view override returns (string memory) {
-        require(exists(tokenId), "non existent token");
+        require(exists(tokenId), "Asset: non existent token");
 
         string[] memory imgURIs = new string[](3);
         uint256 backgroundTokenId = _collectionInfo.backgroundImageAsset[
@@ -230,6 +236,15 @@ abstract contract AssetCollection is
                 URICompiler.getFullUri(baseURI, params, queries),
                 _assetInfo.attributes[tokenId]
             );
+    }
+
+    function description(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        return _assetInfo.descriptions[tokenId];
     }
 
     function imageUri(uint256 tokenId)
@@ -312,6 +327,23 @@ abstract contract AssetCollection is
         returns (string memory)
     {
         return _assetInfo.titles[tokenId];
+    }
+
+    function assetTypeInfo(bytes32 assetType_)
+        public
+        view
+        override
+        returns (
+            string memory name,
+            uint256 backgroundImgTokenId,
+            uint256 foregroundImgTokenId,
+            uint256 zIndex
+        )
+    {
+        name = _collectionInfo.name[assetType_];
+        backgroundImgTokenId = _collectionInfo.backgroundImageAsset[assetType_];
+        foregroundImgTokenId = _collectionInfo.foregroundImageAsset[assetType_];
+        zIndex = _collectionInfo.zIndex[assetType_];
     }
 
     function assetType(uint256 tokenId) public view override returns (bytes32) {

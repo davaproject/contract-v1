@@ -29,9 +29,21 @@ interface IAssetCollection is IERC1155 {
 
     function numberOfAssets() external view returns (uint256);
 
+    function description(uint256 tokenId) external view returns (string memory);
+
     function imageUri(uint256 tokenId_) external view returns (string memory);
 
     function zIndex(uint256 tokenId_) external view returns (uint256);
+
+    function assetTypeInfo(bytes32 assetType_)
+        external
+        view
+        returns (
+            string memory name,
+            uint256 backgroundImgTokenId,
+            uint256 foregroundImgTokenId,
+            uint256 zIndex
+        );
 
     function assetType(uint256 tokenId_) external view returns (bytes32);
 
