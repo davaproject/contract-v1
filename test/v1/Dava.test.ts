@@ -7,13 +7,18 @@ import {
   AvatarV1__factory,
   AvatarV2Draft__factory,
   Dava,
+  DavaFrame,
+  DavaFrame__factory,
   DavaOfficial,
+  DavaOfficial__factory,
   TestAvatarV1,
   TestAvatarV1__factory,
 } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { constants } from "ethers";
 import { Contracts, fixtures } from "../../scripts/utils/fixtures";
+import { checkChange } from "./utils/compare";
+import { assetType } from "./utils/asset";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -42,6 +47,376 @@ describe("Dava", () => {
 
   afterEach(async () => {
     await ethers.provider.send("evm_revert", [snapshot]);
+  });
+
+  describe("registerCollection", () => {
+    let newCollection: DavaOfficial;
+    before(async () => {
+      const Collection = new DavaOfficial__factory(deployer);
+      newCollection = await Collection.deploy("", dava.address);
+      await newCollection.deployed();
+    });
+
+    describe("should be reverted", () => {
+      it("if msg.sender is not ASSET_MANAGER", async () => {
+        const nonManager = accounts[1];
+        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const isManager = await dava.hasRole(
+          ASSET_MANAGER_ROLE,
+          nonManager.address
+        );
+        expect(isManager).to.be.false;
+
+        await expect(
+          dava.connect(nonManager).registerCollection(newCollection.address)
+        ).to.be.reverted;
+      });
+
+      it("if collection does not support IAssetCollection interface", async () => {
+        await expect(
+          dava.registerCollection(contracts.assets.davaFrame.address)
+        ).to.be.revertedWith(
+          "Dava: Does not support IAssetCollection interface"
+        );
+      });
+
+      it("if collection is already registered", async () => {
+        await expect(
+          dava.registerCollection(davaOfficial.address)
+        ).to.be.revertedWith("Dava: already registered collection");
+      });
+    });
+
+    it("should add collection", async () => {
+      await checkChange({
+        status: () => dava.isRegisteredCollection(newCollection.address),
+        process: () => dava.registerCollection(newCollection.address),
+        expectedBefore: false,
+        expectedAfter: true,
+      });
+    });
+
+    it("should emit 'CollectionRegistered' event", async () => {
+      await expect(dava.registerCollection(newCollection.address))
+        .to.emit(dava, "CollectionRegistered")
+        .withArgs(newCollection.address);
+    });
+  });
+
+  describe("registerAssetType", () => {
+    const newAssetType = assetType("TEST");
+
+    describe("should be reverted", () => {
+      it("if msg.sender is not ASSET_MANAGER", async () => {
+        const nonManager = accounts[1];
+        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const isManager = await dava.hasRole(
+          ASSET_MANAGER_ROLE,
+          nonManager.address
+        );
+        expect(isManager).to.be.false;
+
+        await expect(dava.connect(nonManager).registerAssetType(newAssetType))
+          .to.be.reverted;
+      });
+
+      it("if assetType is already registered", async () => {
+        await dava.registerAssetType(newAssetType);
+        await expect(dava.registerAssetType(newAssetType)).to.be.revertedWith(
+          "Dava: assetType is already registered"
+        );
+      });
+    });
+
+    it("should add assetType", async () => {
+      await checkChange({
+        status: () => dava.isSupportedAssetType(newAssetType),
+        process: () => dava.registerAssetType(newAssetType),
+        expectedBefore: false,
+        expectedAfter: true,
+      });
+    });
+
+    it("should emit 'AssetRegistered' event", async () => {
+      await expect(dava.registerAssetType(newAssetType))
+        .to.emit(dava, "AssetRegistered")
+        .withArgs(newAssetType);
+    });
+  });
+
+  describe("registerFrameCollection", () => {
+    let newFrameCollection: DavaFrame;
+    before(async () => {
+      const FrameCollection = new DavaFrame__factory(deployer);
+      newFrameCollection = await FrameCollection.deploy();
+    });
+
+    describe("should be reverted", () => {
+      it("if msg.sender is not ASSET_MANAGER", async () => {
+        const nonManager = accounts[1];
+        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const isManager = await dava.hasRole(
+          ASSET_MANAGER_ROLE,
+          nonManager.address
+        );
+        expect(isManager).to.be.false;
+
+        await expect(
+          dava
+            .connect(nonManager)
+            .registerFrameCollection(newFrameCollection.address)
+        ).to.be.reverted;
+      });
+
+      it("if collection does not support IFrameCollection interface", async () => {
+        await expect(
+          dava.registerFrameCollection(davaOfficial.address)
+        ).to.be.revertedWith(
+          "Dava: Does not support IFrameCollection interface"
+        );
+      });
+    });
+
+    it("should set frameCollection", async () => {
+      await checkChange({
+        status: () => dava.frameCollection(),
+        process: () => dava.registerFrameCollection(newFrameCollection.address),
+        expectedBefore: contracts.assets.davaFrame.address,
+        expectedAfter: newFrameCollection.address,
+      });
+    });
+
+    it("should emit 'DefaultCollectionRegistered' event", async () => {
+      await expect(dava.registerFrameCollection(newFrameCollection.address))
+        .to.emit(dava, "DefaultCollectionRegistered")
+        .withArgs(newFrameCollection.address);
+    });
+  });
+
+  describe("deregisterCollection", () => {
+    describe("should be reverted", () => {
+      it("if msg.sender is not ASSET_MANAGER", async () => {
+        const nonManager = accounts[1];
+        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const isManager = await dava.hasRole(
+          ASSET_MANAGER_ROLE,
+          nonManager.address
+        );
+        expect(isManager).to.be.false;
+
+        await expect(
+          dava.connect(nonManager).deregisterCollection(davaOfficial.address)
+        ).to.be.reverted;
+      });
+
+      it("if collection is not registered", async () => {
+        await expect(
+          dava.deregisterCollection(ethers.Wallet.createRandom().address)
+        ).to.be.revertedWith("Dava: Not registered collection");
+      });
+    });
+
+    it("should remove collection", async () => {
+      await checkChange({
+        status: () => dava.isRegisteredCollection(davaOfficial.address),
+        process: () => dava.deregisterCollection(davaOfficial.address),
+        expectedBefore: true,
+        expectedAfter: false,
+      });
+    });
+
+    it("should emit 'CollectionDeregistered' event", async () => {
+      await expect(dava.deregisterCollection(davaOfficial.address))
+        .to.emit(dava, "CollectionDeregistered")
+        .withArgs(davaOfficial.address);
+    });
+  });
+
+  describe("deregisterAssetType", () => {
+    const newAssetType = assetType("TEST");
+    before(async () => {
+      await dava.registerAssetType(newAssetType);
+    });
+
+    describe("should be reverted", () => {
+      it("if msg.sender is not ASSET_MANAGER", async () => {
+        const nonManager = accounts[1];
+        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const isManager = await dava.hasRole(
+          ASSET_MANAGER_ROLE,
+          nonManager.address
+        );
+        expect(isManager).to.be.false;
+
+        await expect(dava.connect(nonManager).deregisterAssetType(newAssetType))
+          .to.be.reverted;
+      });
+
+      it("if assetType is not registered", async () => {
+        await expect(
+          dava.deregisterAssetType(assetType("TEST_NEW"))
+        ).to.be.revertedWith("Dava: non registered assetType");
+      });
+    });
+
+    it("should remove assetType", async () => {
+      await checkChange({
+        status: () => dava.isSupportedAssetType(newAssetType),
+        process: () => dava.deregisterAssetType(newAssetType),
+        expectedBefore: true,
+        expectedAfter: false,
+      });
+    });
+
+    it("should emit 'AssetDeregistered' event", async () => {
+      await expect(dava.deregisterAssetType(newAssetType))
+        .to.emit(dava, "AssetDeregistered")
+        .withArgs(newAssetType);
+    });
+  });
+
+  describe("isRegisteredCollection", () => {
+    it("should return true if collection is registered", async () => {
+      const result = await dava.isRegisteredCollection(davaOfficial.address);
+      expect(result).to.be.true;
+    });
+
+    it("should return false if collection is not registered", async () => {
+      await dava.deregisterCollection(davaOfficial.address);
+      const result = await dava.isRegisteredCollection(davaOfficial.address);
+      expect(result).to.be.false;
+    });
+  });
+
+  describe("isSupportedAssetType", () => {
+    const newAssetType = assetType("TEST X 10");
+
+    it("should return false if assetType is not registered", async () => {
+      const result = await dava.isSupportedAssetType(newAssetType);
+      expect(result).to.be.false;
+    });
+
+    it("should return true if assetType is registered", async () => {
+      await dava.registerAssetType(newAssetType);
+      const result = await dava.isSupportedAssetType(newAssetType);
+      expect(result).to.be.true;
+    });
+  });
+
+  describe("isDavaAsset", () => {
+    const newAssetType = assetType("TEST X 10000");
+    before(async () => {
+      await dava.registerAssetType(newAssetType);
+    });
+
+    it("should return false if collection is not registered", async () => {
+      const result = await dava.isDavaAsset(
+        ethers.Wallet.createRandom().address,
+        newAssetType
+      );
+      expect(result).to.be.false;
+    });
+
+    it("should return false if assetType is not registered", async () => {
+      const result = await dava.isDavaAsset(
+        ethers.Wallet.createRandom().address,
+        assetType(`${Date.now()}`)
+      );
+      expect(result).to.be.false;
+    });
+
+    it("should return true if assetType and collection are registered", async () => {
+      const result = await dava.isDavaAsset(davaOfficial.address, newAssetType);
+      expect(result).to.be.true;
+    });
+  });
+
+  describe("getAvatar", () => {
+    it("should return proper avatar address", async () => {
+      const owner = ethers.Wallet.createRandom().address;
+      const tokenId = await dava.totalSupply();
+      await dava.mint(owner, tokenId);
+      const avatarAddress = await dava.getAvatar(tokenId);
+
+      const Avatar = new AvatarV1__factory(deployer);
+      const avatar = Avatar.attach(avatarAddress);
+
+      expect(await avatar.owner()).to.equal(owner);
+      expect(await dava.ownerOf(tokenId)).to.equal(owner);
+    });
+  });
+
+  describe("getAllSupportedAssetTypes", () => {
+    it("should return all registered assetTypes", async () => {
+      await checkChange({
+        status: () => dava.getAllSupportedAssetTypes().then((v) => v.length),
+        process: () => dava.registerAssetType(assetType(`${Date.now()}`)),
+        expectedBefore: 2,
+        expectedAfter: 3,
+      });
+    });
+  });
+
+  describe("getRegisteredCollections", () => {
+    let newCollection: DavaOfficial;
+    before(async () => {
+      const Collection = new DavaOfficial__factory(deployer);
+      newCollection = await Collection.deploy("", dava.address);
+      await newCollection.deployed();
+    });
+
+    it("should return all registered collection addresses", async () => {
+      await checkChange({
+        status: () => dava.getRegisteredCollections().then((v) => v.length),
+        process: () => dava.registerCollection(newCollection.address),
+        expectedBefore: 1,
+        expectedAfter: 2,
+      });
+    });
+  });
+
+  describe("tokenURI", () => {
+    it("should be reverted for non-existent token", async () => {
+      const nextTokenId = await dava.totalSupply();
+      await expect(dava.tokenURI(nextTokenId)).to.be.revertedWith(
+        "ERC721Metadata: URI query for nonexistent token"
+      );
+    });
+
+    it("should return the same result from Avatar::getMetadata", async () => {
+      const tokenId = await dava.totalSupply();
+      await dava.mint(deployer.address, tokenId);
+
+      const Avatar = new AvatarV1__factory(deployer);
+      const avatar = Avatar.attach(await dava.getAvatar(tokenId));
+
+      const avatarResult = await avatar.getMetadata();
+      const davaResult = await dava.tokenURI(tokenId);
+
+      expect(avatarResult).to.equal(davaResult);
+    });
+  });
+
+  describe("getPFP", () => {
+    it("should be reverted for non-existent token", async () => {
+      const nextTokenId = await dava.totalSupply();
+      await expect(dava.getPFP(nextTokenId)).to.be.revertedWith(
+        "ERC721Metadata: URI query for nonexistent token"
+      );
+    });
+
+    it("should return the same result from Avatar::getPFP", async () => {
+      const tokenId = await dava.totalSupply();
+      await dava.mint(deployer.address, tokenId);
+
+      const Avatar = new AvatarV1__factory(deployer);
+      const avatar = Avatar.attach(await dava.getAvatar(tokenId));
+
+      const avatarResult = await avatar.getPFP();
+      const davaResult = await dava.getPFP(tokenId);
+
+      expect(avatarResult).to.equal(davaResult);
+    });
   });
 
   describe("ERC721", () => {
@@ -81,19 +456,7 @@ describe("Dava", () => {
     });
   });
 
-  describe("IDava", () => {
-    describe("registerDefaultCollection() & deregisterDefaultCollection()", () => {
-      const tokenId = 0;
-      beforeEach(async () => {
-        await dava.connect(deployer).mint(accounts[0].address, tokenId);
-      });
-      it("should remove the default collection and recover correctly", async () => {
-        //
-      });
-    });
-  });
-
-  describe("transferAssetToAvatar", () => {
+  describe("zap", () => {
     let testAvatar: TestAvatarV1;
     let avatarOwner: SignerWithAddress;
     let assetId: number;
