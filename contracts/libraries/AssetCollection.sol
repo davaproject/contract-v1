@@ -228,6 +228,22 @@ abstract contract AssetCollection is
             foregroundTokenId.toString()
         );
 
+        // assetInfo => maxSupply, collection name
+        Attribute[] memory attributes = new Attribute[](
+            _assetInfo.attributes[tokenId].length + 2
+        );
+        for (uint256 i = 0; i < _assetInfo.attributes[tokenId].length; i += 1) {
+            attributes[i] = _assetInfo.attributes[tokenId][i];
+        }
+        attributes[_assetInfo.attributes[tokenId].length] = Attribute(
+            "MAX SUPPLY",
+            _assetInfo.maxSupply[tokenId].toString()
+        );
+        attributes[_assetInfo.attributes[tokenId].length + 1] = Attribute(
+            "COLLECTION",
+            assetTypeTitle(tokenId)
+        );
+
         return
             OnchainMetadata.toMetadata(
                 _assetInfo.titles[tokenId],
@@ -235,7 +251,7 @@ abstract contract AssetCollection is
                 _assetInfo.descriptions[tokenId],
                 imgURIs,
                 URICompiler.getFullUri(baseURI, params, queries),
-                _assetInfo.attributes[tokenId]
+                attributes
             );
     }
 

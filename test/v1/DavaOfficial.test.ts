@@ -606,7 +606,11 @@ describe("DavaOfficial", () => {
         name: assetInfo.title,
         creator: assetInfo.creator.toLowerCase(),
         description: assetInfo.description,
-        attributes: assetInfo.attributes,
+        attributes: [
+          ...assetInfo.attributes,
+          { trait_type: "MAX SUPPLY", value: `${assetInfo.maxSupply}` },
+          { trait_type: "COLLECTION", value: collectionName },
+        ],
         raw_image:
           "data:image/svg+xml;utf8," +
           createImage([background.url, assetInfo.uri, foreground.url]),
