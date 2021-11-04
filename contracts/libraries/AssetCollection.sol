@@ -65,13 +65,7 @@ abstract contract AssetCollection is
 
     EnumerableSet.Bytes32Set private _supportedAssetTypes;
 
-    event AssetCreated(
-        bytes32 assetType,
-        string title,
-        address creator,
-        string uri,
-        uint256 maxSupply
-    );
+    event AssetCreated(uint256 assetId);
 
     constructor(string memory baseURI_, address dava_) ERC1155("") Ownable() {
         baseURI = baseURI_;
@@ -121,6 +115,7 @@ abstract contract AssetCollection is
                 maxSupply_ != 0,
                 "Asset: maxSupply should be greater than zero"
             );
+            emit AssetCreated(tokenId);
         }
         _assetInfo.assetTypes[tokenId] = assetType_;
 
@@ -130,8 +125,6 @@ abstract contract AssetCollection is
 
         numberOfAssets += 1;
         maxTotalAssetSupply += maxSupply_;
-
-        emit AssetCreated(assetType_, title_, creator_, uri_, maxSupply_);
     }
 
     function createAssetType(
@@ -208,8 +201,6 @@ abstract contract AssetCollection is
     // viewers
 
     function uri(uint256 tokenId) public view override returns (string memory) {
-        require(exists(tokenId), "Asset: non existent token");
-
         string[] memory imgURIs = new string[](3);
         uint256 backgroundTokenId = _collectionInfo.backgroundImageAsset[
             _assetInfo.assetTypes[tokenId]
