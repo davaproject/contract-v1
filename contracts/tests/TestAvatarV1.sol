@@ -10,7 +10,9 @@ import "hardhat/console.sol";
 
 contract TestAvatarV1 is AvatarBase {
     function receivePart(address collection, uint256 id) external {
-        IDava(dava()).zap(_props().davaId, IDava.ZapReq(collection, id, 1));
+        Part[] memory parts = new Part[](1);
+        parts[0] = Part(collection, id);
+        IDava(dava()).zap(_props().davaId, parts, new bytes32[](0));
     }
 
     function version() public pure override returns (string memory) {

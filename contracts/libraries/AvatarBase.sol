@@ -23,9 +23,22 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     // If you wanna access to the existing state variables, use _props().
     // If you want to add new variables, design a new struct and allocate a slot for it.
 
+    modifier onlyOwnerOrDava() {
+        require(
+            msg.sender == owner() || msg.sender == dava(),
+            "Avatar: only owner or Dava can call this"
+        );
+        _;
+    }
+
     receive() external payable override(Proxy, Account) {}
 
-    function setName(string memory name_) public virtual override onlyOwner {
+    function setName(string memory name_)
+        public
+        virtual
+        override
+        onlyOwnerOrDava
+    {
         _props().name = name_;
     }
 
@@ -33,7 +46,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         external
         virtual
         override
-        onlyOwner
+        onlyOwnerOrDava
     {
         for (uint256 i = 0; i < partsOn.length; i += 1) {
             _putOn(partsOn[i]);

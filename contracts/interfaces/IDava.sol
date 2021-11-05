@@ -4,14 +4,9 @@ pragma abicoder v2;
 
 import {IERC721Enumerable} from "@openzeppelin/contracts/interfaces/IERC721Enumerable.sol";
 import {IHost} from "../interfaces/IHost.sol";
+import {Part} from "../interfaces/IAvatar.sol";
 
 interface IDava is IERC721Enumerable, IHost {
-    struct ZapReq {
-        address collection;
-        uint256 partId;
-        uint256 amount;
-    }
-
     function mint(address to, uint256 id) external;
 
     function registerCollection(address collection) external;
@@ -24,9 +19,11 @@ interface IDava is IERC721Enumerable, IHost {
 
     function deregisterPartType(bytes32 partType) external;
 
-    function zap(uint256 tokenId, ZapReq calldata zapReq) external;
-
-    function zap(uint256 tokenId, ZapReq[] calldata zapReqs) external;
+    function zap(
+        uint256 tokenId,
+        Part[] calldata partsOn,
+        bytes32[] calldata partsOff
+    ) external;
 
     function frameCollection() external view returns (address);
 

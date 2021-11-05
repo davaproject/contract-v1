@@ -168,35 +168,54 @@ contract Dava is
         emit PartTypeDeregistered(partType);
     }
 
-    function zap(uint256 tokenId, ZapReq calldata zapReq) public override {
+    function zap(
+        uint256 tokenId,
+        Part[] calldata partsOn,
+        bytes32[] calldata partsOff
+    ) external override {
         require(
-            msg.sender == getAvatar(tokenId),
-            "Dava: avatar and tokenId does not match"
+            msg.sender == ownerOf(tokenId),
+            "Dava: msg.sender is not the owner of avatar"
         );
-
-        address owner = ownerOf(tokenId);
-        IERC1155 collection = IERC1155(zapReq.collection);
-        require(
-            collection.supportsInterface(type(IERC1155).interfaceId),
-            "Dava: part is not transferable"
-        );
-        require(
-            collection.balanceOf(owner, zapReq.partId) >= zapReq.amount,
-            "Dava: owner does not hold part"
-        );
-        collection.safeTransferFrom(
-            owner,
-            msg.sender,
-            zapReq.partId,
-            zapReq.amount,
-            ""
-        );
-    }
-
-    function zap(uint256 tokenId, ZapReq[] calldata zapReqs) external override {
-        for (uint256 i = 0; i < zapReqs.length; i += 1) {
-            zap(tokenId, zapReqs[i]);
+        address avatarAddress = getAvatar(tokenId);
+        for (uint256 i = 0; i < partsOn.length; i += 1) {
+            IERC1155 collection = IERC1155(partsOn[i].collection);
+            require(
+                collection.supportsInterface(type(IERC1155).interfaceId),
+                "Dava: collection is not an erc1155 format"
+            );
+            require(
+                collection.balanceOf(msg.sender, partsOn[i].id) >= 1,
+                "Dava: owner does not hold the part"
+            );
+            collection.safeTransferFrom(
+                msg.sender,
+                avatarAddress,
+                partsOn[i].id,
+                1,
+                ""
+            );
         }
+
+        IAvatar avatar = IAvatar(avatarAddress);
+        for (uint256 i = 0; i < partsOff.length; i += 1) {
+            Part memory equippedPart = avatar.part(partsOff[i]);
+            IERC1155 collection = IERC1155(equippedPart.collection);
+            if (
+                equippedPart.collection != address(0x0) &&
+                collection.balanceOf(avatarAddress, equippedPart.id) > 0
+            ) {
+                collection.safeTransferFrom(
+                    avatarAddress,
+                    msg.sender,
+                    equippedPart.id,
+                    1,
+                    ""
+                );
+            }
+        }
+
+        IAvatar(getAvatar(tokenId)).dress(partsOn, partsOff);
     }
 
     function isRegisteredCollection(address collection)

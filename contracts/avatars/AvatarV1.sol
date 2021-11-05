@@ -16,48 +16,6 @@ import {QuickSort} from "../libraries/QuickSort.sol";
 contract AvatarV1 is AvatarBase {
     using Strings for uint256;
 
-    function dress(Part[] calldata partsOn, bytes32[] calldata partsOff)
-        external
-        override
-        onlyOwner
-    {
-        IDava.ZapReq[] memory zapReqs = new IDava.ZapReq[](partsOn.length);
-        uint256 zapAmount = 0;
-        for (uint256 i = 0; i < partsOn.length; i += 1) {
-            if (!_isEligible(partsOn[i])) {
-                zapReqs[zapAmount] = IDava.ZapReq(
-                    partsOn[i].collection,
-                    partsOn[i].id,
-                    1
-                );
-                zapAmount += 1;
-            }
-        }
-        IDava.ZapReq[] memory validZapReqs = new IDava.ZapReq[](zapAmount);
-        for (uint256 i = 0; i < zapAmount; i += 1) {
-            validZapReqs[i] = zapReqs[i];
-        }
-        IDava(dava()).zap(_props().davaId, validZapReqs);
-
-        for (uint256 i = 0; i < partsOn.length; i += 1) {
-            _putOn(Part(partsOn[i].collection, partsOn[i].id));
-        }
-
-        for (uint256 i = 0; i < partsOff.length; i += 1) {
-            Part memory equippedPart = part(partsOff[i]);
-            if (equippedPart.collection != address(0x0)) {
-                _takeOff(partsOff[i]);
-                IPartCollection(equippedPart.collection).safeTransferFrom(
-                    address(this),
-                    msg.sender,
-                    equippedPart.id,
-                    1,
-                    ""
-                );
-            }
-        }
-    }
-
     function version() public pure override returns (string memory) {
         return "V1";
     }

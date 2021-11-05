@@ -459,7 +459,9 @@ describe("Dava", () => {
   describe("zap", () => {
     let testAvatar: TestAvatarV1;
     let avatarOwner: SignerWithAddress;
+    let _partType: string;
     let partId: number;
+    let nonHoldingPartId: number;
 
     beforeEach(async () => {
       const TestAvatarV1 = new TestAvatarV1__factory(deployer);
@@ -469,6 +471,7 @@ describe("Dava", () => {
       avatarOwner = accounts[1];
       const davaId = 0;
       await dava.connect(deployer).mint(avatarOwner.address, davaId);
+      await dava.connect(deployer).mint(accounts[1].address, davaId + 1);
       testAvatar = TestAvatarV1__factory.connect(
         await dava.getAvatar(davaId),
         deployer
@@ -476,75 +479,106 @@ describe("Dava", () => {
 
       const collectionName = "test";
       const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
+      _partType = partType(collectionName);
       await davaOfficial.createPart(defaultPartType, "test", "", "", [], 0);
       await davaOfficial.createPartType(collectionName, 0, 0, 0);
+      await dava.registerPartType(_partType);
       partId = (await davaOfficial.numberOfParts()).toNumber();
-      await davaOfficial.createPart(
-        ethers.utils.keccak256(ethers.utils.toUtf8Bytes(collectionName)),
-        "TEST",
-        "",
-        "",
-        [],
-        1
-      );
+      await davaOfficial.createPart(_partType, "TEST", "", "", [], 1);
       await davaOfficial.mint(avatarOwner.address, partId, 1, "0x");
+
+      nonHoldingPartId = partId + 1;
+      await davaOfficial.createPart(_partType, "TEST", "", "", [], 1);
+      await davaOfficial.mint(accounts[6].address, nonHoldingPartId, 1, "0x");
     });
 
     describe("should be reverted", () => {
-      it("if non-avatar try to use this function", async () => {
+      it("if non-owner try to use this function", async () => {
         await expect(
-          dava["zap(uint256,(address,uint256,uint256))"](1, {
-            collection: davaOfficial.address,
-            partId: 0,
-            amount: 1,
-          })
-        ).to.be.revertedWith("Dava: avatar and tokenId does not match");
+          dava.connect(accounts[5]).zap(1, [], [])
+        ).to.be.revertedWith("Dava: msg.sender is not the owner of avatar");
       });
 
-      it("if part is not ITransferablePart format", async () => {
+      it("if part is not IERC1155 format", async () => {
         await expect(
-          testAvatar.receivePart(testAvatar.address, 99)
-        ).to.be.revertedWith("Dava: part is not transferable");
+          dava
+            .connect(avatarOwner)
+            .zap(0, [{ collection: dava.address, id: 0 }], [])
+        ).to.be.revertedWith("Dava: collection is not an erc1155 format");
       });
 
       it("if avatar owner does not hold enough part", async () => {
-        const nonExistentPartId = partId + 1;
         const balance = await davaOfficial.balanceOf(
           deployer.address,
-          nonExistentPartId
+          nonHoldingPartId
         );
         expect(balance.toNumber()).to.equal(0);
 
         await expect(
-          testAvatar.receivePart(davaOfficial.address, nonExistentPartId)
-        ).to.be.revertedWith("Dava: owner does not hold part");
+          dava.connect(avatarOwner).zap(
+            0,
+            [
+              { collection: davaOfficial.address, id: partId },
+              { collection: davaOfficial.address, id: nonHoldingPartId },
+            ],
+            []
+          )
+        ).to.be.revertedWith("Dava: owner does not hold the part");
+      });
+
+      it("if avatar owner try to take off unequipped part", async () => {
+        await expect(
+          dava
+            .connect(avatarOwner)
+            .zap(0, [], [partType(Date.now().toString())])
+        ).to.be.revertedWith("Avatar: nothing to take off");
       });
     });
 
-    it("transfer part to avatar", async () => {
-      const balanceBefore = await davaOfficial.balanceOf(
-        avatarOwner.address,
-        partId
-      );
-      expect(balanceBefore.toNumber()).to.gt(0);
-      const balanceOfAvatarBefore = await davaOfficial.balanceOf(
-        testAvatar.address,
-        partId
-      );
-      expect(balanceOfAvatarBefore.toNumber()).to.equal(0);
+    it("transfer part to avatar and equip", async () => {
+      await checkChange({
+        status: async () => {
+          const ownerBalance = (
+            await davaOfficial.balanceOf(avatarOwner.address, partId)
+          ).toNumber();
+          const avatarBalance = (
+            await davaOfficial.balanceOf(testAvatar.address, partId)
+          ).toNumber();
+          const equipped =
+            (await testAvatar.part(_partType)).collection !=
+            ethers.constants.AddressZero;
+          return { ownerBalance, avatarBalance, equipped };
+        },
+        process: () =>
+          dava
+            .connect(avatarOwner)
+            .zap(0, [{ collection: davaOfficial.address, id: partId }], []),
+        expectedBefore: { ownerBalance: 1, avatarBalance: 0, equipped: false },
+        expectedAfter: { ownerBalance: 0, avatarBalance: 1, equipped: true },
+      });
+    });
 
-      await testAvatar.receivePart(davaOfficial.address, partId);
-
-      const balanceAfter = await davaOfficial.balanceOf(
-        avatarOwner.address,
-        partId
-      );
-      expect(balanceAfter).to.equal(balanceBefore.sub(1));
-      const balanceOfAvatarAfter = await davaOfficial.balanceOf(
-        testAvatar.address,
-        partId
-      );
-      expect(balanceOfAvatarAfter.toNumber()).to.equal(1);
+    it("unequip part and transfer it to avatar owner", async () => {
+      await dava
+        .connect(avatarOwner)
+        .zap(0, [{ collection: davaOfficial.address, id: partId }], []);
+      await checkChange({
+        status: async () => {
+          const ownerBalance = (
+            await davaOfficial.balanceOf(avatarOwner.address, partId)
+          ).toNumber();
+          const avatarBalance = (
+            await davaOfficial.balanceOf(testAvatar.address, partId)
+          ).toNumber();
+          const equipped =
+            (await testAvatar.part(_partType)).collection !=
+            ethers.constants.AddressZero;
+          return { ownerBalance, avatarBalance, equipped };
+        },
+        process: () => dava.connect(avatarOwner).zap(0, [], [_partType]),
+        expectedBefore: { ownerBalance: 0, avatarBalance: 1, equipped: true },
+        expectedAfter: { ownerBalance: 1, avatarBalance: 0, equipped: false },
+      });
     });
   });
 });

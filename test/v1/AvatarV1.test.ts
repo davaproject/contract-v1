@@ -16,10 +16,7 @@ import { createImage, createImageUri } from "./utils/image";
 import { partType } from "./utils/part";
 import { checkChange } from "./utils/compare";
 import data from "../../data.json";
-import {
-  generateAvatarMetadataString,
-  generatePartMetadataString,
-} from "./utils/metadata";
+import { generateAvatarMetadataString } from "./utils/metadata";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -511,84 +508,37 @@ describe("Avatar", () => {
 
         await expect(
           mintedAvatar.connect(nonOwner).dress([], [])
-        ).to.be.revertedWith("Account: only owner can call");
+        ).to.be.revertedWith("Avatar: only owner or Dava can call this");
+      });
+
+      it("if avatar does not hold the part", async () => {
+        await expect(
+          mintedAvatar.dress(
+            [{ collection: davaOfficial.address, id: parts[0].id }],
+            []
+          )
+        ).to.be.revertedWith("Avatar: does not have the part.");
+      });
+
+      it("if avatar does not wear the part", async () => {
+        await expect(
+          mintedAvatar.dress([], [parts[0].partType])
+        ).to.be.revertedWith("Avatar: nothing to take off");
       });
     });
 
     describe("should put on parts", () => {
-      it("when avatarOwner hold part but avatar does not", async () => {
-        const targetPart = parts[0];
-        await davaOfficial.mint(avatarOwner.address, targetPart.id, 1, "0x");
-
-        await checkChange({
-          status: async () => {
-            const avatarOwnerBalance = (
-              await davaOfficial.balanceOf(avatarOwner.address, targetPart.id)
-            ).toNumber();
-            const avatarBalance = (
-              await davaOfficial.balanceOf(mintedAvatar.address, targetPart.id)
-            ).toNumber();
-            const equippedPart = await mintedAvatar.part(targetPart.partType);
-
-            return {
-              avatarOwnerBalance,
-              avatarBalance,
-              equippedPart: {
-                collection: equippedPart.collection,
-                id: equippedPart.id.toNumber(),
-              },
-            };
-          },
-          process: () =>
-            mintedAvatar.dress(
-              [
-                {
-                  collection: davaOfficial.address,
-                  id: targetPart.id,
-                },
-              ],
-              []
-            ),
-          expectedBefore: {
-            avatarOwnerBalance: 1,
-            avatarBalance: 0,
-            equippedPart: {
-              collection: ethers.constants.AddressZero,
-              id: 0,
-            },
-          },
-          expectedAfter: {
-            avatarOwnerBalance: 0,
-            avatarBalance: 1,
-            equippedPart: {
-              collection: davaOfficial.address,
-              id: targetPart.id,
-            },
-          },
-        });
-      });
-
-      it("when avatar holds it", async () => {
+      it("if avatar holds the part", async () => {
         const targetPart = parts[0];
         await davaOfficial.mint(mintedAvatar.address, targetPart.id, 1, "0x");
 
         await checkChange({
           status: async () => {
-            const avatarOwnerBalance = (
-              await davaOfficial.balanceOf(avatarOwner.address, targetPart.id)
-            ).toNumber();
-            const avatarBalance = (
-              await davaOfficial.balanceOf(mintedAvatar.address, targetPart.id)
-            ).toNumber();
             const equippedPart = await mintedAvatar.part(targetPart.partType);
 
             return {
-              avatarOwnerBalance,
-              avatarBalance,
-              equippedPart: {
-                collection: equippedPart.collection,
-                id: equippedPart.id.toNumber(),
-              },
+              collection: equippedPart.collection,
+              id: equippedPart.id.toNumber(),
             };
           },
           process: () =>
@@ -602,20 +552,12 @@ describe("Avatar", () => {
               []
             ),
           expectedBefore: {
-            avatarOwnerBalance: 0,
-            avatarBalance: 1,
-            equippedPart: {
-              collection: ethers.constants.AddressZero,
-              id: 0,
-            },
+            collection: ethers.constants.AddressZero,
+            id: 0,
           },
           expectedAfter: {
-            avatarOwnerBalance: 0,
-            avatarBalance: 1,
-            equippedPart: {
-              collection: davaOfficial.address,
-              id: targetPart.id,
-            },
+            collection: davaOfficial.address,
+            id: targetPart.id,
           },
         });
       });
@@ -637,43 +579,22 @@ describe("Avatar", () => {
         );
       });
 
-      it("and transfer it to avatarOwner", async () => {
+      it("if avatar puton already", async () => {
         await checkChange({
           status: async () => {
-            const avatarOwnerBalance = (
-              await davaOfficial.balanceOf(avatarOwner.address, targetPart.id)
-            ).toNumber();
-            const avatarBalance = (
-              await davaOfficial.balanceOf(mintedAvatar.address, targetPart.id)
-            ).toNumber();
             const equippedPart = await mintedAvatar.part(targetPart.partType);
 
             return {
-              avatarOwnerBalance,
-              avatarBalance,
-              equippedPart: {
-                collection: equippedPart.collection,
-                id: equippedPart.id.toNumber(),
-              },
+              collection: equippedPart.collection,
+              id: equippedPart.id.toNumber(),
             };
           },
           process: () => mintedAvatar.dress([], [targetPart.partType]),
           expectedBefore: {
-            avatarOwnerBalance: 0,
-            avatarBalance: 1,
-            equippedPart: {
-              collection: davaOfficial.address,
-              id: targetPart.id,
-            },
+            collection: davaOfficial.address,
+            id: targetPart.id,
           },
-          expectedAfter: {
-            avatarOwnerBalance: 1,
-            avatarBalance: 0,
-            equippedPart: {
-              collection: ethers.constants.AddressZero,
-              id: 0,
-            },
-          },
+          expectedAfter: { collection: ethers.constants.AddressZero, id: 0 },
         });
       });
     });
