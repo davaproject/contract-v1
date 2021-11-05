@@ -11,9 +11,9 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
-import {Asset, IAvatar} from "./interfaces/IAvatar.sol";
+import {Part, IAvatar} from "./interfaces/IAvatar.sol";
 import {IFrameCollection} from "./interfaces/IFrameCollection.sol";
-import {IAssetCollection} from "./interfaces/IAssetCollection.sol";
+import {IPartCollection} from "./interfaces/IPartCollection.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
 contract Dava is
@@ -28,8 +28,7 @@ contract Dava is
     using Clones for address;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant ASSET_MANAGER_ROLE =
-        keccak256("ASSET_MANAGER_ROLE");
+    bytes32 public constant PART_MANAGER_ROLE = keccak256("PART_MANAGER_ROLE");
     bytes32 public constant UPGRADE_MANAGER_ROLE =
         keccak256("UPGRADE_MANAGER_ROLE");
 
@@ -37,7 +36,7 @@ contract Dava is
     address public override frameCollection;
 
     EnumerableSet.AddressSet private _registeredCollections;
-    EnumerableSet.Bytes32Set private _supportedAssetTypes;
+    EnumerableSet.Bytes32Set private _supportedPartTypes;
     address private _minimalProxy;
 
     uint256 public constant MAX_SUPPLY = 10000;
@@ -45,8 +44,8 @@ contract Dava is
     event CollectionRegistered(address collection);
     event CollectionDeregistered(address collection);
     event DefaultCollectionRegistered(address collection);
-    event AssetRegistered(bytes32 assetType);
-    event AssetDeregistered(bytes32 assetType);
+    event PartTypeRegistered(bytes32 partType);
+    event PartTypeDeregistered(bytes32 partType);
 
     // DAO contract owns this registry
     constructor(address minimalProxy_, string memory baseURI_)
@@ -60,8 +59,8 @@ contract Dava is
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
-        _setupRole(ASSET_MANAGER_ROLE, msg.sender);
-        _setRoleAdmin(ASSET_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setupRole(PART_MANAGER_ROLE, msg.sender);
+        _setRoleAdmin(PART_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
         _setupRole(UPGRADE_MANAGER_ROLE, msg.sender);
         _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
@@ -92,13 +91,13 @@ contract Dava is
     function registerCollection(address collection)
         external
         override
-        onlyRole(ASSET_MANAGER_ROLE)
+        onlyRole(PART_MANAGER_ROLE)
     {
         require(
             IERC165(collection).supportsInterface(
-                type(IAssetCollection).interfaceId
+                type(IPartCollection).interfaceId
             ),
-            "Dava: Does not support IAssetCollection interface"
+            "Dava: Does not support IPartCollection interface"
         );
         require(
             !_registeredCollections.contains(collection),
@@ -109,24 +108,24 @@ contract Dava is
         emit CollectionRegistered(collection);
     }
 
-    function registerAssetType(bytes32 assetType)
+    function registerPartType(bytes32 partType)
         external
         override
-        onlyRole(ASSET_MANAGER_ROLE)
+        onlyRole(PART_MANAGER_ROLE)
     {
         require(
-            !_supportedAssetTypes.contains(assetType),
-            "Dava: assetType is already registered"
+            !_supportedPartTypes.contains(partType),
+            "Dava: partType is already registered"
         );
-        _supportedAssetTypes.add(assetType);
+        _supportedPartTypes.add(partType);
 
-        emit AssetRegistered(assetType);
+        emit PartTypeRegistered(partType);
     }
 
     function registerFrameCollection(address collection)
         external
         override
-        onlyRole(ASSET_MANAGER_ROLE)
+        onlyRole(PART_MANAGER_ROLE)
     {
         require(
             IERC165(collection).supportsInterface(
@@ -143,7 +142,7 @@ contract Dava is
     function deregisterCollection(address collection)
         external
         override
-        onlyRole(ASSET_MANAGER_ROLE)
+        onlyRole(PART_MANAGER_ROLE)
     {
         require(
             _registeredCollections.contains(collection),
@@ -155,18 +154,18 @@ contract Dava is
         emit CollectionDeregistered(collection);
     }
 
-    function deregisterAssetType(bytes32 assetType)
+    function deregisterPartType(bytes32 partType)
         external
         override
-        onlyRole(ASSET_MANAGER_ROLE)
+        onlyRole(PART_MANAGER_ROLE)
     {
         require(
-            _supportedAssetTypes.contains(assetType),
-            "Dava: non registered assetType"
+            _supportedPartTypes.contains(partType),
+            "Dava: non registered partType"
         );
-        _supportedAssetTypes.remove(assetType);
+        _supportedPartTypes.remove(partType);
 
-        emit AssetDeregistered(assetType);
+        emit PartTypeDeregistered(partType);
     }
 
     function zap(uint256 tokenId, ZapReq calldata zapReq) public override {
@@ -179,16 +178,16 @@ contract Dava is
         IERC1155 collection = IERC1155(zapReq.collection);
         require(
             collection.supportsInterface(type(IERC1155).interfaceId),
-            "Dava: asset is not transferable"
+            "Dava: part is not transferable"
         );
         require(
-            collection.balanceOf(owner, zapReq.assetId) >= zapReq.amount,
-            "Dava: owner does not hold asset"
+            collection.balanceOf(owner, zapReq.partId) >= zapReq.amount,
+            "Dava: owner does not hold part"
         );
         collection.safeTransferFrom(
             owner,
             msg.sender,
-            zapReq.assetId,
+            zapReq.partId,
             zapReq.amount,
             ""
         );
@@ -209,16 +208,16 @@ contract Dava is
         return _registeredCollections.contains(collection);
     }
 
-    function isSupportedAssetType(bytes32 assetType)
+    function isSupportedPartType(bytes32 partType)
         external
         view
         override
         returns (bool)
     {
-        return _supportedAssetTypes.contains(assetType);
+        return _supportedPartTypes.contains(partType);
     }
 
-    function isDavaAsset(address collection, bytes32 assetType)
+    function isDavaPart(address collection, bytes32 partType)
         external
         view
         override
@@ -226,7 +225,7 @@ contract Dava is
     {
         return
             _registeredCollections.contains(collection) &&
-            _supportedAssetTypes.contains(assetType);
+            _supportedPartTypes.contains(partType);
     }
 
     function getAvatar(uint256 tokenId) public view override returns (address) {
@@ -237,13 +236,13 @@ contract Dava is
             );
     }
 
-    function getAllSupportedAssetTypes()
+    function getAllSupportedPartTypes()
         external
         view
         override
-        returns (bytes32[] memory assetTypes)
+        returns (bytes32[] memory partTypes)
     {
-        return _supportedAssetTypes.values();
+        return _supportedPartTypes.values();
     }
 
     function getRegisteredCollections()

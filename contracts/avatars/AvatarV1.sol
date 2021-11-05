@@ -3,12 +3,12 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
+import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {URICompiler} from "../libraries/URICompiler.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 import {AvatarBase} from "../libraries/AvatarBase.sol";
-import {Asset} from "../interfaces/IAvatar.sol";
+import {Part} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
 import {OnchainMetadata} from "../libraries/OnchainMetadata.sol";
 import {QuickSort} from "../libraries/QuickSort.sol";
@@ -16,18 +16,18 @@ import {QuickSort} from "../libraries/QuickSort.sol";
 contract AvatarV1 is AvatarBase {
     using Strings for uint256;
 
-    function dress(Asset[] calldata assetsOn, bytes32[] calldata assetsOff)
+    function dress(Part[] calldata partsOn, bytes32[] calldata partsOff)
         external
         override
         onlyOwner
     {
-        IDava.ZapReq[] memory zapReqs = new IDava.ZapReq[](assetsOn.length);
+        IDava.ZapReq[] memory zapReqs = new IDava.ZapReq[](partsOn.length);
         uint256 zapAmount = 0;
-        for (uint256 i = 0; i < assetsOn.length; i += 1) {
-            if (!_isEligible(assetsOn[i])) {
+        for (uint256 i = 0; i < partsOn.length; i += 1) {
+            if (!_isEligible(partsOn[i])) {
                 zapReqs[zapAmount] = IDava.ZapReq(
-                    assetsOn[i].assetAddr,
-                    assetsOn[i].id,
+                    partsOn[i].collection,
+                    partsOn[i].id,
                     1
                 );
                 zapAmount += 1;
@@ -39,18 +39,18 @@ contract AvatarV1 is AvatarBase {
         }
         IDava(dava()).zap(_props().davaId, validZapReqs);
 
-        for (uint256 i = 0; i < assetsOn.length; i += 1) {
-            _putOn(Asset(assetsOn[i].assetAddr, assetsOn[i].id));
+        for (uint256 i = 0; i < partsOn.length; i += 1) {
+            _putOn(Part(partsOn[i].collection, partsOn[i].id));
         }
 
-        for (uint256 i = 0; i < assetsOff.length; i += 1) {
-            Asset memory equippedAsset = asset(assetsOff[i]);
-            if (equippedAsset.assetAddr != address(0x0)) {
-                _takeOff(assetsOff[i]);
-                IAssetCollection(equippedAsset.assetAddr).safeTransferFrom(
+        for (uint256 i = 0; i < partsOff.length; i += 1) {
+            Part memory equippedPart = part(partsOff[i]);
+            if (equippedPart.collection != address(0x0)) {
+                _takeOff(partsOff[i]);
+                IPartCollection(equippedPart.collection).safeTransferFrom(
                     address(this),
                     msg.sender,
-                    equippedAsset.id,
+                    equippedPart.id,
                     1,
                     ""
                 );
@@ -69,53 +69,51 @@ contract AvatarV1 is AvatarBase {
     function getMetadata() external view override returns (string memory) {
         IDava _dava = IDava(dava());
 
-        Asset[] memory assets = allAssets();
+        Part[] memory parts = allParts();
         address frameCollection = _dava.frameCollection();
         IFrameCollection.Frame[] memory frames = IFrameCollection(
             frameCollection
         ).getAllFrames();
 
         QuickSort.Layer[] memory layers = new QuickSort.Layer[](
-            assets.length + frames.length
+            parts.length + frames.length
         );
 
-        IAssetCollection.Attribute[]
-            memory attributes = new IAssetCollection.Attribute[](assets.length);
+        IPartCollection.Attribute[]
+            memory attributes = new IPartCollection.Attribute[](parts.length);
         URICompiler.Query[] memory queries = new URICompiler.Query[](
-            assets.length + frames.length
+            parts.length + frames.length
         );
 
         for (uint256 i = 0; i < frames.length; i += 1) {
             queries[i] = URICompiler.Query(
-                uint256(uint160(frameCollection)).toHexString(),
+                uint256(uint160(frameCollection)).toHexString(20),
                 frames[i].id.toString()
             );
             layers[i] = QuickSort.Layer(i, frames[i].zIndex);
         }
 
-        uint256 wearingAssetAmount = 0;
+        uint256 wearingPartAmount = 0;
         uint256 layerAmount = frames.length;
-        for (uint256 i = 0; i < assets.length; i += 1) {
-            if (assets[i].assetAddr != address(0x0)) {
-                attributes[wearingAssetAmount] = IAssetCollection.Attribute(
-                    IAssetCollection(assets[i].assetAddr).assetTypeTitle(
-                        assets[i].id
+        for (uint256 i = 0; i < parts.length; i += 1) {
+            if (parts[i].collection != address(0x0)) {
+                attributes[wearingPartAmount] = IPartCollection.Attribute(
+                    IPartCollection(parts[i].collection).partTypeTitle(
+                        parts[i].id
                     ),
-                    IAssetCollection(assets[i].assetAddr).assetTitle(
-                        assets[i].id
-                    )
+                    IPartCollection(parts[i].collection).partTitle(parts[i].id)
                 );
 
                 queries[layerAmount] = URICompiler.Query(
-                    uint256(uint160(assets[i].assetAddr)).toHexString(),
-                    assets[i].id.toString()
+                    uint256(uint160(parts[i].collection)).toHexString(20),
+                    parts[i].id.toString()
                 );
                 layers[layerAmount] = QuickSort.Layer(
                     layerAmount,
-                    IAssetCollection(assets[i].assetAddr).zIndex(assets[i].id)
+                    IPartCollection(parts[i].collection).zIndex(parts[i].id)
                 );
                 layerAmount += 1;
-                wearingAssetAmount += 1;
+                wearingPartAmount += 1;
             }
         }
 
@@ -133,43 +131,40 @@ contract AvatarV1 is AvatarBase {
         string[] memory imgParams = new string[](1);
         imgParams[0] = "images";
 
-        IAssetCollection.Attribute[]
-            memory wearingAttributes = new IAssetCollection.Attribute[](
-                wearingAssetAmount + 2
+        IPartCollection.Attribute[]
+            memory wearingAttributes = new IPartCollection.Attribute[](
+                wearingPartAmount + 1
             );
-        for (uint256 i = 0; i < wearingAssetAmount; i += 1) {
+        for (uint256 i = 0; i < wearingPartAmount; i += 1) {
             wearingAttributes[i] = attributes[i];
         }
-        wearingAttributes[wearingAssetAmount] = IAssetCollection.Attribute(
-            "Avatar",
-            uint256(uint160(address(this))).toHexString()
+        wearingAttributes[wearingPartAmount] = IPartCollection.Attribute(
+            "ADDRESS",
+            uint256(uint160(address(this))).toHexString(20)
         );
 
-        string[] memory infoParams = new string[](2);
-        infoParams[0] = "infos";
-        infoParams[1] = _props().davaId.toString();
-        wearingAttributes[wearingAssetAmount + 1] = IAssetCollection.Attribute(
-            "Info",
-            URICompiler.getFullUri(
-                baseURI,
-                infoParams,
-                new URICompiler.Query[](0)
-            )
-        );
+        string[] memory infoParams = new string[](3);
+        infoParams[0] = "info";
+        infoParams[1] = uint256(uint160(address(_dava))).toHexString(20);
+        infoParams[2] = _props().davaId.toString();
 
         return
             OnchainMetadata.toMetadata(
                 name(),
-                address(0x0),
                 string(
                     abi.encodePacked(
                         "Genesis Avatar (",
-                        uint256(uint160(address(this))).toHexString(),
+                        uint256(uint160(address(this))).toHexString(20),
                         ")"
                     )
                 ),
                 _imgURIs(),
                 URICompiler.getFullUri(baseURI, imgParams, sortedQueries),
+                URICompiler.getFullUri(
+                    baseURI,
+                    infoParams,
+                    new URICompiler.Query[](0)
+                ),
                 wearingAttributes
             );
     }
@@ -177,13 +172,13 @@ contract AvatarV1 is AvatarBase {
     function _imgURIs() private view returns (string[] memory) {
         IDava _dava = IDava(dava());
 
-        Asset[] memory assets = allAssets();
+        Part[] memory parts = allParts();
         address frameCollection = _dava.frameCollection();
         IFrameCollection.Frame[] memory frames = IFrameCollection(
             frameCollection
         ).getAllFrames();
 
-        uint256 totalLayers = frames.length + assets.length;
+        uint256 totalLayers = frames.length + parts.length;
         uint256 validLayers = frames.length;
 
         QuickSort.Layer[] memory layers = new QuickSort.Layer[](totalLayers);
@@ -193,13 +188,13 @@ contract AvatarV1 is AvatarBase {
             layers[i] = QuickSort.Layer(i, frames[i].zIndex);
         }
 
-        for (uint256 i = 0; i < assets.length; i += 1) {
-            if (assets[i].assetAddr != address(0x0)) {
-                imgURIs[validLayers] = IAssetCollection(assets[i].assetAddr)
-                    .imageUri(assets[i].id);
+        for (uint256 i = 0; i < parts.length; i += 1) {
+            if (parts[i].collection != address(0x0)) {
+                imgURIs[validLayers] = IPartCollection(parts[i].collection)
+                    .imageUri(parts[i].id);
                 layers[validLayers] = QuickSort.Layer(
                     validLayers,
-                    IAssetCollection(assets[i].assetAddr).zIndex(assets[i].id)
+                    IPartCollection(parts[i].collection).zIndex(parts[i].id)
                 );
                 validLayers += 1;
             }

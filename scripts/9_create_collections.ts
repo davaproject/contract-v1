@@ -14,23 +14,23 @@ import { getData } from "./utils/data-log";
 const network = getNetwork();
 const id = 9;
 
-const createAssetType = async ({
+const createPartType = async ({
   davaOfficial,
   collection,
 }: {
   davaOfficial: DavaOfficial;
   collection: {
-    name: string;
+    title: string;
     backgroundImageTokenId: number;
     foregroundImageTokenId: number;
     zIndex: number;
   };
 }): Promise<string> => {
   console.log(
-    `Start register collection <${collection.name}> to <DavaOfficial>`
+    `Start register collection <${collection.title}> to <DavaOfficial>`
   );
-  const tx = await davaOfficial.createAssetType(
-    collection.name,
+  const tx = await davaOfficial.createPartType(
+    collection.title,
     collection.backgroundImageTokenId,
     collection.foregroundImageTokenId,
     collection.zIndex
@@ -38,24 +38,24 @@ const createAssetType = async ({
   await tx.wait(1);
 
   console.log(
-    `collection <${collection.name}> is registered in <DavaOfficial>`
+    `collection <${collection.title}> is registered in <DavaOfficial>`
   );
 
-  return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(collection.name));
+  return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(collection.title));
 };
 
-const registerAssetType = async ({
+const registerPartType = async ({
   dava,
-  assetType,
+  partType,
 }: {
   dava: Dava;
-  assetType: string;
+  partType: string;
 }) => {
-  console.log(`Start register assetType <${assetType}> to <Dava>`);
-  const tx = await dava.registerAssetType(assetType);
+  console.log(`Start registering partType <${partType}> to <Dava>`);
+  const tx = await dava.registerPartType(partType);
   await tx.wait(1);
 
-  console.log(`assetType <${assetType}> is registered in <Dava>`);
+  console.log(`partType <${partType}> is registered in <Dava>`);
 };
 
 const run: HardhatScript = async () => {
@@ -80,24 +80,24 @@ const run: HardhatScript = async () => {
 
   const collections: { [key: string]: string } = {};
   await Object.entries(data.collections).reduce(
-    (acc, [assetTitle, data]) =>
+    (acc, [partTitle, data]) =>
       acc.then(async () => {
         const collection = {
-          name: assetTitle,
+          title: partTitle,
           backgroundImageTokenId: deployedData[data.backgroundImage],
           foregroundImageTokenId: deployedData[data.foregroundImage],
           zIndex: data.zIndex,
         };
 
-        const assetType = await createAssetType({
+        const partType = await createPartType({
           davaOfficial,
           collection,
         });
-        collections[assetTitle] = assetType;
+        collections[partTitle] = partType;
 
-        await registerAssetType({
+        await registerPartType({
           dava,
-          assetType: assetType,
+          partType,
         });
       }),
     Promise.resolve()

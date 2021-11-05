@@ -9,32 +9,30 @@ import { getData } from "./utils/data-log";
 const network = getNetwork();
 const id = 10;
 
-const createAsset = async ({
+const createPart = async ({
   davaOfficial,
-  asset,
+  part,
 }: {
   davaOfficial: DavaOfficial;
-  asset: {
-    collectionType: string;
+  part: {
+    partType: string;
     title: string;
-    creator: string;
     description: string;
     uri: string;
     maxSupply: number;
   };
 }): Promise<void> => {
-  console.log(`Start register asset <${asset.title}> to <DavaOfficial>`);
-  const tx = await davaOfficial.createAsset(
-    asset.collectionType,
-    asset.title,
-    asset.creator,
-    asset.description,
-    asset.uri,
+  console.log(`Start register part <${part.title}> to <DavaOfficial>`);
+  const tx = await davaOfficial.createPart(
+    part.partType,
+    part.title,
+    part.description,
+    part.uri,
     [],
-    asset.maxSupply
+    part.maxSupply
   );
   await tx.wait(1);
-  console.log(`asset <${asset.title}> is registered in <DavaOfficial>`);
+  console.log(`part <${part.title}> is registered in <DavaOfficial>`);
 };
 
 const run: HardhatScript = async () => {
@@ -53,20 +51,19 @@ const run: HardhatScript = async () => {
     "collections"
   );
 
-  await Object.entries(data.assets).reduce(
-    (acc, [assetTypeTitle, assetDataList]) =>
+  await Object.entries(data.parts).reduce(
+    (acc, [partTypeTitle, partDataList]) =>
       acc.then(async () => {
-        return await assetDataList.reduce(async (acc_, assetData) => {
-          const asset = {
-            collectionType: deployedData[assetTypeTitle],
-            title: assetData.title,
-            creator: assetData.creator || ethers.constants.AddressZero,
-            description: assetData.description,
-            uri: assetData.uri,
-            maxSupply: assetData.maxSupply,
+        return await partDataList.reduce(async (acc_, partData) => {
+          const part = {
+            partType: deployedData[partTypeTitle],
+            title: partData.title,
+            description: partData.description,
+            uri: partData.uri,
+            maxSupply: partData.maxSupply,
           };
 
-          return acc_.then(() => createAsset({ davaOfficial, asset }));
+          return acc_.then(() => createPart({ davaOfficial, part }));
         }, Promise.resolve());
       }),
     Promise.resolve()

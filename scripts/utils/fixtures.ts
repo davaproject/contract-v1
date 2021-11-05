@@ -18,8 +18,8 @@ import {
 } from "../../types";
 import data from "../../data.json";
 
-export type Assets = {
-  defaultAsset: {
+export type Parts = {
+  defaultPart: {
     background: {
       tokenId: number;
       url: string;
@@ -36,7 +36,7 @@ export type Contracts = {
   minimalProxy: MinimalProxy;
   dava: Dava;
   avatarV1: AvatarV1;
-  assets: {
+  parts: {
     davaOfficial: DavaOfficial;
     davaFrame: DavaFrame;
   };
@@ -46,7 +46,7 @@ export type Contracts = {
 
 export type Fixture = {
   contracts: Contracts;
-  assets: Assets;
+  parts: Parts;
 };
 
 const registerCollection = async ({
@@ -122,30 +122,28 @@ export const fixtures = async (): Promise<Fixture> => {
   await davaOfficial.deployed();
   await registerCollection({ dava, collection: davaOfficial.address });
 
-  // Setup default assets
-  const defaultAssetType = await davaOfficial.DEFAULT_ASSET_TYPE();
+  // Setup default part
+  const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
 
   const background = {
-    tokenId: await (await davaOfficial.numberOfAssets()).toNumber(),
+    tokenId: await (await davaOfficial.numberOfParts()).toNumber(),
     url: "https://ipfs.io/background.png",
   };
-  await davaOfficial.createAsset(
-    defaultAssetType,
+  await davaOfficial.createPart(
+    defaultPartType,
     "frame",
-    ethers.constants.AddressZero,
     "",
     background.url,
     [],
     0
   );
   const foreground = {
-    tokenId: await (await davaOfficial.numberOfAssets()).toNumber(),
+    tokenId: await (await davaOfficial.numberOfParts()).toNumber(),
     url: "https://ipfs.io/foreground.png",
   };
-  await davaOfficial.createAsset(
-    defaultAssetType,
+  await davaOfficial.createPart(
+    defaultPartType,
     "frame",
-    ethers.constants.AddressZero,
     "",
     foreground.url,
     [],
@@ -181,15 +179,15 @@ export const fixtures = async (): Promise<Fixture> => {
       minimalProxy,
       dava,
       avatarV1,
-      assets: {
+      parts: {
         davaOfficial,
         davaFrame,
       },
       sale,
       randomBox,
     },
-    assets: {
-      defaultAsset: {
+    parts: {
+      defaultPart: {
         background,
         foreground,
       },

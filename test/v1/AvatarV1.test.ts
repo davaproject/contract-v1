@@ -13,9 +13,13 @@ import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { parseEther } from "@ethersproject/units";
 import { createImage, createImageUri } from "./utils/image";
-import { assetType } from "./utils/asset";
+import { partType } from "./utils/part";
 import { checkChange } from "./utils/compare";
 import data from "../../data.json";
+import {
+  generateAvatarMetadataString,
+  generatePartMetadataString,
+} from "./utils/metadata";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -37,7 +41,7 @@ describe("Avatar", () => {
 
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
-    const { contracts, assets } = await fixtures();
+    const { contracts, parts } = await fixtures();
 
     dava = contracts.dava;
     avatarOwner = accounts[0];
@@ -48,9 +52,9 @@ describe("Avatar", () => {
       accounts[0]
     );
 
-    ({ host } = assets);
-    ({ background, foreground } = assets.defaultAsset);
-    ({ davaOfficial, davaFrame } = contracts.assets);
+    ({ host } = parts);
+    ({ background, foreground } = parts.defaultPart);
+    ({ davaOfficial, davaFrame } = contracts.parts);
   });
 
   beforeEach(async () => {
@@ -99,92 +103,76 @@ describe("Avatar", () => {
     });
   });
 
-  describe("asset", () => {
+  describe("part", () => {
     const name = "test";
-    const registeredAssetType = assetType(name);
-    let assetId: number;
-    let assetOwner: SignerWithAddress;
+    const registeredPartType = partType(name);
+    let partId: number;
+    let partOwner: SignerWithAddress;
     before(async () => {
-      assetOwner = accounts[3];
+      partOwner = accounts[3];
 
-      await davaOfficial.createAssetType(name, 0, 0, 0);
-      assetId = (await davaOfficial.numberOfAssets()).toNumber();
-      await davaOfficial.createAsset(
-        registeredAssetType,
-        "test",
-        ethers.constants.AddressZero,
-        "",
-        "",
-        [],
-        1
-      );
-      await dava.registerAssetType(registeredAssetType);
-      await davaOfficial.mint(assetOwner.address, assetId, 1, "0x");
+      await davaOfficial.createPartType(name, 0, 0, 0);
+      partId = (await davaOfficial.numberOfParts()).toNumber();
+      await davaOfficial.createPart(registeredPartType, "test", "", "", [], 1);
+      await dava.registerPartType(registeredPartType);
+      await davaOfficial.mint(partOwner.address, partId, 1, "0x");
     });
 
-    it("should return empty asset if not put on", async () => {
-      const result = await mintedAvatar.asset(registeredAssetType);
-      expect(result.assetAddr).to.equal(ethers.constants.AddressZero);
+    it("should return empty part if not put on", async () => {
+      const result = await mintedAvatar.part(registeredPartType);
+      expect(result.collection).to.equal(ethers.constants.AddressZero);
       expect(result.id).to.equal(0);
     });
 
-    it("should return proper asset", async () => {
+    it("should return proper part", async () => {
       await davaOfficial
-        .connect(assetOwner)
+        .connect(partOwner)
         .safeTransferFrom(
-          assetOwner.address,
+          partOwner.address,
           mintedAvatar.address,
-          assetId,
+          partId,
           1,
           "0x"
         );
       await mintedAvatar.dress(
-        [{ assetAddr: davaOfficial.address, id: assetId }],
+        [{ collection: davaOfficial.address, id: partId }],
         []
       );
-      const result = await mintedAvatar.asset(registeredAssetType);
-      expect(result.assetAddr).to.equal(davaOfficial.address);
-      expect(result.id).to.equal(assetId);
+      const result = await mintedAvatar.part(registeredPartType);
+      expect(result.collection).to.equal(davaOfficial.address);
+      expect(result.id).to.equal(partId);
     });
   });
 
-  describe("allAssets", () => {
+  describe("allParts", () => {
     const name = "test0987654321";
-    const registeredAssetType = assetType(name);
+    const registeredPartType = partType(name);
     before(async () => {
-      await davaOfficial.createAssetType(name, 0, 0, 9999);
-      const assetId = await davaOfficial.numberOfAssets();
-      await davaOfficial.createAsset(
-        registeredAssetType,
-        "test",
-        ethers.constants.AddressZero,
-        "",
-        "",
-        [],
-        1
-      );
-      await dava.registerAssetType(registeredAssetType);
-      await davaOfficial.mint(mintedAvatar.address, assetId, 1, "0x");
+      await davaOfficial.createPartType(name, 0, 0, 9999);
+      const partId = await davaOfficial.numberOfParts();
+      await davaOfficial.createPart(registeredPartType, "test", "", "", [], 1);
+      await dava.registerPartType(registeredPartType);
+      await davaOfficial.mint(mintedAvatar.address, partId, 1, "0x");
       await mintedAvatar.dress(
-        [{ assetAddr: davaOfficial.address, id: assetId }],
+        [{ collection: davaOfficial.address, id: partId }],
         []
       );
     });
 
     after(async () => {
-      await mintedAvatar.dress([], [registeredAssetType]);
+      await mintedAvatar.dress([], [registeredPartType]);
     });
 
-    it("return all assets that avatar currently put on", async () => {
+    it("return all parts that avatar currently put on", async () => {
       await checkChange({
         status: async () => {
-          const assets = await mintedAvatar.allAssets();
-          const putOnAmount = assets.filter(
+          const parts = await mintedAvatar.allParts();
+          const putOnAmount = parts.filter(
             (v) => v[0] != ethers.constants.AddressZero
           ).length;
           return putOnAmount;
         },
-        process: () => mintedAvatar.dress([], [registeredAssetType]),
+        process: () => mintedAvatar.dress([], [registeredPartType]),
         expectedBefore: 1,
         expectedAfter: 0,
       });
@@ -226,7 +214,7 @@ describe("Avatar", () => {
   });
 
   describe("getPFP & getMetaData", () => {
-    describe("without asset", () => {
+    describe("without part", () => {
       it("should return default pfp", async () => {
         const expectedPfp = createImage(
           Object.values(Object.values(data.frames).map(({ image }) => image))
@@ -244,38 +232,30 @@ describe("Avatar", () => {
             tokenId: i,
           })),
         });
-        const expectedResult = {
+        const expectedResult = generateAvatarMetadataString({
           name: await mintedAvatar.name(),
-          creator: ethers.constants.AddressZero,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
-          attributes: [
-            {
-              trait_type: "Avatar",
-              value: mintedAvatar.address.toLowerCase(),
-            },
-            {
-              trait_type: "Info",
-              value: `${host}/infos/${mintedAvatarId}`,
-            },
-          ],
-          raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
-          image: expectedImageUri,
-        };
+          attributes: [],
+          rawImage: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
+          imageUri: expectedImageUri,
+          dava: dava.address,
+          avatar: mintedAvatar.address,
+          tokenId: `${mintedAvatarId}`,
+          host,
+        });
 
         const metadata = await mintedAvatar.getMetadata();
-        expect(metadata).to.equal(
-          "data:application/json;utf8," + JSON.stringify(expectedResult)
-        );
+        expect(metadata).to.equal(expectedResult);
       });
     });
 
-    describe("with assets", () => {
+    describe("with parts", () => {
       let layers: Array<{
         tokenId: number;
         zIndex: number;
         uri: string;
-        assetTypeTitle: string;
-        assetTitle: string;
+        partTypeTitle: string;
+        partTitle: string;
       }>;
 
       before(async () => {
@@ -284,60 +264,59 @@ describe("Avatar", () => {
             tokenId: 0,
             zIndex: data.frames.background.zIndex - 1,
             uri: "https://davaproject.com/layer0",
-            assetTypeTitle: "layer0",
-            assetTitle: "asset0",
+            partTypeTitle: "layer0",
+            partTitle: "part0",
           },
           {
             tokenId: 0,
             zIndex: data.frames.background.zIndex + 1,
             uri: "https://davaproject.com/layer1",
-            assetTypeTitle: "layer1",
-            assetTitle: "asset1",
+            partTypeTitle: "layer1",
+            partTitle: "part1",
           },
           {
             tokenId: 0,
             zIndex: data.frames.body.zIndex + 1,
             uri: "https://davaproject.com/layer2",
-            assetTypeTitle: "layer2",
-            assetTitle: "asset2",
+            partTypeTitle: "layer2",
+            partTitle: "part2",
           },
           {
             tokenId: 0,
             zIndex: data.frames.head.zIndex + 1,
             uri: "https://davaproject.com/layer3",
-            assetTypeTitle: "layer3",
-            assetTitle: "asset3",
+            partTypeTitle: "layer3",
+            partTitle: "part3",
           },
           {
             tokenId: 0,
             zIndex: data.frames.signature.zIndex + 1,
             uri: "https://davaproject.com/layer4",
-            assetTypeTitle: "layer4",
-            assetTitle: "asset4",
+            partTypeTitle: "layer4",
+            partTitle: "part4",
           },
         ];
 
         await layers.reduce(
           (acc, layer) =>
             acc.then(async () => {
-              const { zIndex, uri, assetTypeTitle, assetTitle } = layer;
-              const name = assetTypeTitle;
-              const assetType = ethers.utils.keccak256(
+              const { zIndex, uri, partTypeTitle, partTitle } = layer;
+              const name = partTypeTitle;
+              const partType = ethers.utils.keccak256(
                 ethers.utils.toUtf8Bytes(name)
               );
-              await davaOfficial.createAssetType(
+              await davaOfficial.createPartType(
                 name,
                 background.tokenId,
                 foreground.tokenId,
                 zIndex
               );
-              await dava.registerAssetType(assetType);
+              await dava.registerPartType(partType);
 
-              layer.tokenId = (await davaOfficial.numberOfAssets()).toNumber();
-              await davaOfficial.createAsset(
-                assetType,
-                assetTitle,
-                ethers.constants.AddressZero,
+              layer.tokenId = (await davaOfficial.numberOfParts()).toNumber();
+              await davaOfficial.createPart(
+                partType,
+                layer.partTitle,
                 "",
                 uri,
                 [],
@@ -355,7 +334,7 @@ describe("Avatar", () => {
               await mintedAvatar.dress(
                 [
                   {
-                    assetAddr: davaOfficial.address,
+                    collection: davaOfficial.address,
                     id: layer.tokenId,
                   },
                 ],
@@ -418,45 +397,31 @@ describe("Avatar", () => {
             },
           ],
         });
-        const expectedResult = {
+        const expectedResult = generateAvatarMetadataString({
           name: await mintedAvatar.name(),
-          creator: ethers.constants.AddressZero,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
-            ...layers.map(({ assetTypeTitle, assetTitle }) => ({
-              trait_type: assetTypeTitle,
-              value: assetTitle,
+            ...layers.map(({ partTypeTitle, partTitle }) => ({
+              trait_type: partTypeTitle,
+              value: partTitle,
             })),
-            {
-              trait_type: "Avatar",
-              value: mintedAvatar.address.toLowerCase(),
-            },
-            {
-              trait_type: "Info",
-              value: `${host}/infos/${mintedAvatarId}`,
-            },
           ],
-          raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
-          image: expectedImageUri,
-        };
+          rawImage: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
+          imageUri: expectedImageUri,
+          dava: dava.address,
+          avatar: mintedAvatar.address,
+          tokenId: `${mintedAvatarId}`,
+          host,
+        });
 
         const metadata = await mintedAvatar.getMetadata();
-        expect(metadata).to.equal(
-          "data:application/json;utf8," + JSON.stringify(expectedResult)
-        );
+        expect(metadata).to.equal(expectedResult);
       });
 
       it("should return updated compiled metadata if avatar take off some", async () => {
         await mintedAvatar.dress(
           [],
-          [
-            ethers.utils.keccak256(
-              ethers.utils.toUtf8Bytes(layers[0].assetTypeTitle)
-            ),
-            ethers.utils.keccak256(
-              ethers.utils.toUtf8Bytes(layers[3].assetTypeTitle)
-            ),
-          ]
+          [partType(layers[0].partTypeTitle), partType(layers[3].partTypeTitle)]
         );
         const expectedImageUri = createImageUri({
           host,
@@ -485,71 +450,56 @@ describe("Avatar", () => {
             },
           ],
         });
-        const expectedResult = {
+        const expectedResult = generateAvatarMetadataString({
           name: await mintedAvatar.name(),
-          creator: ethers.constants.AddressZero,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
             ...[layers[1], layers[2], layers[4]].map(
-              ({ assetTypeTitle, assetTitle }) => ({
-                trait_type: assetTypeTitle,
-                value: assetTitle,
+              ({ partTypeTitle, partTitle }) => ({
+                trait_type: partTypeTitle,
+                value: partTitle,
               })
             ),
-            {
-              trait_type: "Avatar",
-              value: mintedAvatar.address.toLowerCase(),
-            },
-            {
-              trait_type: "Info",
-              value: `${host}/infos/${mintedAvatarId}`,
-            },
           ],
-          raw_image: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
-          image: expectedImageUri,
-        };
+          rawImage: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
+          imageUri: expectedImageUri,
+          dava: dava.address,
+          avatar: mintedAvatar.address,
+          tokenId: `${mintedAvatarId}`,
+          host,
+        });
 
         const metadata = await mintedAvatar.getMetadata();
-        expect(metadata).to.equal(
-          "data:application/json;utf8," + JSON.stringify(expectedResult)
-        );
+        expect(metadata).to.equal(expectedResult);
       });
     });
   });
 
   describe("dress", () => {
-    interface Asset {
-      assetType: string;
+    interface Part {
+      partType: string;
       id: number;
     }
-    let assets: Asset[] = [];
+    let parts: Part[] = [];
 
     before(async () => {
       await Promise.all(
         [null, null].map(async (_, i) => {
-          const assetTypeTitle = `test${Date.now()}${i}`;
-          await davaOfficial.createAssetType(
-            assetTypeTitle,
+          const partTypeTitle = `test${Date.now()}${i}`;
+          await davaOfficial.createPartType(
+            partTypeTitle,
             background.tokenId,
             foreground.tokenId,
             i + 1000
           );
 
-          const _assetType = assetType(assetTypeTitle);
-          await dava.registerAssetType(_assetType);
+          const _partType = partType(partTypeTitle);
+          await dava.registerPartType(_partType);
 
-          const assetId = (await davaOfficial.numberOfAssets()).toNumber();
-          await davaOfficial.createAsset(
-            _assetType,
-            `asset-${i}`,
-            deployer.address,
-            "",
-            "",
-            [],
-            10
-          );
+          const partId = (await davaOfficial.numberOfParts()).toNumber();
+          await davaOfficial.createPart(_partType, "", "", "", [], 10);
 
-          assets.push({ assetType: _assetType, id: assetId });
+          parts.push({ partType: _partType, id: partId });
         })
       );
     });
@@ -565,29 +515,27 @@ describe("Avatar", () => {
       });
     });
 
-    describe("should put on assets", () => {
-      it("when avatarOwner hold asset but avatar does not", async () => {
-        const targetAsset = assets[0];
-        await davaOfficial.mint(avatarOwner.address, targetAsset.id, 1, "0x");
+    describe("should put on parts", () => {
+      it("when avatarOwner hold part but avatar does not", async () => {
+        const targetPart = parts[0];
+        await davaOfficial.mint(avatarOwner.address, targetPart.id, 1, "0x");
 
         await checkChange({
           status: async () => {
             const avatarOwnerBalance = (
-              await davaOfficial.balanceOf(avatarOwner.address, targetAsset.id)
+              await davaOfficial.balanceOf(avatarOwner.address, targetPart.id)
             ).toNumber();
             const avatarBalance = (
-              await davaOfficial.balanceOf(mintedAvatar.address, targetAsset.id)
+              await davaOfficial.balanceOf(mintedAvatar.address, targetPart.id)
             ).toNumber();
-            const equippedAsset = await mintedAvatar.asset(
-              targetAsset.assetType
-            );
+            const equippedPart = await mintedAvatar.part(targetPart.partType);
 
             return {
               avatarOwnerBalance,
               avatarBalance,
-              equippedAsset: {
-                assetAddr: equippedAsset.assetAddr,
-                id: equippedAsset.id.toNumber(),
+              equippedPart: {
+                collection: equippedPart.collection,
+                id: equippedPart.id.toNumber(),
               },
             };
           },
@@ -595,8 +543,8 @@ describe("Avatar", () => {
             mintedAvatar.dress(
               [
                 {
-                  assetAddr: davaOfficial.address,
-                  id: targetAsset.id,
+                  collection: davaOfficial.address,
+                  id: targetPart.id,
                 },
               ],
               []
@@ -604,44 +552,42 @@ describe("Avatar", () => {
           expectedBefore: {
             avatarOwnerBalance: 1,
             avatarBalance: 0,
-            equippedAsset: {
-              assetAddr: ethers.constants.AddressZero,
+            equippedPart: {
+              collection: ethers.constants.AddressZero,
               id: 0,
             },
           },
           expectedAfter: {
             avatarOwnerBalance: 0,
             avatarBalance: 1,
-            equippedAsset: {
-              assetAddr: davaOfficial.address,
-              id: targetAsset.id,
+            equippedPart: {
+              collection: davaOfficial.address,
+              id: targetPart.id,
             },
           },
         });
       });
 
       it("when avatar holds it", async () => {
-        const targetAsset = assets[0];
-        await davaOfficial.mint(mintedAvatar.address, targetAsset.id, 1, "0x");
+        const targetPart = parts[0];
+        await davaOfficial.mint(mintedAvatar.address, targetPart.id, 1, "0x");
 
         await checkChange({
           status: async () => {
             const avatarOwnerBalance = (
-              await davaOfficial.balanceOf(avatarOwner.address, targetAsset.id)
+              await davaOfficial.balanceOf(avatarOwner.address, targetPart.id)
             ).toNumber();
             const avatarBalance = (
-              await davaOfficial.balanceOf(mintedAvatar.address, targetAsset.id)
+              await davaOfficial.balanceOf(mintedAvatar.address, targetPart.id)
             ).toNumber();
-            const equippedAsset = await mintedAvatar.asset(
-              targetAsset.assetType
-            );
+            const equippedPart = await mintedAvatar.part(targetPart.partType);
 
             return {
               avatarOwnerBalance,
               avatarBalance,
-              equippedAsset: {
-                assetAddr: equippedAsset.assetAddr,
-                id: equippedAsset.id.toNumber(),
+              equippedPart: {
+                collection: equippedPart.collection,
+                id: equippedPart.id.toNumber(),
               },
             };
           },
@@ -649,8 +595,8 @@ describe("Avatar", () => {
             mintedAvatar.dress(
               [
                 {
-                  assetAddr: davaOfficial.address,
-                  id: targetAsset.id,
+                  collection: davaOfficial.address,
+                  id: targetPart.id,
                 },
               ],
               []
@@ -658,33 +604,33 @@ describe("Avatar", () => {
           expectedBefore: {
             avatarOwnerBalance: 0,
             avatarBalance: 1,
-            equippedAsset: {
-              assetAddr: ethers.constants.AddressZero,
+            equippedPart: {
+              collection: ethers.constants.AddressZero,
               id: 0,
             },
           },
           expectedAfter: {
             avatarOwnerBalance: 0,
             avatarBalance: 1,
-            equippedAsset: {
-              assetAddr: davaOfficial.address,
-              id: targetAsset.id,
+            equippedPart: {
+              collection: davaOfficial.address,
+              id: targetPart.id,
             },
           },
         });
       });
     });
 
-    describe("should take off assets", () => {
-      let targetAsset: Asset;
+    describe("should take off parts", () => {
+      let targetPart: Part;
       before(async () => {
-        targetAsset = assets[0];
-        await davaOfficial.mint(mintedAvatar.address, targetAsset.id, 1, "0x");
+        targetPart = parts[0];
+        await davaOfficial.mint(mintedAvatar.address, targetPart.id, 1, "0x");
         await mintedAvatar.dress(
           [
             {
-              assetAddr: davaOfficial.address,
-              id: assets[0].id,
+              collection: davaOfficial.address,
+              id: parts[0].id,
             },
           ],
           []
@@ -695,38 +641,36 @@ describe("Avatar", () => {
         await checkChange({
           status: async () => {
             const avatarOwnerBalance = (
-              await davaOfficial.balanceOf(avatarOwner.address, targetAsset.id)
+              await davaOfficial.balanceOf(avatarOwner.address, targetPart.id)
             ).toNumber();
             const avatarBalance = (
-              await davaOfficial.balanceOf(mintedAvatar.address, targetAsset.id)
+              await davaOfficial.balanceOf(mintedAvatar.address, targetPart.id)
             ).toNumber();
-            const equippedAsset = await mintedAvatar.asset(
-              targetAsset.assetType
-            );
+            const equippedPart = await mintedAvatar.part(targetPart.partType);
 
             return {
               avatarOwnerBalance,
               avatarBalance,
-              equippedAsset: {
-                assetAddr: equippedAsset.assetAddr,
-                id: equippedAsset.id.toNumber(),
+              equippedPart: {
+                collection: equippedPart.collection,
+                id: equippedPart.id.toNumber(),
               },
             };
           },
-          process: () => mintedAvatar.dress([], [targetAsset.assetType]),
+          process: () => mintedAvatar.dress([], [targetPart.partType]),
           expectedBefore: {
             avatarOwnerBalance: 0,
             avatarBalance: 1,
-            equippedAsset: {
-              assetAddr: davaOfficial.address,
-              id: targetAsset.id,
+            equippedPart: {
+              collection: davaOfficial.address,
+              id: targetPart.id,
             },
           },
           expectedAfter: {
             avatarOwnerBalance: 1,
             avatarBalance: 0,
-            equippedAsset: {
-              assetAddr: ethers.constants.AddressZero,
+            equippedPart: {
+              collection: ethers.constants.AddressZero,
               id: 0,
             },
           },

@@ -18,7 +18,7 @@ import { solidity } from "ethereum-waffle";
 import { constants } from "ethers";
 import { Contracts, fixtures } from "../../scripts/utils/fixtures";
 import { checkChange } from "./utils/compare";
-import { assetType } from "./utils/asset";
+import { partType } from "./utils/part";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -37,7 +37,7 @@ describe("Dava", () => {
     ({
       dava,
       avatarV1,
-      assets: { davaOfficial },
+      parts: { davaOfficial },
     } = contracts);
   });
 
@@ -58,11 +58,11 @@ describe("Dava", () => {
     });
 
     describe("should be reverted", () => {
-      it("if msg.sender is not ASSET_MANAGER", async () => {
+      it("if msg.sender is not PART_MANAGER", async () => {
         const nonManager = accounts[1];
-        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const PART_MANAGER_ROLE = await dava.PART_MANAGER_ROLE();
         const isManager = await dava.hasRole(
-          ASSET_MANAGER_ROLE,
+          PART_MANAGER_ROLE,
           nonManager.address
         );
         expect(isManager).to.be.false;
@@ -72,11 +72,11 @@ describe("Dava", () => {
         ).to.be.reverted;
       });
 
-      it("if collection does not support IAssetCollection interface", async () => {
+      it("if collection does not support IPartCollection interface", async () => {
         await expect(
-          dava.registerCollection(contracts.assets.davaFrame.address)
+          dava.registerCollection(contracts.parts.davaFrame.address)
         ).to.be.revertedWith(
-          "Dava: Does not support IAssetCollection interface"
+          "Dava: Does not support IPartCollection interface"
         );
       });
 
@@ -103,44 +103,44 @@ describe("Dava", () => {
     });
   });
 
-  describe("registerAssetType", () => {
-    const newAssetType = assetType("TEST");
+  describe("registerPartType", () => {
+    const newPartType = partType("TEST");
 
     describe("should be reverted", () => {
-      it("if msg.sender is not ASSET_MANAGER", async () => {
+      it("if msg.sender is not PART_MANAGER", async () => {
         const nonManager = accounts[1];
-        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const PART_MANAGER_ROLE = await dava.PART_MANAGER_ROLE();
         const isManager = await dava.hasRole(
-          ASSET_MANAGER_ROLE,
+          PART_MANAGER_ROLE,
           nonManager.address
         );
         expect(isManager).to.be.false;
 
-        await expect(dava.connect(nonManager).registerAssetType(newAssetType))
-          .to.be.reverted;
+        await expect(dava.connect(nonManager).registerPartType(newPartType)).to
+          .be.reverted;
       });
 
-      it("if assetType is already registered", async () => {
-        await dava.registerAssetType(newAssetType);
-        await expect(dava.registerAssetType(newAssetType)).to.be.revertedWith(
-          "Dava: assetType is already registered"
+      it("if partType is already registered", async () => {
+        await dava.registerPartType(newPartType);
+        await expect(dava.registerPartType(newPartType)).to.be.revertedWith(
+          "Dava: partType is already registered"
         );
       });
     });
 
-    it("should add assetType", async () => {
+    it("should add partType", async () => {
       await checkChange({
-        status: () => dava.isSupportedAssetType(newAssetType),
-        process: () => dava.registerAssetType(newAssetType),
+        status: () => dava.isSupportedPartType(newPartType),
+        process: () => dava.registerPartType(newPartType),
         expectedBefore: false,
         expectedAfter: true,
       });
     });
 
-    it("should emit 'AssetRegistered' event", async () => {
-      await expect(dava.registerAssetType(newAssetType))
-        .to.emit(dava, "AssetRegistered")
-        .withArgs(newAssetType);
+    it("should emit 'PartTypeRegistered' event", async () => {
+      await expect(dava.registerPartType(newPartType))
+        .to.emit(dava, "PartTypeRegistered")
+        .withArgs(newPartType);
     });
   });
 
@@ -152,11 +152,11 @@ describe("Dava", () => {
     });
 
     describe("should be reverted", () => {
-      it("if msg.sender is not ASSET_MANAGER", async () => {
+      it("if msg.sender is not PART_MANAGER", async () => {
         const nonManager = accounts[1];
-        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const PART_MANAGER_ROLE = await dava.PART_MANAGER_ROLE();
         const isManager = await dava.hasRole(
-          ASSET_MANAGER_ROLE,
+          PART_MANAGER_ROLE,
           nonManager.address
         );
         expect(isManager).to.be.false;
@@ -181,7 +181,7 @@ describe("Dava", () => {
       await checkChange({
         status: () => dava.frameCollection(),
         process: () => dava.registerFrameCollection(newFrameCollection.address),
-        expectedBefore: contracts.assets.davaFrame.address,
+        expectedBefore: contracts.parts.davaFrame.address,
         expectedAfter: newFrameCollection.address,
       });
     });
@@ -195,11 +195,11 @@ describe("Dava", () => {
 
   describe("deregisterCollection", () => {
     describe("should be reverted", () => {
-      it("if msg.sender is not ASSET_MANAGER", async () => {
+      it("if msg.sender is not PART_MANAGER", async () => {
         const nonManager = accounts[1];
-        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const PART_MANAGER_ROLE = await dava.PART_MANAGER_ROLE();
         const isManager = await dava.hasRole(
-          ASSET_MANAGER_ROLE,
+          PART_MANAGER_ROLE,
           nonManager.address
         );
         expect(isManager).to.be.false;
@@ -232,46 +232,46 @@ describe("Dava", () => {
     });
   });
 
-  describe("deregisterAssetType", () => {
-    const newAssetType = assetType("TEST");
+  describe("deregisterPartType", () => {
+    const newPartType = partType("TEST");
     before(async () => {
-      await dava.registerAssetType(newAssetType);
+      await dava.registerPartType(newPartType);
     });
 
     describe("should be reverted", () => {
-      it("if msg.sender is not ASSET_MANAGER", async () => {
+      it("if msg.sender is not PART_MANAGER", async () => {
         const nonManager = accounts[1];
-        const ASSET_MANAGER_ROLE = await dava.ASSET_MANAGER_ROLE();
+        const PART_MANAGER_ROLE = await dava.PART_MANAGER_ROLE();
         const isManager = await dava.hasRole(
-          ASSET_MANAGER_ROLE,
+          PART_MANAGER_ROLE,
           nonManager.address
         );
         expect(isManager).to.be.false;
 
-        await expect(dava.connect(nonManager).deregisterAssetType(newAssetType))
+        await expect(dava.connect(nonManager).deregisterPartType(newPartType))
           .to.be.reverted;
       });
 
-      it("if assetType is not registered", async () => {
+      it("if partType is not registered", async () => {
         await expect(
-          dava.deregisterAssetType(assetType("TEST_NEW"))
-        ).to.be.revertedWith("Dava: non registered assetType");
+          dava.deregisterPartType(partType("TEST_NEW"))
+        ).to.be.revertedWith("Dava: non registered partType");
       });
     });
 
-    it("should remove assetType", async () => {
+    it("should remove partType", async () => {
       await checkChange({
-        status: () => dava.isSupportedAssetType(newAssetType),
-        process: () => dava.deregisterAssetType(newAssetType),
+        status: () => dava.isSupportedPartType(newPartType),
+        process: () => dava.deregisterPartType(newPartType),
         expectedBefore: true,
         expectedAfter: false,
       });
     });
 
-    it("should emit 'AssetDeregistered' event", async () => {
-      await expect(dava.deregisterAssetType(newAssetType))
-        .to.emit(dava, "AssetDeregistered")
-        .withArgs(newAssetType);
+    it("should emit 'PartTypeDeregistered' event", async () => {
+      await expect(dava.deregisterPartType(newPartType))
+        .to.emit(dava, "PartTypeDeregistered")
+        .withArgs(newPartType);
     });
   });
 
@@ -288,45 +288,45 @@ describe("Dava", () => {
     });
   });
 
-  describe("isSupportedAssetType", () => {
-    const newAssetType = assetType("TEST X 10");
+  describe("isSupportedPartType", () => {
+    const newPartType = partType("TEST X 10");
 
-    it("should return false if assetType is not registered", async () => {
-      const result = await dava.isSupportedAssetType(newAssetType);
+    it("should return false if partType is not registered", async () => {
+      const result = await dava.isSupportedPartType(newPartType);
       expect(result).to.be.false;
     });
 
-    it("should return true if assetType is registered", async () => {
-      await dava.registerAssetType(newAssetType);
-      const result = await dava.isSupportedAssetType(newAssetType);
+    it("should return true if partType is registered", async () => {
+      await dava.registerPartType(newPartType);
+      const result = await dava.isSupportedPartType(newPartType);
       expect(result).to.be.true;
     });
   });
 
-  describe("isDavaAsset", () => {
-    const newAssetType = assetType("TEST X 10000");
+  describe("isDavaPart", () => {
+    const newPartType = partType("TEST X 10000");
     before(async () => {
-      await dava.registerAssetType(newAssetType);
+      await dava.registerPartType(newPartType);
     });
 
     it("should return false if collection is not registered", async () => {
-      const result = await dava.isDavaAsset(
+      const result = await dava.isDavaPart(
         ethers.Wallet.createRandom().address,
-        newAssetType
+        newPartType
       );
       expect(result).to.be.false;
     });
 
-    it("should return false if assetType is not registered", async () => {
-      const result = await dava.isDavaAsset(
+    it("should return false if partType is not registered", async () => {
+      const result = await dava.isDavaPart(
         ethers.Wallet.createRandom().address,
-        assetType(`${Date.now()}`)
+        partType(`${Date.now()}`)
       );
       expect(result).to.be.false;
     });
 
-    it("should return true if assetType and collection are registered", async () => {
-      const result = await dava.isDavaAsset(davaOfficial.address, newAssetType);
+    it("should return true if partType and collection are registered", async () => {
+      const result = await dava.isDavaPart(davaOfficial.address, newPartType);
       expect(result).to.be.true;
     });
   });
@@ -346,11 +346,11 @@ describe("Dava", () => {
     });
   });
 
-  describe("getAllSupportedAssetTypes", () => {
-    it("should return all registered assetTypes", async () => {
+  describe("getAllSupportedPartTypes", () => {
+    it("should return all registered partTypes", async () => {
       await checkChange({
-        status: () => dava.getAllSupportedAssetTypes().then((v) => v.length),
-        process: () => dava.registerAssetType(assetType(`${Date.now()}`)),
+        status: () => dava.getAllSupportedPartTypes().then((v) => v.length),
+        process: () => dava.registerPartType(partType(`${Date.now()}`)),
         expectedBefore: 2,
         expectedAfter: 3,
       });
@@ -459,7 +459,7 @@ describe("Dava", () => {
   describe("zap", () => {
     let testAvatar: TestAvatarV1;
     let avatarOwner: SignerWithAddress;
-    let assetId: number;
+    let partId: number;
 
     beforeEach(async () => {
       const TestAvatarV1 = new TestAvatarV1__factory(deployer);
@@ -475,28 +475,19 @@ describe("Dava", () => {
       );
 
       const collectionName = "test";
-      const defaultAssetType = await davaOfficial.DEFAULT_ASSET_TYPE();
-      await davaOfficial.createAsset(
-        defaultAssetType,
-        "test",
-        deployer.address,
-        "",
-        "",
-        [],
-        0
-      );
-      await davaOfficial.createAssetType(collectionName, 0, 0, 0);
-      assetId = (await davaOfficial.numberOfAssets()).toNumber();
-      await davaOfficial.createAsset(
+      const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
+      await davaOfficial.createPart(defaultPartType, "test", "", "", [], 0);
+      await davaOfficial.createPartType(collectionName, 0, 0, 0);
+      partId = (await davaOfficial.numberOfParts()).toNumber();
+      await davaOfficial.createPart(
         ethers.utils.keccak256(ethers.utils.toUtf8Bytes(collectionName)),
         "TEST",
-        deployer.address,
         "",
         "",
         [],
         1
       );
-      await davaOfficial.mint(avatarOwner.address, assetId, 1, "0x");
+      await davaOfficial.mint(avatarOwner.address, partId, 1, "0x");
     });
 
     describe("should be reverted", () => {
@@ -504,54 +495,54 @@ describe("Dava", () => {
         await expect(
           dava["zap(uint256,(address,uint256,uint256))"](1, {
             collection: davaOfficial.address,
-            assetId: 0,
+            partId: 0,
             amount: 1,
           })
         ).to.be.revertedWith("Dava: avatar and tokenId does not match");
       });
 
-      it("if asset is not ITransferableAsset format", async () => {
+      it("if part is not ITransferablePart format", async () => {
         await expect(
-          testAvatar.receiveAsset(testAvatar.address, 99)
-        ).to.be.revertedWith("Dava: asset is not transferable");
+          testAvatar.receivePart(testAvatar.address, 99)
+        ).to.be.revertedWith("Dava: part is not transferable");
       });
 
-      it("if avatar owner does not hold enough asset", async () => {
-        const nonExistentAssetId = assetId + 1;
+      it("if avatar owner does not hold enough part", async () => {
+        const nonExistentPartId = partId + 1;
         const balance = await davaOfficial.balanceOf(
           deployer.address,
-          nonExistentAssetId
+          nonExistentPartId
         );
         expect(balance.toNumber()).to.equal(0);
 
         await expect(
-          testAvatar.receiveAsset(davaOfficial.address, nonExistentAssetId)
-        ).to.be.revertedWith("Dava: owner does not hold asset");
+          testAvatar.receivePart(davaOfficial.address, nonExistentPartId)
+        ).to.be.revertedWith("Dava: owner does not hold part");
       });
     });
 
-    it("transfer asset to avatar", async () => {
+    it("transfer part to avatar", async () => {
       const balanceBefore = await davaOfficial.balanceOf(
         avatarOwner.address,
-        assetId
+        partId
       );
       expect(balanceBefore.toNumber()).to.gt(0);
       const balanceOfAvatarBefore = await davaOfficial.balanceOf(
         testAvatar.address,
-        assetId
+        partId
       );
       expect(balanceOfAvatarBefore.toNumber()).to.equal(0);
 
-      await testAvatar.receiveAsset(davaOfficial.address, assetId);
+      await testAvatar.receivePart(davaOfficial.address, partId);
 
       const balanceAfter = await davaOfficial.balanceOf(
         avatarOwner.address,
-        assetId
+        partId
       );
       expect(balanceAfter).to.equal(balanceBefore.sub(1));
       const balanceOfAvatarAfter = await davaOfficial.balanceOf(
         testAvatar.address,
-        assetId
+        partId
       );
       expect(balanceOfAvatarAfter.toNumber()).to.equal(1);
     });

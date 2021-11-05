@@ -19,29 +19,28 @@ const run: HardhatScript = async () => {
   const DavaOfficial = new DavaOfficial__factory(deployer);
   const davaOfficial = DavaOfficial.attach(davaOfficialAddress);
 
-  const defaultAssetType = await davaOfficial.DEFAULT_ASSET_TYPE();
-  const assets = Object.entries(data.images.bases);
+  const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
+  const parts = Object.entries(data.images.bases);
 
   const result: { [key: string]: number } = {};
-  await assets.reduce(
-    (acc, [title, assetUri]) =>
+  await parts.reduce(
+    (acc, [title, partUri]) =>
       acc.then(async () => {
-        const assetId = await (await davaOfficial.numberOfAssets()).toNumber();
+        const partId = await (await davaOfficial.numberOfParts()).toNumber();
 
-        console.log(`Start create default asset <${title}> to <DavaOfficial>`);
-        const tx = await davaOfficial.createAsset(
-          defaultAssetType,
+        console.log(`Start create default part <${title}> to <DavaOfficial>`);
+        const tx = await davaOfficial.createPart(
+          defaultPartType,
           "",
-          ethers.constants.AddressZero,
           "",
-          assetUri,
+          partUri,
           [],
           0
         );
         await tx.wait(1);
-        console.log(`default asset <${title}> is registered in <DavaOfficial>`);
+        console.log(`default part <${title}> is registered in <DavaOfficial>`);
 
-        result[title] = assetId;
+        result[title] = partId;
         return;
       }),
     Promise.resolve()

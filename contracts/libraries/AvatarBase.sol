@@ -8,16 +8,16 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Account} from "./Account.sol";
 import {MinimalProxy, Proxy} from "./MinimalProxy.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
-import {IAvatar, Asset} from "../interfaces/IAvatar.sol";
+import {IAvatar, Part} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
-import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
+import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 
 abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     using Strings for uint256;
 
-    event PutOn(bytes32 indexed assetType, address asset, uint256 id);
-    event TakeOff(bytes32 indexed assetType, address asset, uint256 id);
+    event PutOn(bytes32 indexed partType, address collection, uint256 id);
+    event TakeOff(bytes32 indexed partType, address collection, uint256 id);
 
     // DO NOT DECLARE state variables in the proxy contract.
     // If you wanna access to the existing state variables, use _props().
@@ -29,17 +29,17 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         _props().name = name_;
     }
 
-    function dress(Asset[] calldata assetsOn, bytes32[] calldata assetsOff)
+    function dress(Part[] calldata partsOn, bytes32[] calldata partsOff)
         external
         virtual
         override
         onlyOwner
     {
-        for (uint256 i = 0; i < assetsOn.length; i += 1) {
-            _putOn(assetsOn[i]);
+        for (uint256 i = 0; i < partsOn.length; i += 1) {
+            _putOn(partsOn[i]);
         }
-        for (uint256 i = 0; i < assetsOff.length; i += 1) {
-            _takeOff(assetsOff[i]);
+        for (uint256 i = 0; i < partsOff.length; i += 1) {
+            _takeOff(partsOff[i]);
         }
     }
 
@@ -66,41 +66,36 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         return StorageSlot.getAddressSlot(DAVA_CONTRACT_SLOT).value;
     }
 
-    function asset(bytes32 assetType)
-        public
-        view
-        override
-        returns (Asset memory)
-    {
+    function part(bytes32 partType) public view override returns (Part memory) {
         // Try to retrieve from the storage
-        Asset memory asset_ = _props().assets[assetType];
-        if (asset_.assetAddr == address(0x0)) {
-            return Asset(address(0x0), 0);
+        Part memory part_ = _props().parts[partType];
+        if (part_.collection == address(0x0)) {
+            return Part(address(0x0), 0);
         }
 
         // Check the balance
-        bool owning = _isEligible(asset_);
-        // return the asset only when the Avatar owns the asset or return a null asset.
+        bool owning = _isEligible(part_);
+        // return the part only when the Avatar owns the part or return a null part.
         if (owning) {
-            return asset_;
+            return part_;
         } else {
-            return Asset(address(0x0), 0);
+            return Part(address(0x0), 0);
         }
     }
 
-    function allAssets()
+    function allParts()
         public
         view
         virtual
         override
-        returns (Asset[] memory assets)
+        returns (Part[] memory parts)
     {
         IDava _dava = IDava(dava());
-        bytes32[] memory allTypes = _dava.getAllSupportedAssetTypes();
+        bytes32[] memory allTypes = _dava.getAllSupportedPartTypes();
 
-        assets = new Asset[](allTypes.length);
+        parts = new Part[](allTypes.length);
         for (uint256 i = 0; i < allTypes.length; i += 1) {
-            assets[i] = asset(allTypes[i]);
+            parts[i] = part(allTypes[i]);
         }
     }
 
@@ -127,36 +122,34 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         override
         returns (string memory);
 
-    function _putOn(Asset memory asset_) internal {
-        bytes32 assetType = IAssetCollection(asset_.assetAddr).assetType(
-            asset_.id
-        );
-        require(_isEligible(asset_), "Avatar: does not have the asset.");
-        _props().assets[assetType] = asset_;
-        emit PutOn(assetType, asset_.assetAddr, asset_.id);
+    function _putOn(Part memory part_) internal {
+        bytes32 partType = IPartCollection(part_.collection).partType(part_.id);
+        require(_isEligible(part_), "Avatar: does not have the part.");
+        _props().parts[partType] = part_;
+        emit PutOn(partType, part_.collection, part_.id);
     }
 
-    function _takeOff(bytes32 assetType) internal {
-        Asset memory target = _props().assets[assetType];
-        require(target.assetAddr != address(0), "Avatar: nothing to take off");
-        delete _props().assets[assetType];
-        emit TakeOff(assetType, target.assetAddr, target.id);
+    function _takeOff(bytes32 partType) internal {
+        Part memory target = _props().parts[partType];
+        require(target.collection != address(0), "Avatar: nothing to take off");
+        delete _props().parts[partType];
+        emit TakeOff(partType, target.collection, target.id);
     }
 
-    function _isEligible(Asset memory asset_)
+    function _isEligible(Part memory part_)
         internal
         view
         virtual
         returns (bool)
     {
         require(
-            IDava(dava()).isDavaAsset(
-                asset_.assetAddr,
-                IAssetCollection(asset_.assetAddr).assetType(asset_.id)
+            IDava(dava()).isDavaPart(
+                part_.collection,
+                IPartCollection(part_.collection).partType(part_.id)
             ),
-            "Avatar: not a registered asset."
+            "Avatar: not a registered part."
         );
-        return (IERC1155(asset_.assetAddr).balanceOf(address(this), asset_.id) >
+        return (IERC1155(part_.collection).balanceOf(address(this), part_.id) >
             0);
     }
 }

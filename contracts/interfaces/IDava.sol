@@ -8,7 +8,7 @@ import {IHost} from "../interfaces/IHost.sol";
 interface IDava is IERC721Enumerable, IHost {
     struct ZapReq {
         address collection;
-        uint256 assetId;
+        uint256 partId;
         uint256 amount;
     }
 
@@ -16,13 +16,13 @@ interface IDava is IERC721Enumerable, IHost {
 
     function registerCollection(address collection) external;
 
-    function registerAssetType(bytes32 assetType) external;
+    function registerPartType(bytes32 partType) external;
 
     function registerFrameCollection(address collection) external;
 
     function deregisterCollection(address collection) external;
 
-    function deregisterAssetType(bytes32 assetType) external;
+    function deregisterPartType(bytes32 partType) external;
 
     function zap(uint256 tokenId, ZapReq calldata zapReq) external;
 
@@ -35,19 +35,16 @@ interface IDava is IERC721Enumerable, IHost {
         view
         returns (bool);
 
-    function isSupportedAssetType(bytes32 assetType)
-        external
-        view
-        returns (bool);
+    function isSupportedPartType(bytes32 partType) external view returns (bool);
 
-    function isDavaAsset(address collection, bytes32 assetType)
+    function isDavaPart(address collection, bytes32 partType)
         external
         view
         returns (bool);
 
     function getAvatar(uint256 id) external view returns (address);
 
-    function getAllSupportedAssetTypes()
+    function getAllSupportedPartTypes()
         external
         view
         returns (bytes32[] memory);

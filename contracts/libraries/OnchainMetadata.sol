@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
+import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 library OnchainMetadata {
@@ -16,24 +16,24 @@ library OnchainMetadata {
 
     function toMetadata(
         string memory name,
-        address creator,
         string memory description,
         string[] memory imgURIs,
         string memory externalImgUri,
-        IAssetCollection.Attribute[] memory attributes
+        string memory externalUri,
+        IPartCollection.Attribute[] memory attributes
     ) internal pure returns (string memory) {
         bytes memory metadata = abi.encodePacked(
             'data:application/json;utf8,{"name":"',
             name,
-            '","creator":"',
-            uint256(uint160(creator)).toHexString(20),
+            '","external_url":"',
+            externalUri,
             '","description":"',
             description,
             '","attributes":['
         );
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
-            IAssetCollection.Attribute memory attribute = attributes[i];
+            IPartCollection.Attribute memory attribute = attributes[i];
             metadata = abi.encodePacked(
                 metadata,
                 '{"trait_type":"',

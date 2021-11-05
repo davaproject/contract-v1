@@ -1,25 +1,25 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
+import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {OnchainMetadata} from "../libraries/OnchainMetadata.sol";
 
 contract TestOnchainMetadata {
     function toMetadata(
         string memory name,
-        address creator,
         string memory description,
         string[] memory imgURIs,
         string memory externalImgUri,
-        IAssetCollection.Attribute[] memory attributes
+        string memory externalUri,
+        IPartCollection.Attribute[] memory attributes
     ) external pure returns (string memory) {
         return
             OnchainMetadata.toMetadata(
                 name,
-                creator,
                 description,
                 imgURIs,
                 externalImgUri,
+                externalUri,
                 attributes
             );
     }

@@ -6,8 +6,9 @@ import { Dava, DavaOfficial } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { createImage, createImageUri } from "./utils/image";
-import { assetType } from "./utils/asset";
+import { partType } from "./utils/part";
 import { checkChange } from "./utils/compare";
+import { generatePartMetadataString } from "./utils/metadata";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -21,16 +22,16 @@ describe("DavaOfficial", () => {
   let background: { tokenId: number; url: string };
   let foreground: { tokenId: number; url: string };
 
-  const testAssetType = {
+  const testPartType = {
     backgroundImageTokenId: 0,
     foregroundImageTokenId: 0,
-    name: "testAsset0123",
+    name: "testPart0123",
     zIndex: 10,
   };
-  const testAssets = new Array(2).fill(null).map((_, i) => ({
+  const testParts = new Array(2).fill(null).map((_, i) => ({
     tokenId: 0,
-    assetType: assetType(testAssetType.name),
-    title: `new asset ${i}`,
+    partType: partType(testPartType.name),
+    title: `new part ${i}`,
     creator: ethers.Wallet.createRandom().address,
     description: `new description ${i}`,
     uri: `http://test.com/${i}`,
@@ -40,29 +41,28 @@ describe("DavaOfficial", () => {
 
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
-    const { contracts, assets } = await fixtures();
-    davaOfficial = contracts.assets.davaOfficial;
+    const { contracts, parts } = await fixtures();
+    davaOfficial = contracts.parts.davaOfficial;
     dava = contracts.dava;
-    ({ host } = assets);
-    ({ background, foreground } = assets.defaultAsset);
-    testAssetType.backgroundImageTokenId = background.tokenId;
-    testAssetType.foregroundImageTokenId = foreground.tokenId;
+    ({ host } = parts);
+    ({ background, foreground } = parts.defaultPart);
+    testPartType.backgroundImageTokenId = background.tokenId;
+    testPartType.foregroundImageTokenId = foreground.tokenId;
 
-    await davaOfficial.createAssetType(
-      testAssetType.name,
-      testAssetType.backgroundImageTokenId,
-      testAssetType.foregroundImageTokenId,
-      testAssetType.zIndex
+    await davaOfficial.createPartType(
+      testPartType.name,
+      testPartType.backgroundImageTokenId,
+      testPartType.foregroundImageTokenId,
+      testPartType.zIndex
     );
-    await testAssets.reduce(
+    await testParts.reduce(
       (acc, v) =>
         acc.then(async () => {
-          const tokenId = (await davaOfficial.numberOfAssets()).toNumber();
+          const tokenId = (await davaOfficial.numberOfParts()).toNumber();
           v.tokenId = tokenId;
-          await davaOfficial.createAsset(
-            v.assetType,
+          await davaOfficial.createPart(
+            v.partType,
             v.title,
-            v.creator,
             v.description,
             v.uri,
             v.attributes,
@@ -115,7 +115,7 @@ describe("DavaOfficial", () => {
         await expect(
           davaOfficial
             .connect(nonMinter)
-            .mint(nonMinter.address, testAssets[0].tokenId, 1, "0x")
+            .mint(nonMinter.address, testParts[0].tokenId, 1, "0x")
         ).to.be.reverted;
       });
 
@@ -123,25 +123,25 @@ describe("DavaOfficial", () => {
         await expect(
           davaOfficial.mint(
             deployer.address,
-            testAssets[0].tokenId,
-            testAssets[0].maxSupply + 1,
+            testParts[0].tokenId,
+            testParts[0].maxSupply + 1,
             "0x"
           )
-        ).to.be.revertedWith("Asset: Out of stock.");
+        ).to.be.revertedWith("Part: Out of stock.");
       });
     });
 
     it("mint proper amount of tokens", async () => {
       const receiver = accounts[1];
-      const targetAsset = testAssets[0];
+      const targetPart = testParts[0];
       const mintAmount = 5;
       await checkChange({
         status: () =>
-          davaOfficial.balanceOf(receiver.address, targetAsset.tokenId),
+          davaOfficial.balanceOf(receiver.address, targetPart.tokenId),
         process: () =>
           davaOfficial.mint(
             receiver.address,
-            targetAsset.tokenId,
+            targetPart.tokenId,
             mintAmount,
             "0x"
           ),
@@ -165,7 +165,7 @@ describe("DavaOfficial", () => {
         await expect(
           davaOfficial
             .connect(nonMinter)
-            .mintBatch(nonMinter.address, [testAssets[0].tokenId], [1], "0x")
+            .mintBatch(nonMinter.address, [testParts[0].tokenId], [1], "0x")
         ).to.be.reverted;
       });
 
@@ -173,11 +173,11 @@ describe("DavaOfficial", () => {
         await expect(
           davaOfficial.mintBatch(
             deployer.address,
-            [testAssets[0].tokenId],
-            [testAssets[0].maxSupply + 1],
+            [testParts[0].tokenId],
+            [testParts[0].maxSupply + 1],
             "0x"
           )
-        ).to.be.revertedWith("Asset: Out of stock.");
+        ).to.be.revertedWith("Part: Out of stock.");
       });
     });
 
@@ -188,12 +188,12 @@ describe("DavaOfficial", () => {
         status: () =>
           davaOfficial.balanceOfBatch(
             [receiver.address, receiver.address],
-            testAssets.map(({ tokenId }) => tokenId)
+            testParts.map(({ tokenId }) => tokenId)
           ),
         process: () =>
           davaOfficial.mintBatch(
             receiver.address,
-            testAssets.map(({ tokenId }) => tokenId),
+            testParts.map(({ tokenId }) => tokenId),
             mintAmounts,
             "0x"
           ),
@@ -210,83 +210,71 @@ describe("DavaOfficial", () => {
     });
 
     it("should return imageUri for existent token", async () => {
-      const targetAsset = testAssets[0];
-      const result = await davaOfficial.imageUri(targetAsset.tokenId);
-      expect(result).to.equal(targetAsset.uri);
+      const targetPart = testParts[0];
+      const result = await davaOfficial.imageUri(targetPart.tokenId);
+      expect(result).to.equal(targetPart.uri);
     });
   });
 
   describe("image", () => {
     it("should return image with SVG tag", async () => {
-      const targetAsset = testAssets[0];
-      const result = await davaOfficial.image(targetAsset.tokenId);
-      const expectedResult = createImage([targetAsset.uri]);
+      const targetPart = testParts[0];
+      const result = await davaOfficial.image(targetPart.tokenId);
+      const expectedResult = createImage([targetPart.uri]);
       expect(result).to.equal(expectedResult);
     });
   });
 
-  describe("getAllSupportedAssetTypes", () => {
-    it("should return all registered asset types", async () => {
-      const DEFAULT_ASSET_TYPE = await davaOfficial.DEFAULT_ASSET_TYPE();
+  describe("getAllSupportedPartTypes", () => {
+    it("should return all registered part types", async () => {
+      const DEFAULT_PART_TYPE = await davaOfficial.DEFAULT_PART_TYPE();
 
-      const result = await davaOfficial.getAllSupportedAssetTypes();
-      expect(result).to.eql([
-        DEFAULT_ASSET_TYPE,
-        assetType(testAssetType.name),
-      ]);
-    });
-  });
-
-  describe("creator", () => {
-    it("should return proper creator address", async () => {
-      const targetAsset = testAssets[0];
-      const result = await davaOfficial.creator(targetAsset.tokenId);
-
-      expect(result).to.equal(targetAsset.creator);
+      const result = await davaOfficial.getAllSupportedPartTypes();
+      expect(result).to.eql([DEFAULT_PART_TYPE, partType(testPartType.name)]);
     });
   });
 
   describe("maxSupply", () => {
     it("should return proper maxSupply", async () => {
-      const targetAsset = testAssets[0];
-      const result = await davaOfficial.maxSupply(targetAsset.tokenId);
+      const targetPart = testParts[0];
+      const result = await davaOfficial.maxSupply(targetPart.tokenId);
 
-      expect(result).to.equal(targetAsset.maxSupply);
+      expect(result).to.equal(targetPart.maxSupply);
     });
   });
 
-  describe("assetTypeTitle", () => {
-    it("should return proper assetTypeTitle", async () => {
-      const result = await davaOfficial.assetTypeTitle(testAssets[0].tokenId);
+  describe("partTypeTitle", () => {
+    it("should return proper partTypeTitle", async () => {
+      const result = await davaOfficial.partTypeTitle(testParts[0].tokenId);
 
-      expect(result).to.equal(testAssetType.name);
+      expect(result).to.equal(testPartType.name);
     });
   });
 
-  describe("assetTitle", () => {
-    it("should return proper assetTitle", async () => {
-      const targetAsset = testAssets[0];
-      const result = await davaOfficial.assetTitle(targetAsset.tokenId);
+  describe("partTitle", () => {
+    it("should return proper partTitle", async () => {
+      const targetPart = testParts[0];
+      const result = await davaOfficial.partTitle(targetPart.tokenId);
 
-      expect(result).to.equal(targetAsset.title);
+      expect(result).to.equal(targetPart.title);
     });
   });
 
-  describe("assetType", () => {
-    it("should return proper assetType", async () => {
-      const targetAsset = testAssets[0];
-      const result = await davaOfficial.assetType(targetAsset.tokenId);
+  describe("partType", () => {
+    it("should return proper partType", async () => {
+      const targetPart = testParts[0];
+      const result = await davaOfficial.partType(targetPart.tokenId);
 
-      expect(result).to.equal(targetAsset.assetType);
+      expect(result).to.equal(targetPart.partType);
     });
   });
 
   describe("zIndex", () => {
-    it("should return proper assetType", async () => {
-      const targetAsset = testAssets[0];
-      const result = await davaOfficial.zIndex(targetAsset.tokenId);
+    it("should return proper partType", async () => {
+      const targetPart = testParts[0];
+      const result = await davaOfficial.zIndex(targetPart.tokenId);
 
-      expect(result).to.equal(testAssetType.zIndex);
+      expect(result).to.equal(testPartType.zIndex);
     });
   });
 
@@ -312,38 +300,38 @@ describe("DavaOfficial", () => {
     });
   });
 
-  describe("assetTypeInfo", () => {
-    it("should return proper assetType information", async () => {
-      const result = await davaOfficial.assetTypeInfo(
-        assetType(testAssetType.name)
+  describe("partTypeInfo", () => {
+    it("should return proper partType information", async () => {
+      const result = await davaOfficial.partTypeInfo(
+        partType(testPartType.name)
       );
-      expect(result[0]).to.equal(testAssetType.name);
-      expect(result[1]).to.equal(testAssetType.backgroundImageTokenId);
-      expect(result[2]).to.equal(testAssetType.foregroundImageTokenId);
-      expect(result[3]).to.equal(testAssetType.zIndex);
+      expect(result[0]).to.equal(testPartType.name);
+      expect(result[1]).to.equal(testPartType.backgroundImageTokenId);
+      expect(result[2]).to.equal(testPartType.foregroundImageTokenId);
+      expect(result[3]).to.equal(testPartType.zIndex);
     });
   });
 
-  describe("createAssetType", () => {
-    it("create new assetType", async () => {
-      const newAssetType = {
-        name: "new asset type",
-        backgroundImageTokenId: testAssetType.backgroundImageTokenId,
-        foregroundImageTokenId: testAssetType.foregroundImageTokenId,
+  describe("createPartType", () => {
+    it("create new partType", async () => {
+      const newPartType = {
+        name: "new part type",
+        backgroundImageTokenId: testPartType.backgroundImageTokenId,
+        foregroundImageTokenId: testPartType.foregroundImageTokenId,
         zIndex: 99999,
       };
 
       await checkChange({
         status: async () => {
-          const amountOfAssetTypes = (
-            await davaOfficial.getAllSupportedAssetTypes()
+          const amountOfPartTypes = (
+            await davaOfficial.getAllSupportedPartTypes()
           ).length;
           const [name, backgroundImageTokenId, foregroundImageTokenId, zIndex] =
-            await davaOfficial.assetTypeInfo(assetType(newAssetType.name));
+            await davaOfficial.partTypeInfo(partType(newPartType.name));
 
           return {
-            amountOfAssetTypes,
-            assetTypeInfo: {
+            amountOfPartTypes,
+            partTypeInfo: {
               name,
               backgroundImageTokenId,
               foregroundImageTokenId,
@@ -352,15 +340,15 @@ describe("DavaOfficial", () => {
           };
         },
         process: () =>
-          davaOfficial.createAssetType(
-            newAssetType.name,
-            newAssetType.backgroundImageTokenId,
-            newAssetType.foregroundImageTokenId,
-            newAssetType.zIndex
+          davaOfficial.createPartType(
+            newPartType.name,
+            newPartType.backgroundImageTokenId,
+            newPartType.foregroundImageTokenId,
+            newPartType.zIndex
           ),
         expectedBefore: {
-          amountOfAssetTypes: 2,
-          assetTypeInfo: {
+          amountOfPartTypes: 2,
+          partTypeInfo: {
             name: "",
             backgroundImageTokenId: ethers.BigNumber.from(0),
             foregroundImageTokenId: ethers.BigNumber.from(0),
@@ -368,16 +356,16 @@ describe("DavaOfficial", () => {
           },
         },
         expectedAfter: {
-          amountOfAssetTypes: 3,
-          assetTypeInfo: {
-            name: newAssetType.name,
+          amountOfPartTypes: 3,
+          partTypeInfo: {
+            name: newPartType.name,
             backgroundImageTokenId: ethers.BigNumber.from(
-              newAssetType.backgroundImageTokenId
+              newPartType.backgroundImageTokenId
             ),
             foregroundImageTokenId: ethers.BigNumber.from(
-              newAssetType.foregroundImageTokenId
+              newPartType.foregroundImageTokenId
             ),
-            zIndex: ethers.BigNumber.from(newAssetType.zIndex),
+            zIndex: ethers.BigNumber.from(newPartType.zIndex),
           },
         },
       });
@@ -386,169 +374,157 @@ describe("DavaOfficial", () => {
     describe("should be reverted", () => {
       it("for already registered name", async () => {
         await expect(
-          davaOfficial.createAssetType(
-            testAssetType.name,
+          davaOfficial.createPartType(
+            testPartType.name,
             background.tokenId,
             foreground.tokenId,
             1000
           )
-        ).to.be.revertedWith("Asset: already exists assetType");
+        ).to.be.revertedWith("Part: already exists partType");
       });
 
       it("for already registered zIndex", async () => {
         await expect(
-          davaOfficial.createAssetType(
-            testAssetType.name + "123",
+          davaOfficial.createPartType(
+            testPartType.name + "123",
             background.tokenId,
             foreground.tokenId,
-            testAssetType.zIndex
+            testPartType.zIndex
           )
-        ).to.be.revertedWith("Asset: already used zIndex");
+        ).to.be.revertedWith("Part: already used zIndex");
       });
 
       it("for non existent background", async () => {
         await expect(
-          davaOfficial.createAssetType(
-            testAssetType.name + "123",
+          davaOfficial.createPartType(
+            testPartType.name + "123",
             background.tokenId + 100,
             foreground.tokenId + 100,
-            testAssetType.zIndex + 1
+            testPartType.zIndex + 1
           )
-        ).to.be.revertedWith("Asset: background image is not created");
+        ).to.be.revertedWith("Part: background image is not created");
       });
 
-      it("for non default asset as a background", async () => {
+      it("for non default part as a background", async () => {
         await expect(
-          davaOfficial.createAssetType(
-            testAssetType.name + "123",
-            testAssets[0].tokenId,
-            testAssets[1].tokenId,
-            testAssetType.zIndex + 1
+          davaOfficial.createPartType(
+            testPartType.name + "123",
+            testParts[0].tokenId,
+            testParts[1].tokenId,
+            testPartType.zIndex + 1
           )
-        ).to.be.revertedWith("Asset: background image is not created");
+        ).to.be.revertedWith("Part: background image is not created");
       });
     });
   });
 
-  describe("createAsset", () => {
-    const newAsset = {
-      assetType: assetType(testAssetType.name),
-      title: "new asset test",
+  describe("createPart", () => {
+    const newPart = {
+      partType: partType(testPartType.name),
+      title: "new part test",
       creator: ethers.Wallet.createRandom().address,
-      description: "create asset test",
+      description: "create part test",
       uri: "https://new.test.com/123",
       attributes: [{ trait_type: "tesKey", value: "testVal" }],
       maxSupply: 10,
     };
     let tokenId: number;
 
-    it("create asset", async () => {
-      tokenId = (await davaOfficial.numberOfAssets()).toNumber();
+    it("create part", async () => {
+      tokenId = (await davaOfficial.numberOfParts()).toNumber();
       await checkChange({
         status: async () => {
-          const numberOfAssets = (
-            await davaOfficial.numberOfAssets()
-          ).toNumber();
-          const maxTotalAssetSupply = (
-            await davaOfficial.maxTotalAssetSupply()
+          const numberOfParts = (await davaOfficial.numberOfParts()).toNumber();
+          const maxTotalPartSupply = (
+            await davaOfficial.maxTotalPartSupply()
           ).toNumber();
 
-          const assetType = await davaOfficial.assetType(tokenId);
-          const assetTitle = await davaOfficial.assetTitle(tokenId);
+          const partType = await davaOfficial.partType(tokenId);
+          const partTitle = await davaOfficial.partTitle(tokenId);
           const maxSupply = (await davaOfficial.maxSupply(tokenId)).toNumber();
-          const creator = await davaOfficial.creator(tokenId);
           const imageUri = await davaOfficial.imageUri(tokenId);
 
           return {
-            numberOfAssets,
-            maxTotalAssetSupply,
-            assetType,
-            assetTitle,
+            numberOfParts,
+            maxTotalPartSupply,
+            partType,
+            partTitle,
             maxSupply,
-            creator,
             imageUri,
           };
         },
         process: () =>
-          davaOfficial.createAsset(
-            newAsset.assetType,
-            newAsset.title,
-            newAsset.creator,
-            newAsset.description,
-            newAsset.uri,
-            newAsset.attributes,
-            newAsset.maxSupply
+          davaOfficial.createPart(
+            newPart.partType,
+            newPart.title,
+            newPart.description,
+            newPart.uri,
+            newPart.attributes,
+            newPart.maxSupply
           ),
         expectedBefore: {
-          numberOfAssets: 4,
-          maxTotalAssetSupply: 20,
-          assetType:
+          numberOfParts: 4,
+          maxTotalPartSupply: 20,
+          partType:
             "0x0000000000000000000000000000000000000000000000000000000000000000",
-          assetTitle: "",
+          partTitle: "",
           maxSupply: 0,
-          creator: ethers.constants.AddressZero,
           imageUri: "",
         },
         expectedAfter: {
-          numberOfAssets: 4 + 1,
-          maxTotalAssetSupply: 20 + newAsset.maxSupply,
-          assetType: newAsset.assetType,
-          assetTitle: newAsset.title,
-          maxSupply: newAsset.maxSupply,
-          creator: newAsset.creator,
-          imageUri: newAsset.uri,
+          numberOfParts: 4 + 1,
+          maxTotalPartSupply: 20 + newPart.maxSupply,
+          partType: newPart.partType,
+          partTitle: newPart.title,
+          maxSupply: newPart.maxSupply,
+          imageUri: newPart.uri,
         },
       });
     });
 
     describe("should be reverted", () => {
-      it("if defaultAsset has non zero maxSupply", async () => {
-        const defaultAssetType = await davaOfficial.DEFAULT_ASSET_TYPE();
+      it("if defaultPart has non zero maxSupply", async () => {
+        const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
         await expect(
-          davaOfficial.createAsset(
-            defaultAssetType,
-            newAsset.title,
-            newAsset.creator,
-            newAsset.description,
-            newAsset.uri,
-            newAsset.attributes,
-            newAsset.maxSupply
+          davaOfficial.createPart(
+            defaultPartType,
+            newPart.title,
+            newPart.description,
+            newPart.uri,
+            newPart.attributes,
+            newPart.maxSupply
           )
-        ).to.be.revertedWith(
-          "Asset: maxSupply of default asset should be zero"
-        );
+        ).to.be.revertedWith("Part: maxSupply of default part should be zero");
       });
 
       it("if maxSupply is zero", async () => {
         await expect(
-          davaOfficial.createAsset(
-            newAsset.assetType,
-            newAsset.title,
-            newAsset.creator,
-            newAsset.description,
-            newAsset.uri,
-            newAsset.attributes,
+          davaOfficial.createPart(
+            newPart.partType,
+            newPart.title,
+            newPart.description,
+            newPart.uri,
+            newPart.attributes,
             0
           )
-        ).to.be.revertedWith("Asset: maxSupply should be greater than zero");
+        ).to.be.revertedWith("Part: maxSupply should be greater than zero");
       });
 
-      it("if assetType does not exist", async () => {
+      it("if partType does not exist", async () => {
         const newCollectionType = ethers.utils.keccak256(
           ethers.utils.toUtf8Bytes(new Date().toString())
         );
 
         await expect(
-          davaOfficial.createAsset(
+          davaOfficial.createPart(
             newCollectionType,
-            newAsset.title,
-            newAsset.creator,
-            newAsset.description,
-            newAsset.uri,
-            newAsset.attributes,
-            newAsset.maxSupply
+            newPart.title,
+            newPart.description,
+            newPart.uri,
+            newPart.attributes,
+            newPart.maxSupply
           )
-        ).to.be.revertedWith("Asset: non existent assetType");
+        ).to.be.revertedWith("Part: non existent partType");
       });
     });
   });
@@ -557,12 +533,9 @@ describe("DavaOfficial", () => {
     const collectionName = "test";
     const zIndex = 1;
 
-    const assetInfo = {
-      collectionType: ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(collectionName)
-      ),
+    const partInfo = {
+      collectionType: partType(collectionName),
       title: "testTitle",
-      creator: ethers.Wallet.createRandom().address,
       description: "testDescription",
       uri: "https://test.com",
       attributes: [
@@ -581,40 +554,34 @@ describe("DavaOfficial", () => {
     let tokenId: number;
 
     beforeEach(async () => {
-      await davaOfficial.createAssetType(
+      await davaOfficial.createPartType(
         collectionName,
         background.tokenId,
         foreground.tokenId,
         zIndex
       );
-      tokenId = await (await davaOfficial.numberOfAssets()).toNumber();
-      await davaOfficial.createAsset(
-        assetInfo.collectionType,
-        assetInfo.title,
-        assetInfo.creator,
-        assetInfo.description,
-        assetInfo.uri,
-        assetInfo.attributes,
-        assetInfo.maxSupply
+      tokenId = await (await davaOfficial.numberOfParts()).toNumber();
+      await davaOfficial.createPart(
+        partInfo.collectionType,
+        partInfo.title,
+        partInfo.description,
+        partInfo.uri,
+        partInfo.attributes,
+        partInfo.maxSupply
       );
       await davaOfficial.mint(deployer.address, tokenId, 1, "0x");
     });
 
     it("should return expected metadata", async () => {
       const davaOfficialAddress = davaOfficial.address.toLowerCase();
-      const metaData = {
-        name: assetInfo.title,
-        creator: assetInfo.creator.toLowerCase(),
-        description: assetInfo.description,
-        attributes: [
-          ...assetInfo.attributes,
-          { trait_type: "MAX SUPPLY", value: `${assetInfo.maxSupply}` },
-          { trait_type: "COLLECTION", value: collectionName },
-        ],
-        raw_image:
+      const expectedResult = generatePartMetadataString({
+        name: partInfo.title,
+        description: partInfo.description,
+        attributes: partInfo.attributes,
+        rawImage:
           "data:image/svg+xml;utf8," +
-          createImage([background.url, assetInfo.uri, foreground.url]),
-        image: createImageUri({
+          createImage([background.url, partInfo.uri, foreground.url]),
+        imageUri: createImageUri({
           host: "https://api.davaproject.com",
           layers: [
             { address: davaOfficialAddress, tokenId: background.tokenId },
@@ -622,10 +589,13 @@ describe("DavaOfficial", () => {
             { address: davaOfficialAddress, tokenId: foreground.tokenId },
           ],
         }),
-      };
+        collection: davaOfficial.address,
+        tokenId: `${tokenId}`,
+        maxSupply: partInfo.maxSupply.toString(),
+        type: collectionName,
+        host,
+      });
 
-      const expectedResult =
-        "data:application/json;utf8," + JSON.stringify(metaData);
       const result = await davaOfficial.uri(tokenId);
       expect(result).to.equal(expectedResult);
     });

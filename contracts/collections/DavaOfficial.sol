@@ -1,11 +1,11 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import {AssetCollection} from "../libraries/AssetCollection.sol";
+import {PartCollection} from "../libraries/PartCollection.sol";
 
-contract DavaOfficial is AssetCollection {
+contract DavaOfficial is PartCollection {
     constructor(string memory baseURI_, address dava_)
-        AssetCollection(baseURI_, dava_)
+        PartCollection(baseURI_, dava_)
     {}
 
     function name() public pure returns (string memory) {

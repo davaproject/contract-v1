@@ -4,23 +4,22 @@ pragma abicoder v2;
 
 import {IERC1155} from "@openzeppelin/contracts/interfaces/IERC1155.sol";
 
-interface IAssetCollection is IERC1155 {
+interface IPartCollection is IERC1155 {
     struct Attribute {
         string trait_type;
         string value;
     }
 
-    function createAsset(
-        bytes32 collectionType_,
+    function createPart(
+        bytes32 partType_,
         string memory title_,
-        address creator_,
         string memory description_,
         string memory uri_,
         Attribute[] memory attributes_,
         uint256 maxSupply_
     ) external;
 
-    function createAssetType(
+    function createPartType(
         string memory name_,
         uint256 backgroundImageTokenId_,
         uint256 foregroundImageTokenId_,
@@ -29,7 +28,7 @@ interface IAssetCollection is IERC1155 {
 
     function dava() external view returns (address);
 
-    function numberOfAssets() external view returns (uint256);
+    function numberOfParts() external view returns (uint256);
 
     function description(uint256 tokenId) external view returns (string memory);
 
@@ -37,7 +36,7 @@ interface IAssetCollection is IERC1155 {
 
     function zIndex(uint256 tokenId_) external view returns (uint256);
 
-    function assetTypeInfo(bytes32 assetType_)
+    function partTypeInfo(bytes32 partType_)
         external
         view
         returns (
@@ -47,16 +46,14 @@ interface IAssetCollection is IERC1155 {
             uint256 zIndex_
         );
 
-    function assetType(uint256 tokenId_) external view returns (bytes32);
+    function partType(uint256 tokenId_) external view returns (bytes32);
 
-    function assetTypeTitle(uint256 tokenId_)
+    function partTypeTitle(uint256 tokenId_)
         external
         view
         returns (string memory);
 
-    function assetTitle(uint256 tokenId_) external view returns (string memory);
-
-    function creator(uint256 tokenId_) external view returns (address);
+    function partTitle(uint256 tokenId_) external view returns (string memory);
 
     function image(uint256 tokenId_) external view returns (string memory);
 

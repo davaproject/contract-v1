@@ -9,45 +9,44 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import {IAssetCollection} from "../interfaces/IAssetCollection.sol";
+import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {IAvatar} from "../interfaces/IAvatar.sol";
 import {OnchainMetadata} from "./OnchainMetadata.sol";
 import {URICompiler} from "./URICompiler.sol";
 
-struct AssetInfo {
+struct PartInfo {
     mapping(uint256 => string) titles;
-    mapping(uint256 => address) creators;
     mapping(uint256 => string) descriptions;
     mapping(uint256 => string) imgURIs;
     mapping(uint256 => uint256) maxSupply;
-    mapping(uint256 => IAssetCollection.Attribute[]) attributes;
-    mapping(uint256 => bytes32) assetTypes;
+    mapping(uint256 => IPartCollection.Attribute[]) attributes;
+    mapping(uint256 => bytes32) types;
 }
 
 struct CollectionInfo {
-    // collection type => zIndex
+    // part type => zIndex
     mapping(bytes32 => uint256) zIndex;
-    // collection type => name
-    mapping(bytes32 => string) name;
-    // collection type => current contract tokenId
-    mapping(bytes32 => uint256) backgroundImageAsset;
-    // collection type => current contract tokenId
-    mapping(bytes32 => uint256) foregroundImageAsset;
+    // part type => title
+    mapping(bytes32 => string) titles;
+    // part type => current contract tokenId
+    mapping(bytes32 => uint256) backgroundImagePart;
+    // part type => current contract tokenId
+    mapping(bytes32 => uint256) foregroundImagePart;
     // zIndex => bool
     mapping(uint256 => bool) zIndexExists;
 }
 
-abstract contract AssetCollection is
+abstract contract PartCollection is
     AccessControl,
     Ownable,
     ERC1155Supply,
-    IAssetCollection
+    IPartCollection
 {
     using Strings for uint256;
     using Address for address;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
-    bytes32 public constant DEFAULT_ASSET_TYPE = keccak256("DEFAULT_ASSET");
+    bytes32 public constant DEFAULT_PART_TYPE = keccak256("DEFAULT_PART");
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
@@ -56,16 +55,16 @@ abstract contract AssetCollection is
 
     string public baseURI;
 
-    AssetInfo private _assetInfo;
+    PartInfo private _partInfo;
     CollectionInfo private _collectionInfo;
-    uint256 public override numberOfAssets;
+    uint256 public override numberOfParts;
 
-    uint256 public maxTotalAssetSupply = 0;
-    uint256 public totalAssetSupply = 0;
+    uint256 public maxTotalPartSupply = 0;
+    uint256 public totalPartSupply = 0;
 
-    EnumerableSet.Bytes32Set private _supportedAssetTypes;
+    EnumerableSet.Bytes32Set private _supportedPartTypes;
 
-    event AssetCreated(uint256 assetId);
+    event PartCreated(uint256 partId);
 
     constructor(string memory baseURI_, address dava_) ERC1155("") Ownable() {
         baseURI = baseURI_;
@@ -77,91 +76,87 @@ abstract contract AssetCollection is
         _setupRole(CREATOR_ROLE, msg.sender);
         _setRoleAdmin(CREATOR_ROLE, DEFAULT_ADMIN_ROLE);
 
-        _supportedAssetTypes.add(DEFAULT_ASSET_TYPE);
+        _supportedPartTypes.add(DEFAULT_PART_TYPE);
     }
 
     function setBaseURI(string memory baseURI_) external onlyOwner {
         baseURI = baseURI_;
     }
 
-    function createAsset(
-        bytes32 assetType_,
+    function createPart(
+        bytes32 partType_,
         string memory title_,
-        address creator_,
         string memory description_,
         string memory uri_,
         Attribute[] memory attributes,
         uint256 maxSupply_
     ) public virtual override onlyRole(CREATOR_ROLE) {
-        uint256 tokenId = numberOfAssets;
-        _assetInfo.titles[tokenId] = title_;
-        _assetInfo.creators[tokenId] = creator_;
-        _assetInfo.descriptions[tokenId] = description_;
-        _assetInfo.imgURIs[tokenId] = uri_;
-        _assetInfo.maxSupply[tokenId] = maxSupply_;
+        uint256 tokenId = numberOfParts;
+        _partInfo.titles[tokenId] = title_;
+        _partInfo.descriptions[tokenId] = description_;
+        _partInfo.imgURIs[tokenId] = uri_;
+        _partInfo.maxSupply[tokenId] = maxSupply_;
 
-        // default asset
+        // default part
         require(
-            _supportedAssetTypes.contains(assetType_),
-            "Asset: non existent assetType"
+            _supportedPartTypes.contains(partType_),
+            "Part: non existent partType"
         );
-        if (assetType_ == DEFAULT_ASSET_TYPE) {
+        if (partType_ == DEFAULT_PART_TYPE) {
             require(
                 maxSupply_ == 0,
-                "Asset: maxSupply of default asset should be zero"
+                "Part: maxSupply of default part should be zero"
             );
         } else {
             require(
                 maxSupply_ != 0,
-                "Asset: maxSupply should be greater than zero"
+                "Part: maxSupply should be greater than zero"
             );
-            emit AssetCreated(tokenId);
+            emit PartCreated(tokenId);
         }
-        _assetInfo.assetTypes[tokenId] = assetType_;
+        _partInfo.types[tokenId] = partType_;
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
-            _assetInfo.attributes[tokenId].push(attributes[i]);
+            _partInfo.attributes[tokenId].push(attributes[i]);
         }
 
-        numberOfAssets += 1;
-        maxTotalAssetSupply += maxSupply_;
+        numberOfParts += 1;
+        maxTotalPartSupply += maxSupply_;
     }
 
-    function createAssetType(
-        string memory name_,
+    function createPartType(
+        string memory title_,
         uint256 backgroundImageTokenId_,
         uint256 foregroundImageTokenId_,
         uint256 zIndex_
     ) public virtual override onlyRole(CREATOR_ROLE) {
-        bytes32 _assetType = keccak256(abi.encodePacked(name_));
+        bytes32 _partType = keccak256(abi.encodePacked(title_));
         require(
-            !_supportedAssetTypes.contains(_assetType),
-            "Asset: already exists assetType"
+            !_supportedPartTypes.contains(_partType),
+            "Part: already exists partType"
         );
         require(
             !_collectionInfo.zIndexExists[zIndex_],
-            "Asset: already used zIndex"
+            "Part: already used zIndex"
         );
 
         require(
-            _assetInfo.assetTypes[backgroundImageTokenId_] ==
-                DEFAULT_ASSET_TYPE &&
-                _assetInfo.assetTypes[foregroundImageTokenId_] ==
-                DEFAULT_ASSET_TYPE,
-            "Asset: background image is not created"
+            _partInfo.types[backgroundImageTokenId_] == DEFAULT_PART_TYPE &&
+                _partInfo.types[foregroundImageTokenId_] == DEFAULT_PART_TYPE,
+            "Part: background image is not created"
         );
 
-        _collectionInfo.zIndex[_assetType] = zIndex_;
-        _collectionInfo.name[_assetType] = name_;
-        _collectionInfo.backgroundImageAsset[
-            _assetType
+        _collectionInfo.zIndex[_partType] = zIndex_;
+        _collectionInfo.titles[_partType] = title_;
+        _collectionInfo.backgroundImagePart[
+            _partType
         ] = backgroundImageTokenId_;
-        _collectionInfo.foregroundImageAsset[
-            _assetType
+        _collectionInfo.foregroundImagePart[
+            _partType
         ] = foregroundImageTokenId_;
         _collectionInfo.zIndexExists[zIndex_] = true;
 
-        _supportedAssetTypes.add(_assetType);
+        _supportedPartTypes.add(_partType);
     }
 
     function mint(
@@ -172,10 +167,10 @@ abstract contract AssetCollection is
     ) public onlyRole(MINTER_ROLE) {
         require(
             totalSupply(id) + amount <= maxSupply(id),
-            "Asset: Out of stock."
+            "Part: Out of stock."
         );
 
-        totalAssetSupply += amount;
+        totalPartSupply += amount;
         return super._mint(account, id, amount, data);
     }
 
@@ -190,10 +185,10 @@ abstract contract AssetCollection is
             uint256 amount = amounts[i];
             require(
                 totalSupply(id) + amount <= maxSupply(id),
-                "Asset: Out of stock."
+                "Part: Out of stock."
             );
 
-            totalAssetSupply += amount;
+            totalPartSupply += amount;
         }
         return super._mintBatch(to, ids, amounts, data);
     }
@@ -202,22 +197,28 @@ abstract contract AssetCollection is
 
     function uri(uint256 tokenId) public view override returns (string memory) {
         string[] memory imgURIs = new string[](3);
-        uint256 backgroundTokenId = _collectionInfo.backgroundImageAsset[
-            _assetInfo.assetTypes[tokenId]
+        uint256 backgroundTokenId = _collectionInfo.backgroundImagePart[
+            _partInfo.types[tokenId]
         ];
-        uint256 foregroundTokenId = _collectionInfo.foregroundImageAsset[
-            _assetInfo.assetTypes[tokenId]
+        uint256 foregroundTokenId = _collectionInfo.foregroundImagePart[
+            _partInfo.types[tokenId]
         ];
 
-        imgURIs[0] = _assetInfo.imgURIs[backgroundTokenId];
-        imgURIs[1] = _assetInfo.imgURIs[tokenId];
-        imgURIs[2] = _assetInfo.imgURIs[foregroundTokenId];
+        imgURIs[0] = _partInfo.imgURIs[backgroundTokenId];
+        imgURIs[1] = _partInfo.imgURIs[tokenId];
+        imgURIs[2] = _partInfo.imgURIs[foregroundTokenId];
 
-        string[] memory params = new string[](1);
-        params[0] = "images";
+        string memory thisAddress = uint256(uint160(address(this))).toHexString(
+            20
+        );
+        string[] memory imgParams = new string[](1);
+        imgParams[0] = "images";
+        string[] memory infoParams = new string[](3);
+        infoParams[0] = "info";
+        infoParams[1] = thisAddress;
+        infoParams[2] = tokenId.toString();
+
         URICompiler.Query[] memory queries = new URICompiler.Query[](3);
-        string memory thisAddress = uint256(uint160(address(this)))
-            .toHexString();
         queries[0] = URICompiler.Query(
             thisAddress,
             backgroundTokenId.toString()
@@ -228,29 +229,33 @@ abstract contract AssetCollection is
             foregroundTokenId.toString()
         );
 
-        // assetInfo => maxSupply, collection name
+        // partInfo => maxSupply, collection title
         Attribute[] memory attributes = new Attribute[](
-            _assetInfo.attributes[tokenId].length + 2
+            _partInfo.attributes[tokenId].length + 2
         );
-        for (uint256 i = 0; i < _assetInfo.attributes[tokenId].length; i += 1) {
-            attributes[i] = _assetInfo.attributes[tokenId][i];
+        for (uint256 i = 0; i < _partInfo.attributes[tokenId].length; i += 1) {
+            attributes[i] = _partInfo.attributes[tokenId][i];
         }
-        attributes[_assetInfo.attributes[tokenId].length] = Attribute(
+        attributes[_partInfo.attributes[tokenId].length] = Attribute(
             "MAX SUPPLY",
-            _assetInfo.maxSupply[tokenId].toString()
+            _partInfo.maxSupply[tokenId].toString()
         );
-        attributes[_assetInfo.attributes[tokenId].length + 1] = Attribute(
-            "COLLECTION",
-            assetTypeTitle(tokenId)
+        attributes[_partInfo.attributes[tokenId].length + 1] = Attribute(
+            "TYPE",
+            partTypeTitle(tokenId)
         );
 
         return
             OnchainMetadata.toMetadata(
-                _assetInfo.titles[tokenId],
-                _assetInfo.creators[tokenId],
-                _assetInfo.descriptions[tokenId],
+                _partInfo.titles[tokenId],
+                _partInfo.descriptions[tokenId],
                 imgURIs,
-                URICompiler.getFullUri(baseURI, params, queries),
+                URICompiler.getFullUri(baseURI, imgParams, queries),
+                URICompiler.getFullUri(
+                    baseURI,
+                    infoParams,
+                    new URICompiler.Query[](0)
+                ),
                 attributes
             );
     }
@@ -261,7 +266,7 @@ abstract contract AssetCollection is
         override
         returns (string memory)
     {
-        return _assetInfo.descriptions[tokenId];
+        return _partInfo.descriptions[tokenId];
     }
 
     function imageUri(uint256 tokenId)
@@ -270,7 +275,7 @@ abstract contract AssetCollection is
         override
         returns (string memory)
     {
-        return _assetInfo.imgURIs[tokenId];
+        return _partInfo.imgURIs[tokenId];
     }
 
     function image(uint256 tokenId)
@@ -280,26 +285,12 @@ abstract contract AssetCollection is
         returns (string memory)
     {
         string[] memory imgURIs = new string[](1);
-        imgURIs[0] = _assetInfo.imgURIs[tokenId];
+        imgURIs[0] = _partInfo.imgURIs[tokenId];
         return OnchainMetadata.compileImages(imgURIs);
     }
 
-    function getAllSupportedAssetTypes()
-        public
-        view
-        returns (bytes32[] memory)
-    {
-        return _supportedAssetTypes.values();
-    }
-
-    function creator(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (address)
-    {
-        return _assetInfo.creators[tokenId];
+    function getAllSupportedPartTypes() public view returns (bytes32[] memory) {
+        return _supportedPartTypes.values();
     }
 
     function maxSupply(uint256 tokenId)
@@ -309,7 +300,7 @@ abstract contract AssetCollection is
         override
         returns (uint256)
     {
-        return _assetInfo.maxSupply[tokenId];
+        return _partInfo.maxSupply[tokenId];
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -320,55 +311,51 @@ abstract contract AssetCollection is
         returns (bool)
     {
         return
-            interfaceId == type(IAssetCollection).interfaceId ||
+            interfaceId == type(IPartCollection).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
-    function assetTypeTitle(uint256 tokenId)
+    function partTypeTitle(uint256 tokenId)
         public
         view
         override
         returns (string memory)
     {
-        bytes32 _assetType = _assetInfo.assetTypes[tokenId];
-        return _collectionInfo.name[_assetType];
+        bytes32 _partType = _partInfo.types[tokenId];
+        return _collectionInfo.titles[_partType];
     }
 
     /**
-     * @dev return registered asset title
+     * @dev return registered part title
      */
-    function assetTitle(uint256 tokenId)
+    function partTitle(uint256 tokenId)
         public
         view
         override
         returns (string memory)
     {
-        return _assetInfo.titles[tokenId];
+        return _partInfo.titles[tokenId];
     }
 
-    function assetTypeInfo(bytes32 assetType_)
+    function partTypeInfo(bytes32 partType_)
         public
         view
         override
         returns (
-            string memory name_,
+            string memory title_,
             uint256 backgroundImgTokenId_,
             uint256 foregroundImgTokenId_,
             uint256 zIndex_
         )
     {
-        name_ = _collectionInfo.name[assetType_];
-        backgroundImgTokenId_ = _collectionInfo.backgroundImageAsset[
-            assetType_
-        ];
-        foregroundImgTokenId_ = _collectionInfo.foregroundImageAsset[
-            assetType_
-        ];
-        zIndex_ = _collectionInfo.zIndex[assetType_];
+        title_ = _collectionInfo.titles[partType_];
+        backgroundImgTokenId_ = _collectionInfo.backgroundImagePart[partType_];
+        foregroundImgTokenId_ = _collectionInfo.foregroundImagePart[partType_];
+        zIndex_ = _collectionInfo.zIndex[partType_];
     }
 
-    function assetType(uint256 tokenId) public view override returns (bytes32) {
-        return _assetInfo.assetTypes[tokenId];
+    function partType(uint256 tokenId) public view override returns (bytes32) {
+        return _partInfo.types[tokenId];
     }
 
     /**
@@ -381,8 +368,8 @@ abstract contract AssetCollection is
         override
         returns (uint256)
     {
-        bytes32 _assetType = _assetInfo.assetTypes[tokenId];
-        uint256 zIndex_ = _collectionInfo.zIndex[_assetType];
+        bytes32 _partType = _partInfo.types[tokenId];
+        uint256 zIndex_ = _collectionInfo.zIndex[_partType];
         return zIndex_;
     }
 

@@ -16,10 +16,10 @@ describe("OnchainMetadata", () => {
   let onchainMetadata: TestOnchainMetadata;
   const data = {
     name: "test title",
-    creator: ethers.Wallet.createRandom().address.toLowerCase(),
     description: "test description",
     imgURIs: ["https://test.com/test1", "https://test.com/test2"],
     externalImgUri: "https://api.test.com/images",
+    externalUri: "https://api.test.com/info",
     attributes: [
       {
         trait_type: "trait1",
@@ -46,16 +46,15 @@ describe("OnchainMetadata", () => {
       it("with empty imgURIs", async () => {
         const result = await onchainMetadata.toMetadata(
           data.name,
-          data.creator,
           data.description,
           [],
           data.externalImgUri,
+          data.externalUri,
           data.attributes
         );
         const jsonResult = rawStringToJson(result);
 
         expect(jsonResult.name).to.eq(data.name);
-        expect(jsonResult.creator).to.eq(data.creator);
         expect(jsonResult.description).to.eq(data.description);
         expect(JSON.stringify(jsonResult.attributes)).to.eq(
           JSON.stringify(data.attributes)
@@ -67,16 +66,15 @@ describe("OnchainMetadata", () => {
       it("with empty attributes", async () => {
         const result = await onchainMetadata.toMetadata(
           data.name,
-          data.creator,
           data.description,
           data.imgURIs,
           data.externalImgUri,
+          data.externalUri,
           []
         );
         const jsonResult = rawStringToJson(result);
 
         expect(jsonResult.name).to.eq(data.name);
-        expect(jsonResult.creator).to.eq(data.creator);
         expect(jsonResult.description).to.eq(data.description);
         expect(JSON.stringify(jsonResult.attributes)).to.eq(JSON.stringify([]));
         expect(jsonResult.raw_image).to.contain(createImage(data.imgURIs));
@@ -86,16 +84,15 @@ describe("OnchainMetadata", () => {
       it("with all data", async () => {
         const result = await onchainMetadata.toMetadata(
           data.name,
-          data.creator,
           data.description,
           data.imgURIs,
           data.externalImgUri,
+          data.externalUri,
           data.attributes
         );
         const jsonResult = rawStringToJson(result);
 
         expect(jsonResult.name).to.eq(data.name);
-        expect(jsonResult.creator).to.eq(data.creator);
         expect(jsonResult.description).to.eq(data.description);
         expect(JSON.stringify(jsonResult.attributes)).to.eq(
           JSON.stringify(data.attributes)
