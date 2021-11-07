@@ -150,6 +150,11 @@ export const fixtures = async (): Promise<Fixture> => {
     0
   );
 
+  // Start deploying <RandomBox>
+  const RandomBoxContract = new RandomBox__factory(deployer);
+  const randomBox = await RandomBoxContract.deploy();
+  await randomBox.deployed();
+
   // Start deploying <Sale>
   const SaleContract = new Sale__factory(deployer);
   const now = (await ethers.provider.getBlock("latest")).timestamp;
@@ -158,6 +163,8 @@ export const fixtures = async (): Promise<Fixture> => {
   const publicStart = now + 3000;
   const sale = await SaleContract.deploy(
     dava.address,
+    davaOfficial.address,
+    randomBox.address,
     preStart,
     preEnd,
     publicStart
@@ -168,11 +175,6 @@ export const fixtures = async (): Promise<Fixture> => {
   const MINTER_ROLE = await dava.MINTER_ROLE();
   tx = await dava.grantRole(MINTER_ROLE, sale.address);
   await tx.wait(1);
-
-  // Start deploying <RandomBox>
-  const RandomBoxContract = new RandomBox__factory(deployer);
-  const randomBox = await RandomBoxContract.deploy();
-  await randomBox.deployed();
 
   return {
     contracts: {

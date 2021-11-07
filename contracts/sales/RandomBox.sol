@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "../interfaces/IRandomBox.sol";
+import "./IRandomBox.sol";
 
 contract RandomBox is IRandomBox, AccessControl {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
