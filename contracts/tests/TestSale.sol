@@ -29,6 +29,18 @@ contract TestSale is Sale {
 
     receive() external payable {}
 
+    function amountOfGroups(bytes3 partTypeGroup)
+        external
+        view
+        returns (uint256)
+    {
+        return _amountOfGroups[partTypeGroup];
+    }
+
+    function groups() external view returns (bytes3[] memory) {
+        return _groups;
+    }
+
     function partIds(bytes1 partTypeIndex)
         external
         view
@@ -43,20 +55,8 @@ contract TestSale is Sale {
         return partIds_;
     }
 
-    function processedPartDistInfo(bytes32 partData)
-        external
-        view
-        returns (bool)
-    {
-        return _processedPartDistInfo[partData];
-    }
-
-    function mintAvatarWithParts(uint256 avatarId, bytes32 partData) external {
-        _mintAvatarWithParts(avatarId, partData);
-    }
-
-    function mintParts(bytes1 partTypeIndex, address receiver) external {
-        _mintParts(partTypeIndex, receiver);
+    function mintAvatarWithParts(uint256 avatarId) external {
+        _mintAvatarWithParts(avatarId);
     }
 
     function verifyWhitelistSig(PreSaleReq calldata preSaleReq)
@@ -68,20 +68,7 @@ contract TestSale is Sale {
         return true;
     }
 
-    function verifyPartDistInfoSig(PartsReq calldata partsReq)
-        external
-        view
-        returns (bool)
-    {
-        _verifyPartDistInfoSig(partsReq);
-        return true;
-    }
-
-    function retrievePartTypeIndexes(bytes32 partData)
-        external
-        pure
-        returns (bytes1[] memory)
-    {
-        return _retrievePartTypeIndexes(partData);
+    function retrievePartIds() external returns (uint256[] memory) {
+        return _retrievePartIds();
     }
 }

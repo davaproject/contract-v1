@@ -9,10 +9,10 @@ import {IDava} from "../interfaces/IDava.sol";
 import {IRandomBox} from "./IRandomBox.sol";
 
 interface IPartCollection {
-    function mint(
+    function mintBatch(
         address account,
-        uint256 id,
-        uint256 amount,
+        uint256[] calldata partIds,
+        uint256[] calldata amounts,
         bytes memory data
     ) external;
 
@@ -26,9 +26,8 @@ contract Sale is EIP712, Ownable {
 
     bytes32 public constant WHITELIST_TYPE_HASH =
         keccak256("Whitelist(uint256 ticketAmount,address beneficiary)");
-    bytes32 public constant PARTS_TYPE_HASH =
-        keccak256("PartDistInfo(bytes32 rawData)");
 
+    uint256 public constant PARTS_PER_AVATAR = 3;
     uint256 public constant MAX_MINT_PER_TICKET = 3;
     uint256 public constant PRE_ALLOCATED_AMOUNT = 500;
 
@@ -49,8 +48,10 @@ contract Sale is EIP712, Ownable {
     mapping(address => uint256) public publicSaleMintAmountOf;
 
     // Parts
+    // 0x(partType1)(partType2)(partType3) => amount
+    mapping(bytes3 => uint256) internal _amountOfGroups;
+    bytes3[] internal _groups;
     mapping(bytes1 => EnumerableSet.UintSet) internal _partIds;
-    mapping(bytes32 => bool) internal _processedPartDistInfo;
 
     IDava public dava;
     IPartCollection public davaOfficial;
@@ -66,23 +67,6 @@ contract Sale is EIP712, Ownable {
         bytes32 rSig;
         bytes32 sSig;
         Whitelist whitelist;
-    }
-
-    /**
-        To reduce gas cost, partTypes consist of 2 big parts
-        1. partTypeIndexes in fist 3 bytes
-        2. Salt in remaining bytes
-        for example, 0x010ba00000....000000ab02
-     */
-    struct PartDistInfo {
-        bytes32 rawData;
-    }
-
-    struct PartsReq {
-        uint8 vSig;
-        bytes32 rSig;
-        bytes32 sSig;
-        PartDistInfo partDistInfo;
     }
 
     constructor(
@@ -121,6 +105,18 @@ contract Sale is EIP712, Ownable {
         _;
     }
 
+    function setPartGroups(
+        bytes3[] calldata partGroups,
+        uint256[] calldata amounts
+    ) external onlyOwner {
+        require(partGroups.length == amounts.length, "Sale: invalid arguments");
+
+        for (uint256 i = 0; i < partGroups.length; i += 1) {
+            _amountOfGroups[partGroups[i]] = amounts[i];
+            _groups.push(partGroups[i]);
+        }
+    }
+
     function setPartIds(bytes1 partTypeIndex, uint256[] calldata partIds)
         external
         onlyOwner
@@ -130,33 +126,25 @@ contract Sale is EIP712, Ownable {
         }
     }
 
-    function claim(address[] calldata recipients, bytes32[] calldata partData)
-        external
-        onlyOwner
-    {
-        require(
-            recipients.length == partData.length,
-            "Sale: invalid arguments"
-        );
+    function claim(address[] calldata recipients) external onlyOwner {
         require(
             totalClaimedAmount + recipients.length <= PRE_ALLOCATED_AMOUNT,
             "Sale: exceeds pre allocated mint amount"
         );
 
         for (uint256 i = 0; i < recipients.length; i++) {
-            _mintAvatarWithParts(totalClaimedAmount, partData[i]);
+            _mintAvatarWithParts(totalClaimedAmount);
 
             totalClaimedAmount += 1;
         }
     }
 
     // this is for public sale.
-    function mint(PartsReq[] calldata partsReqs)
+    function mint(uint256 purchaseAmount)
         external
         payable
         onlyDuringPublicSale
     {
-        uint256 purchaseAmount = partsReqs.length;
         require(!soldOut(), "Sale: sold out");
         require(
             purchaseAmount <=
@@ -168,21 +156,18 @@ contract Sale is EIP712, Ownable {
         publicSaleMintAmountOf[msg.sender] += purchaseAmount;
 
         for (uint256 i = 0; i < purchaseAmount; i += 1) {
-            _verifyPartDistInfoSig(partsReqs[i]);
-
             uint256 davaId = _getMintableId();
             totalPublicSaleAmount += 1;
 
-            _mintAvatarWithParts(davaId, partsReqs[i].partDistInfo.rawData);
+            _mintAvatarWithParts(davaId);
         }
     }
 
     // this is for pre sale.
     function mintWithWhitelist(
         PreSaleReq calldata preSaleReq,
-        PartsReq[] calldata partsReqs
+        uint256 purchaseAmount
     ) external payable onlyDuringPreSale {
-        uint256 purchaseAmount = partsReqs.length;
         require(
             msg.sender == preSaleReq.whitelist.beneficiary,
             "Sale: msg.sender is not whitelisted"
@@ -199,12 +184,10 @@ contract Sale is EIP712, Ownable {
         preSaleMintAmountOf[msg.sender] += purchaseAmount;
 
         for (uint256 i = 0; i < purchaseAmount; i += 1) {
-            _verifyPartDistInfoSig(partsReqs[i]);
-
             uint256 davaId = _getMintableId();
             totalPreSaleAmount += 1;
 
-            _mintAvatarWithParts(davaId, partsReqs[i].partDistInfo.rawData);
+            _mintAvatarWithParts(davaId);
         }
     }
 
@@ -213,45 +196,25 @@ contract Sale is EIP712, Ownable {
         receiver.transfer(amount);
     }
 
-    function _mintAvatarWithParts(uint256 avatarId, bytes32 partData) internal {
-        require(
-            !_processedPartDistInfo[partData],
-            "Sale: already used partDistInfo"
-        );
-        _processedPartDistInfo[partData] = true;
-
+    function _mintAvatarWithParts(uint256 avatarId) internal {
         dava.mint(address(this), avatarId);
         address avatar = dava.getAvatar(avatarId);
 
-        bytes1[] memory partTypeIndexes = _retrievePartTypeIndexes(partData);
+        uint256[] memory partIds = _retrievePartIds();
 
-        Part[] memory parts = new Part[](3);
-        for (uint256 i = 0; i < 3; i += 1) {
-            uint256 partId = _mintParts(partTypeIndexes[i], avatar);
-            parts[i] = Part(address(davaOfficial), partId);
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 1;
+        amounts[1] = 1;
+        amounts[2] = 1;
+        davaOfficial.mintBatch(avatar, partIds, amounts, "0x");
+
+        Part[] memory parts = new Part[](PARTS_PER_AVATAR);
+        for (uint256 i = 0; i < PARTS_PER_AVATAR; i += 1) {
+            parts[i] = Part(address(davaOfficial), partIds[i]);
         }
 
         IAvatar(avatar).dress(parts, new bytes32[](0));
         dava.transferFrom(address(this), msg.sender, avatarId);
-    }
-
-    function _mintParts(bytes1 partTypeIndex, address receiver)
-        internal
-        returns (uint256)
-    {
-        uint256 randomIndex = _randomBox.getRandomNumber(
-            _partIds[partTypeIndex].length()
-        );
-        uint256 partId = _partIds[partTypeIndex].at(randomIndex);
-        davaOfficial.mint(receiver, partId, 1, "0x");
-
-        if (
-            davaOfficial.totalSupply(partId) == davaOfficial.maxSupply(partId)
-        ) {
-            _partIds[partTypeIndex].remove(partId);
-        }
-
-        return partId;
     }
 
     function soldOut() public view returns (bool) {
@@ -281,33 +244,37 @@ contract Sale is EIP712, Ownable {
         require(signer == owner(), "Sale: invalid signature");
     }
 
-    function _verifyPartDistInfoSig(PartsReq calldata partsReq) internal view {
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(PARTS_TYPE_HASH, partsReq.partDistInfo.rawData)
-            )
-        );
+    function _retrievePartIds() internal returns (uint256[] memory) {
+        uint256 randomIndex = _randomBox.getRandomNumber(_groups.length);
+        bytes3 group = _groups[randomIndex];
+        _amountOfGroups[group] -= 1;
+        if (_amountOfGroups[group] == 0) {
+            if (randomIndex == _groups.length - 1) {
+                _groups.pop();
+            } else {
+                _groups[randomIndex] = _groups[_groups.length - 1];
+                _groups.pop();
+            }
+        }
 
-        address signer = ecrecover(
-            digest,
-            partsReq.vSig,
-            partsReq.rSig,
-            partsReq.sSig
-        );
-        require(signer == owner(), "Sale: invalid signature");
-    }
+        uint256[] memory partIds = new uint256[](PARTS_PER_AVATAR);
+        for (uint256 i = 0; i < PARTS_PER_AVATAR; i += 1) {
+            bytes1 partIndex = bytes1(group << (8 * i));
+            randomIndex = _randomBox.getRandomNumber(
+                _partIds[partIndex].length()
+            );
+            uint256 partId = (_partIds[partIndex].at(randomIndex));
+            partIds[i] = partId;
 
-    function _retrievePartTypeIndexes(bytes32 partData)
-        internal
-        pure
-        returns (bytes1[] memory)
-    {
-        bytes1[] memory partTypeIndexes = new bytes1[](3);
-        partTypeIndexes[0] = bytes1(partData);
-        partTypeIndexes[1] = bytes1(partData << 8);
-        partTypeIndexes[2] = bytes1(partData << 16);
+            if (
+                davaOfficial.totalSupply(partId) + 1 ==
+                davaOfficial.maxSupply(partId)
+            ) {
+                _partIds[partIndex].remove(partId);
+            }
+        }
 
-        return partTypeIndexes;
+        return partIds;
     }
 
     function _getMintableId() private view returns (uint256) {
