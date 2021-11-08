@@ -122,6 +122,18 @@
       }
     ]
   },
+  "sale": {
+    "mainnet": {
+      "presaleStartsAt": 1637107200,
+      "presaleEndsAt": 1637193600,
+      "mainsaleStartsAt": 1637366400
+    },
+    "rinkeby": {
+      "presaleStartsAt": 0,
+      "presaleEndsAt": 3272664127,
+      "mainsaleStartsAt": 0
+    }
+  },
   "contracts": {
     "minimalProxy": "",
     "dava": "",
