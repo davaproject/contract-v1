@@ -6,8 +6,6 @@ import {IDava} from "../interfaces/IDava.sol";
 import {Part} from "../interfaces/IAvatar.sol";
 import {AvatarBase} from "../libraries/AvatarBase.sol";
 
-import "hardhat/console.sol";
-
 contract TestAvatarV1 is AvatarBase {
     function receivePart(address collection, uint256 id) external {
         Part[] memory parts = new Part[](1);
