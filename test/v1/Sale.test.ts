@@ -13,7 +13,7 @@ import {
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { checkChange } from "./utils/compare";
-import { genPartsReqSig, genWhitelistSig } from "./utils/signature";
+import { genWhitelistSig } from "./utils/signature";
 import { partType } from "./utils/part";
 import { BigNumberish } from "@ethersproject/bignumber";
 
@@ -30,6 +30,7 @@ describe("Sale", () => {
   let sale: TestSale;
   let dava: Dava;
   let davaOfficial: DavaOfficial;
+  let randomBox: RandomBox;
   let [deployer, ...accounts]: SignerWithAddress[] = [];
 
   const partIds: { [partTypeIndex: number]: Array<number> } = {};
@@ -38,7 +39,6 @@ describe("Sale", () => {
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
     const { contracts } = await fixtures();
-    let randomBox: RandomBox;
     ({
       dava,
       randomBox,
@@ -88,6 +88,7 @@ describe("Sale", () => {
       partIds[i] = [partId];
       partInfo[i] = [partType(collectionName)];
     }
+    await sale.setPartGroups(["0x000102"], [1]);
   });
 
   beforeEach(async () => {
@@ -96,6 +97,42 @@ describe("Sale", () => {
 
   afterEach(async () => {
     await ethers.provider.send("evm_revert", [snapshot]);
+  });
+
+  describe("setPartGroups", () => {
+    it("should be reverted if partGroups and amounts length are unmatched", async () => {
+      await expect(
+        sale.setPartGroups(["0x000001", "0x000002"], [1, 1, 1])
+      ).to.be.revertedWith("Sale: invalid arguments");
+    });
+
+    it("should set amountOfGroups and groups correctly", async () => {
+      const registeredGroups = await sale.groups();
+      const partGroups = ["0x000001", "0x000002"];
+      const amounts = [100, 200];
+      await checkChange({
+        process: () => sale.setPartGroups(partGroups, amounts),
+        status: async () => {
+          const groups = await sale.groups();
+          const amountOfGroups = [
+            await sale.amountOfGroups(partGroups[0]),
+            await sale.amountOfGroups(partGroups[1]),
+          ];
+          return { groups, amountOfGroups };
+        },
+        expectedBefore: {
+          groups: [...registeredGroups],
+          amountOfGroups: [ethers.BigNumber.from(0), ethers.BigNumber.from(0)],
+        },
+        expectedAfter: {
+          groups: [...registeredGroups, ...partGroups],
+          amountOfGroups: [
+            ethers.BigNumber.from(amounts[0]),
+            ethers.BigNumber.from(amounts[1]),
+          ],
+        },
+      });
+    });
   });
 
   describe("setPartIds", () => {
@@ -113,22 +150,74 @@ describe("Sale", () => {
     });
   });
 
-  describe("_retrievePartTypeIndexes", () => {
-    it("should retrieve expected bytes", async () => {
-      const randomNumber = (maxNumber: number): number =>
-        Math.floor(Math.random() * maxNumber);
-      const bytes = [
-        randomNumber(2 ** 8),
-        randomNumber(2 ** 8),
-        randomNumber(2 ** 8),
-      ];
-      const bytes32 = [
-        ...bytes,
-        ...ethers.utils.randomBytes(32 - bytes.length),
-      ];
+  describe("_retrievePartIds", () => {
+    let newSale: TestSale;
+    let partIds: Array<number> = [];
+    let supplies = [1, 1, 2];
+    let groups = ["0a", "0b", "0c"];
 
-      const result = await sale.retrievePartTypeIndexes(bytes32);
-      expect(result).to.eql(bytes.map((dec) => ethers.utils.hexlify(dec)));
+    before(async () => {
+      const NewSale = new TestSale__factory(deployer);
+      newSale = await NewSale.deploy(
+        dava.address,
+        davaOfficial.address,
+        randomBox.address,
+        0,
+        99999999999,
+        0
+      );
+      await newSale.deployed();
+      await randomBox.grantRole(
+        await randomBox.OPERATOR_ROLE(),
+        newSale.address
+      );
+
+      const collectionName = `${Date.now()}`;
+      await davaOfficial.createPartType(collectionName, 0, 0, 99999);
+      await dava.registerPartType(partType(collectionName));
+
+      for (let i = 0; i < supplies.length; i += 1) {
+        const partId = await davaOfficial.numberOfParts();
+        partIds.push(partId.toNumber());
+        await davaOfficial.createPart(
+          partType(collectionName),
+          "TEST",
+          "TEST",
+          "TEST",
+          [],
+          supplies[i]
+        );
+        await newSale.setPartIds("0x" + groups[i], [partId]);
+      }
+      await newSale.setPartGroups(["0x" + groups.join("")], [1]);
+    });
+
+    it("should remove groups if amountOfGroups goes to zero", async () => {
+      await checkChange({
+        process: () => newSale.retrievePartIds(),
+        status: () =>
+          newSale
+            .amountOfGroups("0x" + groups.join(""))
+            .then((v) => v.toNumber()),
+        expectedBefore: 1,
+        expectedAfter: 0,
+      });
+    });
+
+    it("should remove partId from partIds if davaOfficial supply goes to zero", async () => {
+      await checkChange({
+        process: () => newSale.retrievePartIds(),
+        status: async () => {
+          const result = [];
+          for (let i = 0; i < partIds.length; i += 1) {
+            const partIds = await newSale.partIds("0x" + groups[i]);
+            result.push(partIds.map((v) => v.toNumber()));
+          }
+          return result;
+        },
+        expectedBefore: [[partIds[0]], [partIds[1]], [partIds[2]]],
+        expectedAfter: [[], [], [partIds[2]]],
+      });
     });
   });
 
@@ -266,39 +355,8 @@ describe("Sale", () => {
     });
   });
 
-  describe("_verifyPartDistInfoSig", () => {
-    it("should pass for valid signature", async () => {
-      const msg = {
-        rawData: ethers.utils.formatBytes32String("test"),
-      };
-      const sig = await genPartsReqSig({
-        signer: deployer,
-        domain: {
-          name: contractInfo.name,
-          version: contractInfo.version,
-          chainId: (await ethers.provider.getNetwork()).chainId,
-          verifyingContract: sale.address,
-        },
-        msg,
-      });
-
-      await expect(
-        sale.verifyPartDistInfoSig({
-          ...sig,
-          partDistInfo: msg,
-        })
-      ).not.to.be.reverted;
-    });
-  });
-
   describe("claim", () => {
     describe("should be reverted", () => {
-      it("if number of recipients and amount of partsData are different", async () => {
-        await expect(
-          sale.claim([ethers.Wallet.createRandom().address], [])
-        ).to.be.revertedWith("Sale: invalid arguments");
-      });
-
       it("if exceeds pre allocated amount", async () => {
         const PRE_ALLOCATED_AMOUNT = (
           await sale.PRE_ALLOCATED_AMOUNT()
@@ -310,28 +368,21 @@ describe("Sale", () => {
         const partData = new Array(PRE_ALLOCATED_AMOUNT + 1).fill(
           ethers.utils.randomBytes(32)
         );
-        await expect(sale.claim(recipients, partData)).to.be.revertedWith(
+        await expect(sale.claim(recipients)).to.be.revertedWith(
           "Sale: exceeds pre allocated mint amount"
         );
       });
 
       it("if part is out of stock", async () => {
         await expect(
-          sale.claim(
-            [deployer.address],
-            [[0, 0, 2, ...ethers.utils.randomBytes(29)]]
-          )
+          sale.claim([deployer.address, deployer.address])
         ).to.be.revertedWith("RandomBox: maxNumber should be greater than 0");
       });
     });
 
     it("should mint expected amount of avatar and parts", async () => {
       await checkChange({
-        process: () =>
-          sale.claim(
-            [deployer.address],
-            [[0, 1, 2, ...ethers.utils.randomBytes(29)]]
-          ),
+        process: () => sale.claim([deployer.address]),
         status: async () => {
           const avatarSupply = (await dava.totalSupply()).toNumber();
           const partsSupply = (await davaOfficial.totalPartSupply()).toNumber();
@@ -343,12 +394,11 @@ describe("Sale", () => {
     });
   });
 
-  describe("_mintParts", () => {
+  describe("_mintAvatarWithParts", () => {
     it("should remove outofstock partId from _partIds", async () => {
-      const receiver = ethers.Wallet.createRandom();
       const partTypeIndex = "0x00";
       await checkChange({
-        process: () => sale.mintParts(partTypeIndex, receiver.address),
+        process: () => sale.mintAvatarWithParts(0),
         status: () => sale.partIds(partTypeIndex).then((v) => v.length),
         expectedBefore: 1,
         expectedAfter: 0,
@@ -356,49 +406,31 @@ describe("Sale", () => {
     });
 
     it("should mint part successfully", async () => {
-      const receiver = ethers.Wallet.createRandom();
-      const index = 0;
-      const partTypeIndex = `0x0${index}`;
       await checkChange({
-        process: () => sale.mintParts(partTypeIndex, receiver.address),
-        status: () =>
-          davaOfficial
-            .balanceOf(receiver.address, partIds[index][0])
-            .then((v) => v.toNumber()),
-        expectedBefore: 0,
-        expectedAfter: 1,
-      });
-    });
-  });
-
-  describe("_mintAvatarWithParts", () => {
-    describe("should be reverted", () => {
-      it("if partDistInfo is used before", async () => {
-        const recipients = new Array(2)
-          .fill(null)
-          .map(() => ethers.Wallet.createRandom().address);
-        const partData = new Array(2).fill([
-          0,
-          1,
-          2,
-          ...ethers.utils.randomBytes(29),
-        ]);
-        await expect(sale.claim(recipients, partData)).to.be.revertedWith(
-          "Sale: already used partDistInfo"
-        );
+        process: () => sale.mintAvatarWithParts(0),
+        status: async () => {
+          try {
+            const avatar = await dava.getAvatar(0);
+            const balances = (
+              await davaOfficial.balanceOfBatch(
+                [avatar, avatar, avatar],
+                [partIds[0][0], partIds[1][0], partIds[2][0]]
+              )
+            ).map((v) => v.toNumber());
+            return balances;
+          } catch (e) {
+            return [0, 0, 0];
+          }
+        },
+        expectedBefore: [0, 0, 0],
+        expectedAfter: [1, 1, 1],
       });
     });
 
-    it("should mint expected parts", async () => {
+    it("should mint parts", async () => {
       const avatarId = await dava.totalSupply();
       await checkChange({
-        process: () =>
-          sale.mintAvatarWithParts(avatarId, [
-            0,
-            1,
-            2,
-            ...ethers.utils.randomBytes(29),
-          ]),
+        process: () => sale.mintAvatarWithParts(avatarId),
         status: async () => {
           const supplyOf0 = (
             await davaOfficial.totalSupply(partIds[0][0])
@@ -419,13 +451,7 @@ describe("Sale", () => {
     it("should set the owner properly", async () => {
       const avatarId = (await dava.totalSupply()).toNumber();
       await checkChange({
-        process: () =>
-          sale.mintAvatarWithParts(avatarId, [
-            0,
-            1,
-            2,
-            ...ethers.utils.randomBytes(29),
-          ]),
+        process: () => sale.mintAvatarWithParts(avatarId),
         status: async () => {
           let avatarOwner = ethers.constants.AddressZero;
           try {
@@ -453,13 +479,7 @@ describe("Sale", () => {
     it("should equip parts to the avatar", async () => {
       const avatarId = (await dava.totalSupply()).toNumber();
       await checkChange({
-        process: () =>
-          sale.mintAvatarWithParts(avatarId, [
-            0,
-            1,
-            2,
-            ...ethers.utils.randomBytes(29),
-          ]),
+        process: () => sale.mintAvatarWithParts(avatarId),
         status: async () => {
           try {
             const avatarAddress = await dava.getAvatar(avatarId);
@@ -489,12 +509,6 @@ describe("Sale", () => {
       sSig: string;
       whitelist: { ticketAmount: number; beneficiary: string };
     };
-    let partsReq: {
-      vSig: number;
-      rSig: string;
-      sSig: string;
-      partDistInfo: { rawData: string | Array<number> };
-    };
 
     before(async () => {
       beneficiary = accounts[1];
@@ -514,46 +528,26 @@ describe("Sale", () => {
         msg,
       });
       whitelistReq = { ...whitelistSignature, whitelist: msg };
-
-      const rawData = [0, 1, 2, ...ethers.utils.randomBytes(29)];
-      const partsReqSig = await genPartsReqSig({
-        signer: deployer,
-        domain,
-        msg: {
-          rawData,
-        },
-      });
-
-      partsReq = { ...partsReqSig, partDistInfo: { rawData } };
     });
 
     describe("should be reverted", () => {
       it("if msg.sender is not a beneficiary", async () => {
         await expect(
-          sale.connect(accounts[2]).mintWithWhitelist(whitelistReq, [partsReq])
+          sale.connect(accounts[2]).mintWithWhitelist(whitelistReq, 1)
         ).to.be.revertedWith("Sale: msg.sender is not whitelisted");
       });
 
       it("if exceeds signed ticket amount", async () => {
         await expect(
-          sale
-            .connect(beneficiary)
-            .mintWithWhitelist(whitelistReq, [
-              partsReq,
-              partsReq,
-              partsReq,
-              partsReq,
-            ])
+          sale.connect(beneficiary).mintWithWhitelist(whitelistReq, 4)
         ).to.be.revertedWith("Sale: exceeds assigned amount");
       });
 
       it("if msg.value is not enough", async () => {
         await expect(
-          sale
-            .connect(beneficiary)
-            .mintWithWhitelist(whitelistReq, [partsReq], {
-              value: ethers.utils.parseEther("0.01"),
-            })
+          sale.connect(beneficiary).mintWithWhitelist(whitelistReq, 1, {
+            value: ethers.utils.parseEther("0.01"),
+          })
         ).to.be.revertedWith("Sale: not enough eth");
       });
 
@@ -561,17 +555,7 @@ describe("Sale", () => {
         await expect(
           sale
             .connect(beneficiary)
-            .mintWithWhitelist({ ...whitelistReq, vSig: 9 }, [partsReq], {
-              value: ethers.utils.parseEther("1"),
-            })
-        ).to.be.revertedWith("Sale: invalid signature");
-      });
-
-      it("if partDistInfo signature is invalid", async () => {
-        await expect(
-          sale
-            .connect(beneficiary)
-            .mintWithWhitelist(whitelistReq, [{ ...partsReq, vSig: 9 }], {
+            .mintWithWhitelist({ ...whitelistReq, vSig: 9 }, 1, {
               value: ethers.utils.parseEther("1"),
             })
         ).to.be.revertedWith("Sale: invalid signature");
@@ -581,11 +565,9 @@ describe("Sale", () => {
     it("should mint proper amount of avatars", async () => {
       await checkChange({
         process: () =>
-          sale
-            .connect(beneficiary)
-            .mintWithWhitelist(whitelistReq, [partsReq], {
-              value: ethers.utils.parseEther("1"),
-            }),
+          sale.connect(beneficiary).mintWithWhitelist(whitelistReq, 1, {
+            value: ethers.utils.parseEther("1"),
+          }),
         status: () => dava.totalSupply().then((v) => v.toNumber()),
         expectedBefore: 0,
         expectedAfter: 1,
@@ -596,34 +578,10 @@ describe("Sale", () => {
   describe("mint", () => {
     let price: BigNumberish;
     let buyer: SignerWithAddress;
-    let partsReq: {
-      vSig: number;
-      rSig: string;
-      sSig: string;
-      partDistInfo: { rawData: string | Array<number> };
-    };
 
     before(async () => {
       price = await sale.PRICE();
       buyer = accounts[0];
-
-      const domain = {
-        name: contractInfo.name,
-        version: contractInfo.version,
-        chainId: (await ethers.provider.getNetwork()).chainId,
-        verifyingContract: sale.address,
-      };
-
-      const rawData = [0, 1, 2, ...ethers.utils.randomBytes(29)];
-      const partsReqSig = await genPartsReqSig({
-        signer: deployer,
-        domain,
-        msg: {
-          rawData,
-        },
-      });
-
-      partsReq = { ...partsReqSig, partDistInfo: { rawData } };
     });
 
     describe("should be reverted", () => {
@@ -633,7 +591,11 @@ describe("Sale", () => {
         ).toNumber();
 
         await expect(
-          sale.mint(new Array(MAX_MINT_PER_ACCOUNT + 1).fill(partsReq))
+          sale.mint(MAX_MINT_PER_ACCOUNT + 1, {
+            value: ethers.utils.parseEther(
+              `${(MAX_MINT_PER_ACCOUNT + 1) * 0.05}`
+            ),
+          })
         ).to.be.revertedWith(
           "Sale: can not purchase more than MAX_MINT_PER_ACCOUNT"
         );
@@ -641,15 +603,15 @@ describe("Sale", () => {
 
       it("if not enough eth is sent", async () => {
         const price = await sale.PRICE();
-        await expect(
-          sale.mint([partsReq], { value: price.sub(1) })
-        ).to.be.revertedWith("Sale: not enough eth");
+        await expect(sale.mint(1, { value: price.sub(1) })).to.be.revertedWith(
+          "Sale: not enough eth"
+        );
       });
     });
 
     it("should transfer eth", async () => {
       await checkChange({
-        process: () => sale.mint([partsReq], { value: price }),
+        process: () => sale.mint(1, { value: price }),
         status: () =>
           ethers.provider.getBalance(sale.address).then((v) => v.toString()),
         expectedBefore: "0",
@@ -662,8 +624,7 @@ describe("Sale", () => {
       const receiver = accounts[5];
 
       await checkChange({
-        process: () =>
-          sale.connect(receiver).mint([partsReq], { value: price }),
+        process: () => sale.connect(receiver).mint(1, { value: price }),
         status: async () => {
           const davaBalance = (
             await dava.balanceOf(receiver.address)
