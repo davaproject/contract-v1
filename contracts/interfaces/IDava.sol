@@ -2,12 +2,12 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {IERC721Enumerable} from "@openzeppelin/contracts/interfaces/IERC721Enumerable.sol";
+import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {Part} from "../interfaces/IAvatar.sol";
 
-interface IDava is IERC721Enumerable, IHost {
-    function mint(address to, uint256 id) external;
+interface IDava is IERC721, IHost {
+    function mint(address to, uint256 id) external returns (address);
 
     function registerCollection(address collection) external;
 
