@@ -33,6 +33,7 @@ contract Sale is EIP712, Ownable {
     uint256 public immutable PRE_SALE_OPENING_TIME;
     uint256 public immutable PRE_SALE_CLOSING_TIME;
     uint256 public immutable PUBLIC_SALE_OPENING_TIME;
+    uint256 public publicSaleClosingTime;
 
     // Supply
     uint16 private constant MAX_TOTAL_SUPPLY = 10000;
@@ -73,6 +74,7 @@ contract Sale is EIP712, Ownable {
         PRE_SALE_OPENING_TIME = presaleStart;
         PRE_SALE_CLOSING_TIME = presaleEnd;
         PUBLIC_SALE_OPENING_TIME = publicStart;
+        publicSaleClosingTime = 2**256 - 1;
     }
 
     modifier onlyDuringPreSale() {
@@ -92,7 +94,15 @@ contract Sale is EIP712, Ownable {
             block.timestamp >= PUBLIC_SALE_OPENING_TIME,
             "Sale: publicSale has not started yet"
         );
+        require(
+            block.timestamp <= publicSaleClosingTime,
+            "Sale: publicSale has ended"
+        );
         _;
+    }
+
+    function setPublicSaleClosingTime(uint256 closingTime_) external onlyOwner {
+        publicSaleClosingTime = closingTime_;
     }
 
     function claim(address[] calldata recipients) external onlyOwner {

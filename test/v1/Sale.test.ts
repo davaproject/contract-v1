@@ -108,6 +108,24 @@ describe("Sale", () => {
     await ethers.provider.send("evm_revert", [snapshot]);
   });
 
+  describe("setPublicSaleClosingTime", () => {
+    it("should be reverted if msg.sender is not the owner", async () => {
+      const nonOwner = accounts[5];
+      await expect(sale.connect(nonOwner).setPublicSaleClosingTime(1)).to.be
+        .reverted;
+    });
+
+    it("should set publicSaleClosingTime", async () => {
+      const closingTime = Math.floor(Date.now() / 10000);
+      await checkChange({
+        process: () => sale.setPublicSaleClosingTime(closingTime),
+        status: () => sale.publicSaleClosingTime(),
+        expectedBefore: ethers.BigNumber.from(2).pow(256).sub(1),
+        expectedAfter: ethers.BigNumber.from(closingTime),
+      });
+    });
+  });
+
   describe("_verifyWhitelistSig", () => {
     beforeEach(async () => {
       const owner = await sale.owner();
