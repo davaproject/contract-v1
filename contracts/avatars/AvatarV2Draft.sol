@@ -9,10 +9,6 @@ import {AvatarBase} from "../libraries/AvatarBase.sol";
 contract AvatarV2Draft is AvatarBase {
     using Strings for uint256;
 
-    function testChangeName(string memory val) public {
-        _props().name = val;
-    }
-
     function version() public pure override returns (string memory) {
         return "V2";
     }

@@ -11,7 +11,6 @@ import {Part} from "../interfaces/IAvatar.sol";
 
 struct Props {
     uint256 davaId;
-    string name;
     mapping(bytes32 => Part) parts;
 }
 

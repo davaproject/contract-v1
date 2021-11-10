@@ -4,16 +4,12 @@ pragma abicoder v2;
 
 struct Part {
     address collection;
-    uint256 id;
+    uint96 id;
 }
 
 interface IAvatar {
-    function setName(string memory name_) external;
-
     function dress(Part[] calldata partsOn, bytes32[] calldata partsOff)
         external;
-
-    function name() external view returns (string memory);
 
     function version() external view returns (string memory);
 

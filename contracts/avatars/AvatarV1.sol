@@ -64,7 +64,7 @@ contract AvatarV1 is AvatarBase {
 
                 queries[layerAmount] = URICompiler.Query(
                     uint256(uint160(parts[i].collection)).toHexString(20),
-                    parts[i].id.toString()
+                    uint256(parts[i].id).toString()
                 );
                 layers[layerAmount] = QuickSort.Layer(
                     layerAmount,
@@ -104,11 +104,16 @@ contract AvatarV1 is AvatarBase {
         string[] memory infoParams = new string[](3);
         infoParams[0] = "info";
         infoParams[1] = uint256(uint160(address(_dava))).toHexString(20);
-        infoParams[2] = _props().davaId.toString();
+        infoParams[2] = uint256(_props().davaId).toString();
 
         return
             OnchainMetadata.toMetadata(
-                name(),
+                string(
+                    abi.encodePacked(
+                        "DAVA #",
+                        uint256(_props().davaId).toString()
+                    )
+                ),
                 string(
                     abi.encodePacked(
                         "Genesis Avatar (",
