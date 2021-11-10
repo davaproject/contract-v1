@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import "hardhat/console.sol";
-
 contract RandomBox {
     bytes32[313] internal _aPartIds;
     bytes32[313] internal _bPartIds;

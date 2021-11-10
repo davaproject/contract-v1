@@ -334,7 +334,7 @@ describe("Dava", () => {
   describe("getAvatar", () => {
     it("should return proper avatar address", async () => {
       const owner = ethers.Wallet.createRandom().address;
-      const tokenId = await dava.totalSupply();
+      const tokenId = 0;
       await dava.mint(owner, tokenId);
       const avatarAddress = await dava.getAvatar(tokenId);
 
@@ -377,14 +377,14 @@ describe("Dava", () => {
 
   describe("tokenURI", () => {
     it("should be reverted for non-existent token", async () => {
-      const nextTokenId = await dava.totalSupply();
+      const nextTokenId = 0;
       await expect(dava.tokenURI(nextTokenId)).to.be.revertedWith(
         "ERC721Metadata: URI query for nonexistent token"
       );
     });
 
     it("should return the same result from Avatar::getMetadata", async () => {
-      const tokenId = await dava.totalSupply();
+      const tokenId = 0;
       await dava.mint(deployer.address, tokenId);
 
       const Avatar = new AvatarV1__factory(deployer);
@@ -399,14 +399,14 @@ describe("Dava", () => {
 
   describe("getPFP", () => {
     it("should be reverted for non-existent token", async () => {
-      const nextTokenId = await dava.totalSupply();
+      const nextTokenId = 0;
       await expect(dava.getPFP(nextTokenId)).to.be.revertedWith(
         "ERC721Metadata: URI query for nonexistent token"
       );
     });
 
     it("should return the same result from Avatar::getPFP", async () => {
-      const tokenId = await dava.totalSupply();
+      const tokenId = 0;
       await dava.mint(deployer.address, tokenId);
 
       const Avatar = new AvatarV1__factory(deployer);
@@ -524,14 +524,6 @@ describe("Dava", () => {
             []
           )
         ).to.be.revertedWith("Dava: owner does not hold the part");
-      });
-
-      it("if avatar owner try to take off unequipped part", async () => {
-        await expect(
-          dava
-            .connect(avatarOwner)
-            .zap(0, [], [partType(Date.now().toString())])
-        ).to.be.revertedWith("Avatar: nothing to take off");
       });
     });
 

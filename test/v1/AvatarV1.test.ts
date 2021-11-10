@@ -62,28 +62,6 @@ describe("Avatar", () => {
     await ethers.provider.send("evm_revert", [snapshot]);
   });
 
-  describe("setName", () => {
-    it("should set name", async () => {
-      const name = "test";
-      await checkChange({
-        status: () => mintedAvatar.name(),
-        process: () => mintedAvatar.setName(name),
-        expectedBefore: `DAVA #${mintedAvatarId}`,
-        expectedAfter: name,
-      });
-    });
-  });
-
-  describe("name", () => {
-    it("should return name", async () => {
-      const name = "test";
-      await mintedAvatar.setName(name);
-
-      const result = await mintedAvatar.name();
-      expect(result).to.equal(name);
-    });
-  });
-
   describe("owner", () => {
     it("should return DAVA token owner", async () => {
       const ownerOfDava = await dava.ownerOf(mintedAvatarId);
@@ -230,7 +208,7 @@ describe("Avatar", () => {
           })),
         });
         const expectedResult = generateAvatarMetadataString({
-          name: await mintedAvatar.name(),
+          name: `DAVA #${mintedAvatarId}`,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [],
           rawImage: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
@@ -395,7 +373,7 @@ describe("Avatar", () => {
           ],
         });
         const expectedResult = generateAvatarMetadataString({
-          name: await mintedAvatar.name(),
+          name: `DAVA #${mintedAvatarId}`,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
             ...layers.map(({ partTypeTitle, partTitle }) => ({
@@ -448,7 +426,7 @@ describe("Avatar", () => {
           ],
         });
         const expectedResult = generateAvatarMetadataString({
-          name: await mintedAvatar.name(),
+          name: `DAVA #${mintedAvatarId}`,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
             ...[layers[1], layers[2], layers[4]].map(
@@ -480,24 +458,26 @@ describe("Avatar", () => {
     let parts: Part[] = [];
 
     before(async () => {
-      await Promise.all(
-        [null, null].map(async (_, i) => {
-          const partTypeTitle = `test${Date.now()}${i}`;
-          await davaOfficial.createPartType(
-            partTypeTitle,
-            background.tokenId,
-            foreground.tokenId,
-            i + 1000
-          );
+      await [null, null].reduce(
+        (acc, _, i) =>
+          acc.then(async () => {
+            const partTypeTitle = `test${Date.now()}${i}`;
+            await davaOfficial.createPartType(
+              partTypeTitle,
+              background.tokenId,
+              foreground.tokenId,
+              i + 1000
+            );
 
-          const _partType = partType(partTypeTitle);
-          await dava.registerPartType(_partType);
+            const _partType = partType(partTypeTitle);
+            await dava.registerPartType(_partType);
 
-          const partId = (await davaOfficial.numberOfParts()).toNumber();
-          await davaOfficial.createPart(_partType, "", "", "", [], 10);
+            const partId = (await davaOfficial.numberOfParts()).toNumber();
+            await davaOfficial.createPart(_partType, "", "", "", [], 10);
 
-          parts.push({ partType: _partType, id: partId });
-        })
+            parts.push({ partType: _partType, id: partId });
+          }),
+        Promise.resolve()
       );
     });
 
@@ -510,20 +490,44 @@ describe("Avatar", () => {
           mintedAvatar.connect(nonOwner).dress([], [])
         ).to.be.revertedWith("Avatar: only owner or Dava can call this");
       });
+    });
 
-      it("if avatar does not hold the part", async () => {
-        await expect(
+    it("should success but should not show part image if avatar does not hold the part", async () => {
+      const targetPart = parts[0];
+      await davaOfficial.mint(
+        ethers.Wallet.createRandom().address,
+        targetPart.id,
+        1,
+        "0x"
+      );
+
+      await checkChange({
+        status: async () => {
+          const equippedPart = await mintedAvatar.part(targetPart.partType);
+
+          return {
+            collection: equippedPart.collection,
+            id: equippedPart.id.toNumber(),
+          };
+        },
+        process: () =>
           mintedAvatar.dress(
-            [{ collection: davaOfficial.address, id: parts[0].id }],
+            [
+              {
+                collection: davaOfficial.address,
+                id: targetPart.id,
+              },
+            ],
             []
-          )
-        ).to.be.revertedWith("Avatar: does not have the part.");
-      });
-
-      it("if avatar does not wear the part", async () => {
-        await expect(
-          mintedAvatar.dress([], [parts[0].partType])
-        ).to.be.revertedWith("Avatar: nothing to take off");
+          ),
+        expectedBefore: {
+          collection: ethers.constants.AddressZero,
+          id: 0,
+        },
+        expectedAfter: {
+          collection: ethers.constants.AddressZero,
+          id: 0,
+        },
       });
     });
 

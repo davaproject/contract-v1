@@ -435,10 +435,6 @@ describe("DavaOfficial", () => {
       await checkChange({
         status: async () => {
           const numberOfParts = (await davaOfficial.numberOfParts()).toNumber();
-          const maxTotalPartSupply = (
-            await davaOfficial.maxTotalPartSupply()
-          ).toNumber();
-
           const partType = await davaOfficial.partType(tokenId);
           const partTitle = await davaOfficial.partTitle(tokenId);
           const maxSupply = (await davaOfficial.maxSupply(tokenId)).toNumber();
@@ -446,7 +442,6 @@ describe("DavaOfficial", () => {
 
           return {
             numberOfParts,
-            maxTotalPartSupply,
             partType,
             partTitle,
             maxSupply,
@@ -464,7 +459,6 @@ describe("DavaOfficial", () => {
           ),
         expectedBefore: {
           numberOfParts: 4,
-          maxTotalPartSupply: 20,
           partType:
             "0x0000000000000000000000000000000000000000000000000000000000000000",
           partTitle: "",
@@ -473,7 +467,6 @@ describe("DavaOfficial", () => {
         },
         expectedAfter: {
           numberOfParts: 4 + 1,
-          maxTotalPartSupply: 20 + newPart.maxSupply,
           partType: newPart.partType,
           partTitle: newPart.title,
           maxSupply: newPart.maxSupply,
