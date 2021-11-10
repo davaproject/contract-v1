@@ -2,7 +2,8 @@
 pragma solidity >=0.8.0;
 
 interface IRandomBox {
-    function getRandomNumber(uint256 _maxNumber)
+    function getPartIds(uint256 index)
         external
-        returns (uint256 result);
+        view
+        returns (uint256[] memory partIds);
 }
