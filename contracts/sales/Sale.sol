@@ -9,16 +9,11 @@ import {IDava} from "../interfaces/IDava.sol";
 import {IRandomBox} from "./IRandomBox.sol";
 
 interface IPartCollection {
-    function mintBatch(
+    function unsafeMintBatch(
         address account,
         uint256[] calldata partIds,
-        uint256[] calldata amounts,
-        bytes memory data
+        uint256[] calldata amounts
     ) external;
-
-    function totalSupply(uint256 id) external view returns (uint256);
-
-    function maxSupply(uint256 id) external view returns (uint256);
 }
 
 contract Sale is EIP712, Ownable {
@@ -33,26 +28,21 @@ contract Sale is EIP712, Ownable {
 
     uint256 public constant PRICE = 0.05 ether;
     uint256 public constant MAX_MINT_PER_ACCOUNT = 30;
+    uint256 public constant MAX_MINT_PER_TX = 30;
 
     uint256 public immutable PRE_SALE_OPENING_TIME;
     uint256 public immutable PRE_SALE_CLOSING_TIME;
     uint256 public immutable PUBLIC_SALE_OPENING_TIME;
 
     // Supply
-    uint256 private constant MAX_TOTAL_SUPPLY = 10000;
-    uint256 public totalClaimedAmount = 0;
-    uint256 public totalPreSaleAmount = 0;
-    uint256 public totalPublicSaleAmount = 0;
+    uint16 private constant MAX_TOTAL_SUPPLY = 10000;
+    uint16 public totalClaimedAmount = 0;
+    uint16 public totalPreSaleAmount = 0;
+    uint16 public totalPublicSaleAmount = 0;
 
     mapping(address => uint256) public preSaleMintAmountOf;
-    mapping(address => uint256) public publicSaleMintAmountOf;
 
     // Parts
-    // 0x(partType1)(partType2)(partType3) => amount
-    mapping(bytes3 => uint256) internal _amountOfGroups;
-    bytes3[] internal _groups;
-    mapping(bytes1 => EnumerableSet.UintSet) internal _partIds;
-
     IDava public dava;
     IPartCollection public davaOfficial;
     IRandomBox private _randomBox;
@@ -105,38 +95,17 @@ contract Sale is EIP712, Ownable {
         _;
     }
 
-    function setPartGroups(
-        bytes3[] calldata partGroups,
-        uint256[] calldata amounts
-    ) external onlyOwner {
-        require(partGroups.length == amounts.length, "Sale: invalid arguments");
-
-        for (uint256 i = 0; i < partGroups.length; i += 1) {
-            _amountOfGroups[partGroups[i]] = amounts[i];
-            _groups.push(partGroups[i]);
-        }
-    }
-
-    function setPartIds(bytes1 partTypeIndex, uint256[] calldata partIds)
-        external
-        onlyOwner
-    {
-        for (uint256 i = 0; i < partIds.length; i += 1) {
-            _partIds[partTypeIndex].add(partIds[i]);
-        }
-    }
-
     function claim(address[] calldata recipients) external onlyOwner {
         require(
-            totalClaimedAmount + recipients.length <= PRE_ALLOCATED_AMOUNT,
+            totalClaimedAmount + uint16(recipients.length) <=
+                PRE_ALLOCATED_AMOUNT,
             "Sale: exceeds pre allocated mint amount"
         );
 
-        for (uint256 i = 0; i < recipients.length; i++) {
-            _mintAvatarWithParts(totalClaimedAmount);
-
-            totalClaimedAmount += 1;
+        for (uint16 i = 0; i < uint16(recipients.length); i++) {
+            _mintAvatarWithParts(totalClaimedAmount + i);
         }
+        totalClaimedAmount += uint16(recipients.length);
     }
 
     // this is for public sale.
@@ -147,20 +116,16 @@ contract Sale is EIP712, Ownable {
     {
         require(!soldOut(), "Sale: sold out");
         require(
-            purchaseAmount <=
-                MAX_MINT_PER_ACCOUNT - publicSaleMintAmountOf[msg.sender],
-            "Sale: can not purchase more than MAX_MINT_PER_ACCOUNT"
+            purchaseAmount <= MAX_MINT_PER_TX,
+            "Sale: can not purchase more than MAX_MINT_PER_TX"
         );
         _checkEthAmount(purchaseAmount, msg.value);
 
-        publicSaleMintAmountOf[msg.sender] += purchaseAmount;
-
-        for (uint256 i = 0; i < purchaseAmount; i += 1) {
-            uint256 davaId = _getMintableId();
-            totalPublicSaleAmount += 1;
-
-            _mintAvatarWithParts(davaId);
+        uint16 davaId = _getMintableId();
+        for (uint16 i = 0; i < uint16(purchaseAmount); i += 1) {
+            _mintAvatarWithParts(davaId + i);
         }
+        totalPublicSaleAmount += uint16(purchaseAmount);
     }
 
     // this is for pre sale.
@@ -183,12 +148,11 @@ contract Sale is EIP712, Ownable {
 
         preSaleMintAmountOf[msg.sender] += purchaseAmount;
 
-        for (uint256 i = 0; i < purchaseAmount; i += 1) {
-            uint256 davaId = _getMintableId();
-            totalPreSaleAmount += 1;
-
-            _mintAvatarWithParts(davaId);
+        uint16 davaId = _getMintableId();
+        for (uint16 i = 0; i < uint16(purchaseAmount); i += 1) {
+            _mintAvatarWithParts(davaId + i);
         }
+        totalPreSaleAmount += uint16(purchaseAmount);
     }
 
     function withdrawFunds(address payable receiver) external onlyOwner {
@@ -196,23 +160,20 @@ contract Sale is EIP712, Ownable {
         receiver.transfer(amount);
     }
 
-    function _mintAvatarWithParts(uint256 avatarId) internal {
-        dava.mint(address(this), avatarId);
-        address avatar = dava.getAvatar(avatarId);
+    function _mintAvatarWithParts(uint16 avatarId) internal {
+        address avatar = dava.mint(address(this), uint256(avatarId));
 
-        uint256[] memory partIds = _retrievePartIds();
-
+        uint256[] memory partIds = _randomBox.getPartIds(avatarId);
         uint256[] memory amounts = new uint256[](3);
         amounts[0] = 1;
         amounts[1] = 1;
         amounts[2] = 1;
-        davaOfficial.mintBatch(avatar, partIds, amounts, "0x");
 
+        davaOfficial.unsafeMintBatch(avatar, partIds, amounts);
         Part[] memory parts = new Part[](PARTS_PER_AVATAR);
         for (uint256 i = 0; i < PARTS_PER_AVATAR; i += 1) {
-            parts[i] = Part(address(davaOfficial), partIds[i]);
+            parts[i] = Part(address(davaOfficial), uint96(partIds[i]));
         }
-
         IAvatar(avatar).dress(parts, new bytes32[](0));
         dava.transferFrom(address(this), msg.sender, avatarId);
     }
@@ -220,7 +181,7 @@ contract Sale is EIP712, Ownable {
     function soldOut() public view returns (bool) {
         return (totalPreSaleAmount +
             totalPublicSaleAmount +
-            PRE_ALLOCATED_AMOUNT ==
+            uint160(PRE_ALLOCATED_AMOUNT) ==
             MAX_TOTAL_SUPPLY);
     }
 
@@ -244,41 +205,8 @@ contract Sale is EIP712, Ownable {
         require(signer == owner(), "Sale: invalid signature");
     }
 
-    function _retrievePartIds() internal returns (uint256[] memory) {
-        uint256 randomIndex = _randomBox.getRandomNumber(_groups.length);
-        bytes3 group = _groups[randomIndex];
-        _amountOfGroups[group] -= 1;
-        if (_amountOfGroups[group] == 0) {
-            if (randomIndex == _groups.length - 1) {
-                _groups.pop();
-            } else {
-                _groups[randomIndex] = _groups[_groups.length - 1];
-                _groups.pop();
-            }
-        }
-
-        uint256[] memory partIds = new uint256[](PARTS_PER_AVATAR);
-        for (uint256 i = 0; i < PARTS_PER_AVATAR; i += 1) {
-            bytes1 partIndex = bytes1(group << (8 * i));
-            randomIndex = _randomBox.getRandomNumber(
-                _partIds[partIndex].length()
-            );
-            uint256 partId = (_partIds[partIndex].at(randomIndex));
-            partIds[i] = partId;
-
-            if (
-                davaOfficial.totalSupply(partId) + 1 ==
-                davaOfficial.maxSupply(partId)
-            ) {
-                _partIds[partIndex].remove(partId);
-            }
-        }
-
-        return partIds;
-    }
-
-    function _getMintableId() private view returns (uint256) {
-        uint256 id = PRE_ALLOCATED_AMOUNT +
+    function _getMintableId() private view returns (uint16) {
+        uint16 id = uint16(PRE_ALLOCATED_AMOUNT) +
             totalPreSaleAmount +
             totalPublicSaleAmount;
         require(id < MAX_TOTAL_SUPPLY, "Sale: exceeds max supply");

@@ -29,33 +29,7 @@ contract TestSale is Sale {
 
     receive() external payable {}
 
-    function amountOfGroups(bytes3 partTypeGroup)
-        external
-        view
-        returns (uint256)
-    {
-        return _amountOfGroups[partTypeGroup];
-    }
-
-    function groups() external view returns (bytes3[] memory) {
-        return _groups;
-    }
-
-    function partIds(bytes1 partTypeIndex)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        uint256 amount = _partIds[partTypeIndex].length();
-        uint256[] memory partIds_ = new uint256[](amount);
-
-        for (uint256 i = 0; i < _partIds[partTypeIndex].length(); i += 1) {
-            partIds_[i] = _partIds[partTypeIndex].at(i);
-        }
-        return partIds_;
-    }
-
-    function mintAvatarWithParts(uint256 avatarId) external {
+    function mintAvatarWithParts(uint16 avatarId) external {
         _mintAvatarWithParts(avatarId);
     }
 
@@ -66,9 +40,5 @@ contract TestSale is Sale {
     {
         _verifyWhitelistSig(preSaleReq);
         return true;
-    }
-
-    function retrievePartIds() external returns (uint256[] memory) {
-        return _retrievePartIds();
     }
 }
