@@ -15,6 +15,8 @@ interface IAvatar {
 
     function dava() external view returns (address);
 
+    function davaId() external view returns (uint256);
+
     function part(bytes32 partType) external view returns (Part memory);
 
     function allParts() external view returns (Part[] memory parts);
@@ -22,4 +24,6 @@ interface IAvatar {
     function getPFP() external view returns (string memory);
 
     function getMetadata() external view returns (string memory);
+
+    function externalImgUri() external view returns (string memory);
 }

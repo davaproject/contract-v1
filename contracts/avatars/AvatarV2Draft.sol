@@ -32,4 +32,8 @@ contract AvatarV2Draft is AvatarBase {
                 )
             );
     }
+
+    function externalImgUri() external pure override returns (string memory) {
+        return "";
+    }
 }

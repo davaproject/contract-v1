@@ -24,4 +24,8 @@ contract TestAvatarV1 is AvatarBase {
     function getMetadata() external pure override returns (string memory) {
         return "";
     }
+
+    function externalImgUri() external pure override returns (string memory) {
+        return "";
+    }
 }

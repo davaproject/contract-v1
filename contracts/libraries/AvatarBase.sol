@@ -55,6 +55,10 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         return StorageSlot.getAddressSlot(DAVA_CONTRACT_SLOT).value;
     }
 
+    function davaId() public view override returns (uint256) {
+        return _props().davaId;
+    }
+
     function part(bytes32 partType) public view override returns (Part memory) {
         // Try to retrieve from the storage
         Part memory part_ = _props().parts[partType];

@@ -28,31 +28,11 @@ contract AvatarV1 is AvatarBase {
         IDava _dava = IDava(dava());
 
         Part[] memory parts = allParts();
-        address frameCollection = _dava.frameCollection();
-        IFrameCollection.Frame[] memory frames = IFrameCollection(
-            frameCollection
-        ).getAllFrames();
-
-        QuickSort.Layer[] memory layers = new QuickSort.Layer[](
-            parts.length + frames.length
-        );
 
         IPartCollection.Attribute[]
             memory attributes = new IPartCollection.Attribute[](parts.length);
-        URICompiler.Query[] memory queries = new URICompiler.Query[](
-            parts.length + frames.length
-        );
-
-        for (uint256 i = 0; i < frames.length; i += 1) {
-            queries[i] = URICompiler.Query(
-                uint256(uint160(frameCollection)).toHexString(20),
-                frames[i].id.toString()
-            );
-            layers[i] = QuickSort.Layer(i, frames[i].zIndex);
-        }
 
         uint256 wearingPartAmount = 0;
-        uint256 layerAmount = frames.length;
         for (uint256 i = 0; i < parts.length; i += 1) {
             if (parts[i].collection != address(0x0)) {
                 attributes[wearingPartAmount] = IPartCollection.Attribute(
@@ -61,33 +41,9 @@ contract AvatarV1 is AvatarBase {
                     ),
                     IPartCollection(parts[i].collection).partTitle(parts[i].id)
                 );
-
-                queries[layerAmount] = URICompiler.Query(
-                    uint256(uint160(parts[i].collection)).toHexString(20),
-                    uint256(parts[i].id).toString()
-                );
-                layers[layerAmount] = QuickSort.Layer(
-                    layerAmount,
-                    IPartCollection(parts[i].collection).zIndex(parts[i].id)
-                );
-                layerAmount += 1;
                 wearingPartAmount += 1;
             }
         }
-
-        if (layerAmount > 1) {
-            QuickSort.sort(layers, int256(0), int256(layerAmount - 1));
-        }
-        URICompiler.Query[] memory sortedQueries = new URICompiler.Query[](
-            layerAmount
-        );
-        for (uint256 i = 0; i < layerAmount; i += 1) {
-            sortedQueries[i] = queries[layers[i].value];
-        }
-
-        string memory baseURI = IHost(dava()).baseURI();
-        string[] memory imgParams = new string[](1);
-        imgParams[0] = "images";
 
         IPartCollection.Attribute[]
             memory wearingAttributes = new IPartCollection.Attribute[](
@@ -101,6 +57,7 @@ contract AvatarV1 is AvatarBase {
             uint256(uint160(address(this))).toHexString(20)
         );
 
+        string memory baseURI = IHost(dava()).baseURI();
         string[] memory infoParams = new string[](3);
         infoParams[0] = "info";
         infoParams[1] = uint256(uint160(address(_dava))).toHexString(20);
@@ -122,7 +79,7 @@ contract AvatarV1 is AvatarBase {
                     )
                 ),
                 _imgURIs(),
-                URICompiler.getFullUri(baseURI, imgParams, sortedQueries),
+                externalImgUri(),
                 URICompiler.getFullUri(
                     baseURI,
                     infoParams,
@@ -130,6 +87,63 @@ contract AvatarV1 is AvatarBase {
                 ),
                 wearingAttributes
             );
+    }
+
+    function externalImgUri() public view override returns (string memory) {
+        IDava _dava = IDava(dava());
+
+        Part[] memory parts = allParts();
+        address frameCollection = _dava.frameCollection();
+        IFrameCollection.Frame[] memory frames = IFrameCollection(
+            frameCollection
+        ).getAllFrames();
+
+        QuickSort.Layer[] memory layers = new QuickSort.Layer[](
+            parts.length + frames.length
+        );
+
+        URICompiler.Query[] memory queries = new URICompiler.Query[](
+            parts.length + frames.length
+        );
+
+        for (uint256 i = 0; i < frames.length; i += 1) {
+            queries[i] = URICompiler.Query(
+                uint256(uint160(frameCollection)).toHexString(20),
+                frames[i].id.toString()
+            );
+            layers[i] = QuickSort.Layer(i, frames[i].zIndex);
+        }
+
+        uint256 layerAmount = frames.length;
+        for (uint256 i = 0; i < parts.length; i += 1) {
+            if (parts[i].collection != address(0x0)) {
+                queries[layerAmount] = URICompiler.Query(
+                    uint256(uint160(parts[i].collection)).toHexString(20),
+                    uint256(parts[i].id).toString()
+                );
+                layers[layerAmount] = QuickSort.Layer(
+                    layerAmount,
+                    IPartCollection(parts[i].collection).zIndex(parts[i].id)
+                );
+                layerAmount += 1;
+            }
+        }
+
+        if (layerAmount > 1) {
+            QuickSort.sort(layers, int256(0), int256(layerAmount - 1));
+        }
+        URICompiler.Query[] memory sortedQueries = new URICompiler.Query[](
+            layerAmount
+        );
+        for (uint256 i = 0; i < layerAmount; i += 1) {
+            sortedQueries[i] = queries[layers[i].value];
+        }
+
+        string memory baseURI = IHost(dava()).baseURI();
+        string[] memory imgParams = new string[](1);
+        imgParams[0] = "images";
+
+        return URICompiler.getFullUri(baseURI, imgParams, sortedQueries);
     }
 
     function _imgURIs() private view returns (string[] memory) {
