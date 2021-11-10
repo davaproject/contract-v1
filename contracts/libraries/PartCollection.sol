@@ -2,7 +2,8 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {ERC1155Supply, ERC1155, IERC1155} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import {ERC1155Supply} from "./ERC1155Supply.sol";
+import {ERC1155, IERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -59,9 +60,6 @@ abstract contract PartCollection is
     CollectionInfo private _collectionInfo;
     uint256 public override numberOfParts;
 
-    uint256 public maxTotalPartSupply = 0;
-    uint256 public totalPartSupply = 0;
-
     EnumerableSet.Bytes32Set private _supportedPartTypes;
 
     event PartCreated(uint256 partId);
@@ -81,6 +79,26 @@ abstract contract PartCollection is
 
     function setBaseURI(string memory baseURI_) external onlyOwner {
         baseURI = baseURI_;
+    }
+
+    function unsafeCreatePart(
+        bytes32 partType_,
+        string memory title_,
+        string memory description_,
+        string memory uri_,
+        Attribute[] memory attributes,
+        uint256 maxSupply_,
+        uint256 filledSupply_
+    ) external onlyRole(CREATOR_ROLE) {
+        _unsafeSetTotalSupply(numberOfParts, filledSupply_);
+        createPart(
+            partType_,
+            title_,
+            description_,
+            uri_,
+            attributes,
+            maxSupply_
+        );
     }
 
     function createPart(
@@ -121,7 +139,6 @@ abstract contract PartCollection is
         }
 
         numberOfParts += 1;
-        maxTotalPartSupply += maxSupply_;
     }
 
     function createPartType(
@@ -170,7 +187,6 @@ abstract contract PartCollection is
             "Part: Out of stock."
         );
 
-        totalPartSupply += amount;
         return super._mint(account, id, amount, data);
     }
 
@@ -181,16 +197,20 @@ abstract contract PartCollection is
         bytes memory data
     ) public onlyRole(MINTER_ROLE) {
         for (uint256 i = 0; i < ids.length; i += 1) {
-            uint256 id = ids[i];
-            uint256 amount = amounts[i];
             require(
-                totalSupply(id) + amount <= maxSupply(id),
+                totalSupply(ids[i]) + amounts[i] <= maxSupply(ids[i]),
                 "Part: Out of stock."
             );
-
-            totalPartSupply += amount;
         }
         return super._mintBatch(to, ids, amounts, data);
+    }
+
+    function unsafeMintBatch(
+        address to,
+        uint256[] calldata ids,
+        uint256[] calldata amounts
+    ) external onlyRole(MINTER_ROLE) {
+        super._unsafeMintBatch(to, ids, amounts, "");
     }
 
     // viewers
