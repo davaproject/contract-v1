@@ -5,7 +5,7 @@ pragma abicoder v2;
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -16,13 +16,7 @@ import {IFrameCollection} from "./interfaces/IFrameCollection.sol";
 import {IPartCollection} from "./interfaces/IPartCollection.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
-contract Dava is
-    AccessControl,
-    ERC721Enumerable,
-    Ownable,
-    IDava,
-    UpgradeableBeacon
-{
+contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Clones for address;
@@ -39,7 +33,7 @@ contract Dava is
     EnumerableSet.Bytes32Set private _supportedPartTypes;
     address private _minimalProxy;
 
-    uint256 public constant MAX_SUPPLY = 10000;
+    uint48 public constant MAX_SUPPLY = 10000;
 
     event CollectionRegistered(address collection);
     event CollectionDeregistered(address collection);
@@ -83,9 +77,10 @@ contract Dava is
         external
         override
         onlyRole(MINTER_ROLE)
+        returns (address)
     {
-        require(id < MAX_SUPPLY, "Dava: Invalid id");
-        _mint(to, id);
+        require(id < uint256(MAX_SUPPLY), "Dava: Invalid id");
+        return _mintWithProxy(to, id);
     }
 
     function registerCollection(address collection)
@@ -302,7 +297,7 @@ contract Dava is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(AccessControl, ERC721Enumerable, IERC165)
+        override(AccessControl, ERC721, IERC165)
         returns (bool)
     {
         return
@@ -310,9 +305,10 @@ contract Dava is
             super.supportsInterface(interfaceId);
     }
 
-    function _mint(address to, uint256 id) internal override {
+    function _mintWithProxy(address to, uint256 id) internal returns (address) {
         address avatar = _minimalProxy.cloneDeterministic(bytes32(id));
         MinimalProxy(payable(avatar)).initialize(id);
         super._mint(to, id);
+        return avatar;
     }
 }

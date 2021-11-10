@@ -9,7 +9,7 @@ import {AvatarBase} from "../libraries/AvatarBase.sol";
 contract TestAvatarV1 is AvatarBase {
     function receivePart(address collection, uint256 id) external {
         Part[] memory parts = new Part[](1);
-        parts[0] = Part(collection, id);
+        parts[0] = Part(collection, uint96(id));
         IDava(dava()).zap(_props().davaId, parts, new bytes32[](0));
     }
 

@@ -33,15 +33,6 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
 
     receive() external payable override(Proxy, Account) {}
 
-    function setName(string memory name_)
-        public
-        virtual
-        override
-        onlyOwnerOrDava
-    {
-        _props().name = name_;
-    }
-
     function dress(Part[] calldata partsOn, bytes32[] calldata partsOff)
         external
         virtual
@@ -53,21 +44,6 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         }
         for (uint256 i = 0; i < partsOff.length; i += 1) {
             _takeOff(partsOff[i]);
-        }
-    }
-
-    function name()
-        public
-        view
-        virtual
-        override
-        returns (string memory avatarName)
-    {
-        avatarName = _props().name;
-        if (bytes(avatarName).length == 0) {
-            avatarName = string(
-                abi.encodePacked("DAVA #", _props().davaId.toString())
-            );
         }
     }
 
@@ -137,14 +113,12 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
 
     function _putOn(Part memory part_) internal {
         bytes32 partType = IPartCollection(part_.collection).partType(part_.id);
-        require(_isEligible(part_), "Avatar: does not have the part.");
         _props().parts[partType] = part_;
         emit PutOn(partType, part_.collection, part_.id);
     }
 
     function _takeOff(bytes32 partType) internal {
         Part memory target = _props().parts[partType];
-        require(target.collection != address(0), "Avatar: nothing to take off");
         delete _props().parts[partType];
         emit TakeOff(partType, target.collection, target.id);
     }

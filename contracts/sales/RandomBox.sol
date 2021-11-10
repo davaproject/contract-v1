@@ -1,43 +1,64 @@
-//SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./IRandomBox.sol";
+contract RandomBox {
+    bytes32[358] internal _aPartIds;
+    bytes32[358] internal _bPartIds;
+    bytes32[358] internal _cPartIds;
 
-contract RandomBox is IRandomBox, AccessControl {
-    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-
-    uint256 private seed = 0;
+    uint256 internal _seed = 0;
+    address private _owner;
 
     constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(OPERATOR_ROLE, msg.sender);
-        _setRoleAdmin(OPERATOR_ROLE, DEFAULT_ADMIN_ROLE);
+        _owner = msg.sender;
     }
 
-    function getRandomNumber(uint256 _maxNumber)
+    modifier onlyOwner() {
+        require(_owner == msg.sender, "RandomBox: only owner can run this");
+        _;
+    }
+
+    function setSeed() external onlyOwner {
+        _seed = block.timestamp;
+    }
+
+    function setA(bytes32[358] calldata aPartIds_) external onlyOwner {
+        for (uint256 i = 0; i < 358; i += 1) {
+            _aPartIds[i] = aPartIds_[i];
+        }
+    }
+
+    function setB(bytes32[358] calldata bPartIds_) external onlyOwner {
+        for (uint256 i = 0; i < 358; i += 1) {
+            _bPartIds[i] = bPartIds_[i];
+        }
+    }
+
+    function setC(bytes32[358] calldata cPartIds_) external onlyOwner {
+        for (uint256 i = 0; i < 358; i += 1) {
+            _cPartIds[i] = cPartIds_[i];
+        }
+    }
+
+    function getPartIds(uint256 index)
         external
-        override
-        onlyRole(OPERATOR_ROLE)
-        returns (uint256 result)
+        view
+        returns (uint256[] memory)
     {
-        require(
-            _maxNumber > 0,
-            "RandomBox: maxNumber should be greater than 0"
+        uint256 compiledSeed = (index + _seed) % 10000;
+        uint256 motherIndex = (compiledSeed) / 28;
+        uint256 childShifter = ((compiledSeed) % 28) * 9;
+
+        uint256[] memory partIds = new uint256[](3);
+        partIds[0] = uint256(
+            uint16(bytes2((_aPartIds[motherIndex] << (childShifter)) >> 7))
         );
-        result =
-            uint256(
-                keccak256(
-                    abi.encodePacked(
-                        seed,
-                        block.timestamp,
-                        seed,
-                        block.difficulty,
-                        seed
-                    )
-                )
-            ) %
-            _maxNumber;
-        seed += 1;
+        partIds[1] = uint256(
+            uint16(bytes2((_bPartIds[motherIndex] << (childShifter)) >> 7))
+        );
+        partIds[2] = uint256(
+            uint16(bytes2((_cPartIds[motherIndex] << (childShifter)) >> 7))
+        );
+        return partIds;
     }
 }
