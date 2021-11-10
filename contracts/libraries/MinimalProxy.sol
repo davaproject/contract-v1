@@ -7,12 +7,11 @@ import {StorageSlot} from "@openzeppelin/contracts/utils/StorageSlot.sol";
 import {Proxy} from "@openzeppelin/contracts/proxy/Proxy.sol";
 import {IBeacon} from "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 import {ERC1967Upgrade} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Upgrade.sol";
-import {Asset} from "../interfaces/IAvatar.sol";
+import {Part} from "../interfaces/IAvatar.sol";
 
 struct Props {
     uint256 davaId;
-    string name;
-    mapping(bytes32 => Asset) assets;
+    mapping(bytes32 => Part) parts;
 }
 
 contract MinimalProxy is Initializable, Proxy, ERC1967Upgrade {

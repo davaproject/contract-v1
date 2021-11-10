@@ -28,7 +28,7 @@ abstract contract Account is
     modifier onlyOwner() {
         require(
             owner() == _msgSender() || address(this) == _msgSender(),
-            "Acocunt: only owner can call"
+            "Account: only owner can call"
         );
         _;
     }
@@ -88,10 +88,6 @@ abstract contract Account is
             transaction.data
         );
         require(success, "Account: transaction reverted");
-        emit Executed(
-            transaction.to,
-            transaction.value,
-            transaction.data
-        );
+        emit Executed(transaction.to, transaction.value, transaction.data);
     }
 }

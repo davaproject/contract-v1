@@ -7,8 +7,9 @@
     "resolveJsonModule": true,
     "typeRoots": ["node_modules/@types"],
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./"
     // "declaration": true
   },
-  "include": ["./types", "./deployed.json"]
+  "include": ["./types", "./deployed.json", "./test", "./scripts"],
+  "files": ["./hardhat.config.ts"]
 }

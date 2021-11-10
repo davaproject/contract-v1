@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {IERC1155Asset} from "../interfaces/IERC1155Asset.sol";
+import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 library OnchainMetadata {
@@ -16,27 +16,28 @@ library OnchainMetadata {
 
     function toMetadata(
         string memory name,
-        address creator,
         string memory description,
         string[] memory imgURIs,
-        IERC1155Asset.Attribute[] memory attributes
+        string memory externalImgUri,
+        string memory externalUri,
+        IPartCollection.Attribute[] memory attributes
     ) internal pure returns (string memory) {
         bytes memory metadata = abi.encodePacked(
             'data:application/json;utf8,{"name":"',
             name,
-            '","creator":"',
-            uint256(uint160(creator)).toHexString(20),
+            '","external_url":"',
+            externalUri,
             '","description":"',
             description,
             '","attributes":['
         );
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
-            IERC1155Asset.Attribute memory attribute = attributes[i];
+            IPartCollection.Attribute memory attribute = attributes[i];
             metadata = abi.encodePacked(
                 metadata,
                 '{"trait_type":"',
-                attribute.traitType,
+                attribute.trait_type,
                 '","value":"',
                 attribute.value,
                 '"}'
@@ -48,8 +49,10 @@ library OnchainMetadata {
 
         metadata = abi.encodePacked(
             metadata,
-            '],"image":"data:image/svg+xml;utf8,',
+            '],"raw_image":"data:image/svg+xml;utf8,',
             compileImages(imgURIs),
+            '","image":"',
+            externalImgUri,
             '"}'
         );
 

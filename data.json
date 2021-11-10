@@ -1,0 +1,155 @@
+{
+  "baseURI": "https://api.davaproject.com",
+  "images": {
+    "frames": {
+      "frameBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "frameBody": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
+      "frameHead": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png",
+      "signature": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png"
+    },
+    "bases": {
+      "empty": "https://gateway.pinata.cloud/ipfs/QmfUXdFrURAqR6xMi293D51rWTpBnnTRufTRxT9Uav8d5R",
+      "emptyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "emptyHeadBody": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBody.png",
+      "emptyBodyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_BodyBackground.png",
+      "emptyHeadBodyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBodyBackground.png",
+      "emptyHead": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_Head.png"
+    }
+  },
+  "frames": {
+    "background": {
+      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "zIndex": 5000
+    },
+    "body": {
+      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
+      "zIndex": 25000
+    },
+    "head": {
+      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png",
+      "zIndex": 35000
+    },
+    "signature": {
+      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
+      "zIndex": 70000
+    }
+  },
+  "collections": {
+    "background": {
+      "backgroundImage": "empty",
+      "foregroundImage": "emptyHeadBody",
+      "zIndex": 10000
+    },
+    "suitAddOn": {
+      "backgroundImage": "emptyBackground",
+      "foregroundImage": "emptyHeadBody",
+      "zIndex": 20000
+    },
+    "suit": {
+      "backgroundImage": "emptyBodyBackground",
+      "foregroundImage": "emptyHead",
+      "zIndex": 30000
+    },
+    "emotion": {
+      "backgroundImage": "emptyHeadBodyBackground",
+      "foregroundImage": "empty",
+      "zIndex": 40000
+    },
+    "helmet": {
+      "backgroundImage": "emptyHeadBodyBackground",
+      "foregroundImage": "empty",
+      "zIndex": 50000
+    },
+    "helmetAddOn": {
+      "backgroundImage": "emptyHeadBodyBackground",
+      "foregroundImage": "empty",
+      "zIndex": 60000
+    }
+  },
+  "parts": {
+    "background": [
+      {
+        "title": "TEST_BACKGROUND",
+        "creator": "",
+        "description": "this is test background",
+        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/BG_GrSunshine.png",
+        "maxSupply": 100
+      }
+    ],
+    "suitAddOn": [
+      {
+        "title": "TEST_SUIT_ADD_ON",
+        "creator": "",
+        "description": "this is test suit add on",
+        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/SA_SamuraiSword.png",
+        "maxSupply": 100
+      }
+    ],
+    "suit": [
+      {
+        "title": "TEST_SUIT",
+        "creator": "",
+        "description": "this is test suit",
+        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/ST_ShinyLeather.png",
+        "maxSupply": 100
+      }
+    ],
+    "emotion": [
+      {
+        "title": "TEST_EMOTION",
+        "creator": "",
+        "description": "this is test emotion",
+        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/EM_LedFrowning.png",
+        "maxSupply": 100
+      }
+    ],
+    "helmet": [
+      {
+        "title": "TEST_HELMET",
+        "creator": "",
+        "description": "this is test helmet",
+        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/HM_CatMask.png",
+        "maxSupply": 100
+      }
+    ],
+    "helmetAddOn": [
+      {
+        "title": "TEST_HELMET_ADD_ON",
+        "creator": "",
+        "description": "this is test helmet add on",
+        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/HA_BunnyEars.png",
+        "maxSupply": 100
+      }
+    ]
+  },
+  "sale": {
+    "mainnet": {
+      "presaleStartsAt": 1637107200,
+      "presaleEndsAt": 1637193600,
+      "mainsaleStartsAt": 1637366400
+    },
+    "rinkeby": {
+      "presaleStartsAt": 0,
+      "presaleEndsAt": 3272664127,
+      "mainsaleStartsAt": 0
+    }
+  },
+  "contracts": {
+    "minimalProxy": "",
+    "dava": "",
+    "avatarV1": "",
+    "davaFrameBackground": "",
+    "davaFrameBody": "",
+    "davaFrameHead": "",
+    "davaSignature": "",
+    "davaBackground": "",
+    "davaEmotion": "",
+    "davaHelmet": "",
+    "davaHelmetAddOn": "",
+    "davaSuit": "",
+    "davaSuitAddOn": "",
+    "sale": "",
+    "randomBox": "",
+    "assetDrop": ""
+  }
+}

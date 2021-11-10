@@ -2,17 +2,12 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "../interfaces/IAsset.sol";
-import "../libraries/AvatarBase.sol";
+import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {AvatarBase} from "../libraries/AvatarBase.sol";
 
 contract AvatarV2Draft is AvatarBase {
     using Strings for uint256;
-
-    function testChangeName(string memory val) public {
-        _props().name = val;
-    }
 
     function version() public pure override returns (string memory) {
         return "V2";

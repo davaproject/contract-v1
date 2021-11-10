@@ -5,149 +5,241 @@ pragma abicoder v2;
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ERC721Enumerable, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
-import {IAvatar} from "./interfaces/IAvatar.sol";
-import {IAsset} from "./interfaces/IAsset.sol";
+import {Part, IAvatar} from "./interfaces/IAvatar.sol";
+import {IFrameCollection} from "./interfaces/IFrameCollection.sol";
+import {IPartCollection} from "./interfaces/IPartCollection.sol";
 import {IDava} from "./interfaces/IDava.sol";
 
-contract Dava is
-    AccessControl,
-    ERC721Enumerable,
-    Ownable,
-    IDava,
-    UpgradeableBeacon
-{
+contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Clones for address;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant ASSET_MANAGER_ROLE =
-        keccak256("ASSET_MANAGER_ROLE");
+    bytes32 public constant PART_MANAGER_ROLE = keccak256("PART_MANAGER_ROLE");
     bytes32 public constant UPGRADE_MANAGER_ROLE =
         keccak256("UPGRADE_MANAGER_ROLE");
 
-    mapping(bytes32 => EnumerableSet.AddressSet) private _assets;
-    mapping(bytes32 => IAsset) private _defaultAssets;
+    string public override baseURI;
+    address public override frameCollection;
 
-    EnumerableSet.Bytes32Set private _supportedAssetTypes;
+    EnumerableSet.AddressSet private _registeredCollections;
+    EnumerableSet.Bytes32Set private _supportedPartTypes;
     address private _minimalProxy;
 
-    uint256 public constant MAX_SUPPLY = 10000;
+    uint48 public constant MAX_SUPPLY = 10000;
 
-    event AssetRegistered(address asset);
-    event AssetDeregistered(address asset);
+    event CollectionRegistered(address collection);
+    event CollectionDeregistered(address collection);
+    event DefaultCollectionRegistered(address collection);
+    event PartTypeRegistered(bytes32 partType);
+    event PartTypeDeregistered(bytes32 partType);
 
     // DAO contract owns this registry
-    constructor(address minimalProxy_)
+    constructor(address minimalProxy_, string memory baseURI_)
         ERC721("Dava", "DAVA")
         UpgradeableBeacon(minimalProxy_)
         Ownable()
     {
         _minimalProxy = minimalProxy_;
+        baseURI = baseURI_;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
-        _setupRole(ASSET_MANAGER_ROLE, msg.sender);
-        _setRoleAdmin(ASSET_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setupRole(PART_MANAGER_ROLE, msg.sender);
+        _setRoleAdmin(PART_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
         _setupRole(UPGRADE_MANAGER_ROLE, msg.sender);
         _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
+    function setBaseURI(string memory baseURI_)
+        external
+        onlyRole(UPGRADE_MANAGER_ROLE)
+    {
+        baseURI = baseURI_;
+    }
+
     function upgradeTo(address newImplementation)
-        public
+        external
         onlyRole(UPGRADE_MANAGER_ROLE)
     {
         _upgradeTo(newImplementation);
     }
 
     function mint(address to, uint256 id)
-        public
+        external
         override
         onlyRole(MINTER_ROLE)
+        returns (address)
     {
-        require(id < MAX_SUPPLY, "Dava: Invalid id");
-        _mint(to, id);
+        require(id < uint256(MAX_SUPPLY), "Dava: Invalid id");
+        return _mintWithProxy(to, id);
     }
 
-    function registerAsset(address asset)
-        public
+    function registerCollection(address collection)
+        external
         override
-        onlyRole(ASSET_MANAGER_ROLE)
+        onlyRole(PART_MANAGER_ROLE)
     {
         require(
-            IERC165(asset).supportsInterface(type(IAsset).interfaceId),
-            "Does not support IAsset interface"
+            IERC165(collection).supportsInterface(
+                type(IPartCollection).interfaceId
+            ),
+            "Dava: Does not support IPartCollection interface"
         );
-        bytes32 assetType = IAsset(asset).assetType();
-        _assets[assetType].add(asset);
-        if (!_supportedAssetTypes.contains(assetType)) {
-            _supportedAssetTypes.add(assetType);
-        }
+        require(
+            !_registeredCollections.contains(collection),
+            "Dava: already registered collection"
+        );
+        _registeredCollections.add(collection);
+
+        emit CollectionRegistered(collection);
     }
 
-    function registerDefaultAsset(address asset)
-        public
+    function registerPartType(bytes32 partType)
+        external
         override
-        onlyRole(ASSET_MANAGER_ROLE)
+        onlyRole(PART_MANAGER_ROLE)
     {
         require(
-            IERC165(asset).supportsInterface(type(IAsset).interfaceId),
-            "Does not support IAsset interface"
+            !_supportedPartTypes.contains(partType),
+            "Dava: partType is already registered"
         );
-        bytes32 assetType = IAsset(asset).assetType();
-        _defaultAssets[assetType] = IAsset(asset);
-        if (!_supportedAssetTypes.contains(assetType)) {
-            _supportedAssetTypes.add(assetType);
-        }
+        _supportedPartTypes.add(partType);
+
+        emit PartTypeRegistered(partType);
     }
 
-    function deregisterAsset(address asset)
-        public
+    function registerFrameCollection(address collection)
+        external
         override
-        onlyRole(ASSET_MANAGER_ROLE)
+        onlyRole(PART_MANAGER_ROLE)
     {
-        bytes32 assetType = IAsset(asset).assetType();
-        require(_assets[assetType].contains(asset), "Dava: Not registered");
-        _assets[assetType].remove(asset);
-
-        if (
-            _supportedAssetTypes.contains(assetType) &&
-            _assets[assetType].length() == 0 &&
-            address(_defaultAssets[assetType]) == address(0)
-        ) {
-            _supportedAssetTypes.remove(assetType);
-        }
-    }
-
-    function deregisterDefaultAsset(address asset)
-        public
-        override
-        onlyRole(ASSET_MANAGER_ROLE)
-    {
-        bytes32 assetType = IAsset(asset).assetType();
         require(
-            address(_defaultAssets[assetType]) != address(0),
-            "Dava: Not registered"
+            IERC165(collection).supportsInterface(
+                type(IFrameCollection).interfaceId
+            ),
+            "Dava: Does not support IFrameCollection interface"
         );
 
-        delete _defaultAssets[assetType];
-        if (
-            _supportedAssetTypes.contains(assetType) &&
-            _assets[assetType].length() == 0
-        ) {
-            _supportedAssetTypes.remove(assetType);
-        }
+        frameCollection = collection;
+
+        emit DefaultCollectionRegistered(collection);
     }
 
-    function isDavaAsset(address asset) public view override returns (bool) {
-        bytes32 assetType = IAsset(asset).assetType();
-        return _assets[assetType].contains(asset);
+    function deregisterCollection(address collection)
+        external
+        override
+        onlyRole(PART_MANAGER_ROLE)
+    {
+        require(
+            _registeredCollections.contains(collection),
+            "Dava: Not registered collection"
+        );
+
+        _registeredCollections.remove(collection);
+
+        emit CollectionDeregistered(collection);
+    }
+
+    function deregisterPartType(bytes32 partType)
+        external
+        override
+        onlyRole(PART_MANAGER_ROLE)
+    {
+        require(
+            _supportedPartTypes.contains(partType),
+            "Dava: non registered partType"
+        );
+        _supportedPartTypes.remove(partType);
+
+        emit PartTypeDeregistered(partType);
+    }
+
+    function zap(
+        uint256 tokenId,
+        Part[] calldata partsOn,
+        bytes32[] calldata partsOff
+    ) external override {
+        require(
+            msg.sender == ownerOf(tokenId),
+            "Dava: msg.sender is not the owner of avatar"
+        );
+        address avatarAddress = getAvatar(tokenId);
+        for (uint256 i = 0; i < partsOn.length; i += 1) {
+            IERC1155 collection = IERC1155(partsOn[i].collection);
+            require(
+                collection.supportsInterface(type(IERC1155).interfaceId),
+                "Dava: collection is not an erc1155 format"
+            );
+            require(
+                collection.balanceOf(msg.sender, partsOn[i].id) >= 1,
+                "Dava: owner does not hold the part"
+            );
+            collection.safeTransferFrom(
+                msg.sender,
+                avatarAddress,
+                partsOn[i].id,
+                1,
+                ""
+            );
+        }
+
+        IAvatar avatar = IAvatar(avatarAddress);
+        for (uint256 i = 0; i < partsOff.length; i += 1) {
+            Part memory equippedPart = avatar.part(partsOff[i]);
+            IERC1155 collection = IERC1155(equippedPart.collection);
+            if (
+                equippedPart.collection != address(0x0) &&
+                collection.balanceOf(avatarAddress, equippedPart.id) > 0
+            ) {
+                collection.safeTransferFrom(
+                    avatarAddress,
+                    msg.sender,
+                    equippedPart.id,
+                    1,
+                    ""
+                );
+            }
+        }
+
+        IAvatar(getAvatar(tokenId)).dress(partsOn, partsOff);
+    }
+
+    function isRegisteredCollection(address collection)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _registeredCollections.contains(collection);
+    }
+
+    function isSupportedPartType(bytes32 partType)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _supportedPartTypes.contains(partType);
+    }
+
+    function isDavaPart(address collection, bytes32 partType)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return
+            _registeredCollections.contains(collection) &&
+            _supportedPartTypes.contains(partType);
     }
 
     function getAvatar(uint256 tokenId) public view override returns (address) {
@@ -158,42 +250,27 @@ contract Dava is
             );
     }
 
-    function getDefaultAsset(bytes32 assetType)
-        public
+    function getAllSupportedPartTypes()
+        external
         view
         override
-        returns (string memory image, uint256 zIndex)
+        returns (bytes32[] memory partTypes)
     {
-        IAsset defaultAsset = _defaultAssets[assetType];
-        if (address(defaultAsset) == address(0)) return ("", 0);
-        else {
-            image = defaultAsset.defaultImage();
-            zIndex = defaultAsset.zIndex();
-        }
+        return _supportedPartTypes.values();
     }
 
-    function getAllAssets(bytes32 assetType)
-        public
+    function getRegisteredCollections()
+        external
         view
         override
         returns (address[] memory)
     {
-        return _assets[assetType].values();
-    }
-
-    function getAllSupportedAssetTypes()
-        public
-        view
-        override
-        returns (bytes32[] memory)
-    {
-        return _supportedAssetTypes.values();
+        return _registeredCollections.values();
     }
 
     function tokenURI(uint256 tokenId)
         public
         view
-        virtual
         override
         returns (string memory)
     {
@@ -205,9 +282,8 @@ contract Dava is
     }
 
     function getPFP(uint256 tokenId)
-        public
+        external
         view
-        virtual
         override
         returns (string memory)
     {
@@ -221,8 +297,7 @@ contract Dava is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        virtual
-        override(AccessControl, ERC721Enumerable, IERC165)
+        override(AccessControl, ERC721, IERC165)
         returns (bool)
     {
         return
@@ -230,9 +305,10 @@ contract Dava is
             super.supportsInterface(interfaceId);
     }
 
-    function _mint(address to, uint256 id) internal override {
+    function _mintWithProxy(address to, uint256 id) internal returns (address) {
         address avatar = _minimalProxy.cloneDeterministic(bytes32(id));
         MinimalProxy(payable(avatar)).initialize(id);
         super._mint(to, id);
+        return avatar;
     }
 }

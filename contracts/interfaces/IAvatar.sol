@@ -2,28 +2,22 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-struct Asset {
-    bytes32 assetType;
-    address assetAddr;
-    uint256 id;
+struct Part {
+    address collection;
+    uint96 id;
 }
 
 interface IAvatar {
-    function setName(string memory name_) external;
-
-    function putOn(Asset[] calldata assets) external;
-
-    function takeOff(bytes32[] calldata assetTypes) external;
-
-    function name() external view returns (string memory);
+    function dress(Part[] calldata partsOn, bytes32[] calldata partsOff)
+        external;
 
     function version() external view returns (string memory);
 
     function dava() external view returns (address);
 
-    function asset(bytes32 assetType) external view returns (Asset memory);
+    function part(bytes32 partType) external view returns (Part memory);
 
-    function allAssets() external view returns (Asset[] memory assets);
+    function allParts() external view returns (Part[] memory parts);
 
     function getPFP() external view returns (string memory);
 

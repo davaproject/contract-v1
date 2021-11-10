@@ -2,37 +2,54 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {IERC721Enumerable} from "@openzeppelin/contracts/interfaces/IERC721Enumerable.sol";
+import {IERC721} from "@openzeppelin/contracts/interfaces/IERC721.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {Part} from "../interfaces/IAvatar.sol";
 
-interface IDava is IERC721Enumerable {
-    function mint(address to, uint256 id) external;
+interface IDava is IERC721, IHost {
+    function mint(address to, uint256 id) external returns (address);
 
-    function registerAsset(address asset) external;
+    function registerCollection(address collection) external;
 
-    function registerDefaultAsset(address asset) external;
+    function registerPartType(bytes32 partType) external;
 
-    function deregisterAsset(address asset) external;
+    function registerFrameCollection(address collection) external;
 
-    function deregisterDefaultAsset(address asset) external;
+    function deregisterCollection(address collection) external;
 
-    function isDavaAsset(address asset) external view returns (bool);
+    function deregisterPartType(bytes32 partType) external;
+
+    function zap(
+        uint256 tokenId,
+        Part[] calldata partsOn,
+        bytes32[] calldata partsOff
+    ) external;
+
+    function frameCollection() external view returns (address);
+
+    function isRegisteredCollection(address collection)
+        external
+        view
+        returns (bool);
+
+    function isSupportedPartType(bytes32 partType) external view returns (bool);
+
+    function isDavaPart(address collection, bytes32 partType)
+        external
+        view
+        returns (bool);
 
     function getAvatar(uint256 id) external view returns (address);
 
-    function getAllAssets(bytes32 assetType)
-        external
-        view
-        returns (address[] memory);
-
-    function getAllSupportedAssetTypes()
+    function getAllSupportedPartTypes()
         external
         view
         returns (bytes32[] memory);
 
-    function getPFP(uint256 id) external view returns (string memory);
-
-    function getDefaultAsset(bytes32 assetType)
+    function getRegisteredCollections()
         external
         view
-        returns (string memory image, uint256 zIndex);
+        returns (address[] memory);
+
+    function getPFP(uint256 id) external view returns (string memory);
 }

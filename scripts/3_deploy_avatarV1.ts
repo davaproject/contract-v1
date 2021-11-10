@@ -1,12 +1,12 @@
 import { ethers } from "hardhat";
-import { DeployedContract, HardhatScript, main } from "./utils/script-runner";
+import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
 import { AvatarV1__factory } from "../types";
 
 const network = getNetwork();
 const id = 3;
 
-const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
+const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
@@ -17,8 +17,10 @@ const run: HardhatScript = async (): Promise<DeployedContract | undefined> => {
   console.log("<AvatarV1> Contract deployed at:", avatarV1.address);
 
   return {
-    contractName: "AvatarV1",
-    address: avatarV1.address,
+    deployedContract: {
+      contractName: "AvatarV1",
+      address: avatarV1.address,
+    },
   };
 };
 
