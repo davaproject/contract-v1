@@ -17,6 +17,7 @@ import { genWhitelistSig } from "./utils/signature";
 import { partType } from "./utils/part";
 import { BigNumberish } from "@ethersproject/bignumber";
 import BytesLikeArray from "./types/BytesLikeArray";
+import { partIdsToHex } from "./utils/bit";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -90,13 +91,19 @@ describe("Sale", () => {
 
     await randomBox.setSeed();
     await randomBox.setA(
-      new Array(313).fill("0x" + `0${partIds[0]}`.repeat(32)) as BytesLikeArray
+      new Array(358).fill(
+        partIdsToHex(new Array(28).fill(partIds[0]))
+      ) as BytesLikeArray
     );
     await randomBox.setB(
-      new Array(313).fill("0x" + `0${partIds[1]}`.repeat(32)) as BytesLikeArray
+      new Array(358).fill(
+        partIdsToHex(new Array(28).fill(partIds[1]))
+      ) as BytesLikeArray
     );
     await randomBox.setC(
-      new Array(313).fill("0x" + `0${partIds[2]}`.repeat(32)) as BytesLikeArray
+      new Array(358).fill(
+        partIdsToHex(new Array(28).fill(partIds[2]))
+      ) as BytesLikeArray
     );
   });
 
