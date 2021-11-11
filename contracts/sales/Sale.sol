@@ -21,6 +21,8 @@ contract Sale is EIP712, Ownable {
 
     bytes32 public constant WHITELIST_TYPE_HASH =
         keccak256("Whitelist(uint256 ticketAmount,address beneficiary)");
+    bytes32 public constant RESERVED_TYPE_HASH =
+        keccak256("Reserved(uint256 amount,address beneficiary)");
 
     uint16 public constant PARTS_PER_AVATAR = 3;
     uint16 public constant MAX_MINT_PER_TICKET = 3;
@@ -47,6 +49,19 @@ contract Sale is EIP712, Ownable {
     IRandomBox private _randomBox;
 
     mapping(address => uint256) public preSaleMintAmountOf;
+    mapping(address => uint256) public claimedAmountOf;
+
+    struct Reserved {
+        uint256 amount;
+        address beneficiary;
+    }
+
+    struct ClaimReq {
+        uint8 vSig;
+        bytes32 rSig;
+        bytes32 sSig;
+        Reserved reserved;
+    }
 
     struct Whitelist {
         uint256 ticketAmount;
@@ -105,17 +120,28 @@ contract Sale is EIP712, Ownable {
         publicSaleClosingTime = closingTime_;
     }
 
-    function claim(address[] calldata recipients) external onlyOwner {
+    function claim(ClaimReq calldata claimReq, uint16 claimedAmount) external {
         require(
-            totalClaimedAmount + uint16(recipients.length) <=
-                PRE_ALLOCATED_AMOUNT,
-            "Sale: exceeds pre allocated mint amount"
+            msg.sender == claimReq.reserved.beneficiary,
+            "Sale: not authorized"
         );
+        require(
+            claimedAmount <=
+                claimReq.reserved.amount - claimedAmountOf[msg.sender],
+            "Sale: exceeds assigned amount"
+        );
+        require(
+            totalClaimedAmount + claimedAmount <= PRE_ALLOCATED_AMOUNT,
+            "Sale: exceeds PRE_ALLOCATED_AMOUNT"
+        );
+        _verifyClaimSig(claimReq);
 
-        for (uint16 i = 0; i < uint16(recipients.length); i++) {
+        claimedAmountOf[msg.sender] += claimedAmount;
+
+        for (uint16 i = 0; i < claimedAmount; i++) {
             _mintAvatarWithParts(totalClaimedAmount + i);
         }
-        totalClaimedAmount += uint16(recipients.length);
+        totalClaimedAmount += claimedAmount;
     }
 
     // this is for public sale.
@@ -189,6 +215,26 @@ contract Sale is EIP712, Ownable {
             totalPublicSaleAmount +
             PRE_ALLOCATED_AMOUNT ==
             MAX_TOTAL_SUPPLY);
+    }
+
+    function _verifyClaimSig(ClaimReq calldata claimReq) internal view {
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    RESERVED_TYPE_HASH,
+                    claimReq.reserved.amount,
+                    msg.sender
+                )
+            )
+        );
+
+        address signer = ecrecover(
+            digest,
+            claimReq.vSig,
+            claimReq.rSig,
+            claimReq.sSig
+        );
+        require(signer == owner(), "Sale: invalid signature");
     }
 
     function _verifyWhitelistSig(PreSaleReq calldata preSaleReq) internal view {

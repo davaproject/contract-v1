@@ -37,7 +37,7 @@ export const genWhitelistSig = async ({
   return { vSig: v, rSig: r, sSig: s };
 };
 
-export const genPartsReqSig = async ({
+export const genClaimSig = async ({
   signer,
   domain,
   msg,
@@ -50,14 +50,19 @@ export const genPartsReqSig = async ({
     verifyingContract: string;
   };
   msg: {
-    rawData: string | Array<number>;
+    amount: number;
+    beneficiary: string;
   };
 }): Promise<{ vSig: number; rSig: string; sSig: string }> => {
   const types = {
-    PartDistInfo: [
+    Reserved: [
       {
-        name: "rawData",
-        type: "bytes32",
+        name: "amount",
+        type: "uint256",
+      },
+      {
+        name: "beneficiary",
+        type: "address",
       },
     ],
   };

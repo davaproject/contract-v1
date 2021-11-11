@@ -13,7 +13,7 @@ import {
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { checkChange } from "./utils/compare";
-import { genWhitelistSig } from "./utils/signature";
+import { genWhitelistSig, genClaimSig } from "./utils/signature";
 import { categoryId } from "./utils/part";
 import { BigNumberish } from "@ethersproject/bignumber";
 import BytesLikeArray from "./types/BytesLikeArray";
@@ -130,6 +130,140 @@ describe("Sale", () => {
         expectedBefore: 2 ** 32 - 1,
         expectedAfter: closingTime,
       });
+    });
+  });
+
+  describe("_verifyClaimSig", () => {
+    beforeEach(async () => {
+      const owner = await sale.owner();
+      expect(owner).to.equal(deployer.address);
+    });
+
+    it("should be reverted for invalid owner", async () => {
+      const nonOwner = accounts[1];
+      expect(deployer.address).not.to.equal(nonOwner.address);
+
+      const msg = {
+        amount: 1,
+        beneficiary: nonOwner.address,
+      };
+      const sig = await genClaimSig({
+        signer: nonOwner,
+        domain: {
+          name: contractInfo.name,
+          version: contractInfo.version,
+          chainId: (await ethers.provider.getNetwork()).chainId,
+          verifyingContract: sale.address,
+        },
+        msg,
+      });
+
+      await expect(
+        sale.verifyClaimSig({
+          ...sig,
+          reserved: msg,
+        })
+      ).to.be.revertedWith("Sale: invalid signature");
+    });
+
+    it("should be reverted for invalid amount", async () => {
+      const beneficiary = deployer;
+      const msg = {
+        amount: 1,
+        beneficiary: beneficiary.address,
+      };
+      const sig = await genClaimSig({
+        signer: deployer,
+        domain: {
+          name: contractInfo.name,
+          version: contractInfo.version,
+          chainId: (await ethers.provider.getNetwork()).chainId,
+          verifyingContract: sale.address,
+        },
+        msg,
+      });
+
+      await expect(
+        sale.verifyClaimSig({
+          ...sig,
+          reserved: { ...msg, amount: msg.amount + 1 },
+        })
+      ).to.be.revertedWith("Sale: invalid signature");
+    });
+
+    it("should be reverted for invalid chainId", async () => {
+      const beneficiary = deployer;
+      const msg = {
+        amount: 1,
+        beneficiary: beneficiary.address,
+      };
+      const sig = await genClaimSig({
+        signer: deployer,
+        domain: {
+          name: contractInfo.name,
+          version: contractInfo.version,
+          chainId: (await ethers.provider.getNetwork()).chainId + 1,
+          verifyingContract: sale.address,
+        },
+        msg,
+      });
+
+      await expect(
+        sale.verifyClaimSig({
+          ...sig,
+          reserved: msg,
+        })
+      ).to.be.revertedWith("Sale: invalid signature");
+    });
+
+    it("should be reverted for invalid contractAddress", async () => {
+      const beneficiary = deployer;
+      const msg = {
+        amount: 1,
+        beneficiary: beneficiary.address,
+      };
+      const sig = await genClaimSig({
+        signer: deployer,
+        domain: {
+          name: contractInfo.name,
+          version: contractInfo.version,
+          chainId: (await ethers.provider.getNetwork()).chainId + 1,
+          verifyingContract: ethers.Wallet.createRandom().address,
+        },
+        msg,
+      });
+
+      await expect(
+        sale.verifyClaimSig({
+          ...sig,
+          reserved: msg,
+        })
+      ).to.be.revertedWith("Sale: invalid signature");
+    });
+
+    it("should pass for valid signature", async () => {
+      const beneficiary = accounts[1];
+      const msg = {
+        amount: 1,
+        beneficiary: beneficiary.address,
+      };
+      const sig = await genClaimSig({
+        signer: deployer,
+        domain: {
+          name: contractInfo.name,
+          version: contractInfo.version,
+          chainId: (await ethers.provider.getNetwork()).chainId,
+          verifyingContract: sale.address,
+        },
+        msg,
+      });
+
+      await expect(
+        sale.connect(beneficiary).verifyClaimSig({
+          ...sig,
+          reserved: msg,
+        })
+      ).not.to.be.reverted;
     });
   });
 
@@ -272,38 +406,144 @@ describe("Sale", () => {
       it("if exceeds pre allocated amount", async () => {
         const PRE_ALLOCATED_AMOUNT = await sale.PRE_ALLOCATED_AMOUNT();
 
-        const recipients = new Array(PRE_ALLOCATED_AMOUNT + 1)
-          .fill(null)
-          .map(() => ethers.Wallet.createRandom().address);
-        await expect(sale.claim(recipients)).to.be.revertedWith(
-          "Sale: exceeds pre allocated mint amount"
-        );
+        const beneficiary = deployer;
+        const msg = {
+          amount: PRE_ALLOCATED_AMOUNT + 1,
+          beneficiary: beneficiary.address,
+        };
+        const sig = await genClaimSig({
+          signer: deployer,
+          domain: {
+            name: contractInfo.name,
+            version: contractInfo.version,
+            chainId: (await ethers.provider.getNetwork()).chainId,
+            verifyingContract: sale.address,
+          },
+          msg,
+        });
+
+        await expect(
+          sale.claim({ ...sig, reserved: msg }, PRE_ALLOCATED_AMOUNT + 1)
+        ).to.be.revertedWith("Sale: exceeds PRE_ALLOCATED_AMOUNT");
+      });
+
+      it("if msg.sender is not the beneficiary", async () => {
+        const beneficiary = deployer;
+        const msg = {
+          amount: 1,
+          beneficiary: beneficiary.address,
+        };
+        const sig = await genClaimSig({
+          signer: deployer,
+          domain: {
+            name: contractInfo.name,
+            version: contractInfo.version,
+            chainId: (await ethers.provider.getNetwork()).chainId,
+            verifyingContract: sale.address,
+          },
+          msg,
+        });
+
+        await expect(
+          sale.connect(accounts[3]).claim({ ...sig, reserved: msg }, 1)
+        ).to.be.revertedWith("Sale: not authorized");
+      });
+
+      it("if claimAmount exceeds assigned amount", async () => {
+        const beneficiary = deployer;
+        const assignedAmount = 3;
+        const msg = {
+          amount: assignedAmount,
+          beneficiary: beneficiary.address,
+        };
+        const sig = await genClaimSig({
+          signer: deployer,
+          domain: {
+            name: contractInfo.name,
+            version: contractInfo.version,
+            chainId: (await ethers.provider.getNetwork()).chainId,
+            verifyingContract: sale.address,
+          },
+          msg,
+        });
+
+        await expect(
+          sale
+            .connect(beneficiary)
+            .claim({ ...sig, reserved: msg }, assignedAmount + 1)
+        ).to.be.revertedWith("Sale: exceeds assigned amount");
+      });
+
+      it("if claimedAmount + claimAmount exceeds assigned amount", async () => {
+        const beneficiary = deployer;
+        const assignedAmount = 3;
+        const msg = {
+          amount: assignedAmount,
+          beneficiary: beneficiary.address,
+        };
+        const sig = await genClaimSig({
+          signer: deployer,
+          domain: {
+            name: contractInfo.name,
+            version: contractInfo.version,
+            chainId: (await ethers.provider.getNetwork()).chainId,
+            verifyingContract: sale.address,
+          },
+          msg,
+        });
+
+        await sale.connect(beneficiary).claim({ ...sig, reserved: msg }, 1);
+        await expect(
+          sale
+            .connect(beneficiary)
+            .claim({ ...sig, reserved: msg }, assignedAmount)
+        ).to.be.revertedWith("Sale: exceeds assigned amount");
       });
     });
 
     it("should mint expected amount of avatar", async () => {
-      await checkChange({
-        process: () => sale.claim([deployer.address]),
-        status: async () => {
-          const avatarSupply = (
-            await dava.balanceOf(deployer.address)
-          ).toNumber();
-          return { avatarSupply };
+      const beneficiary = deployer;
+      const assignedAmount = 3;
+      const msg = {
+        amount: assignedAmount,
+        beneficiary: beneficiary.address,
+      };
+      const sig = await genClaimSig({
+        signer: deployer,
+        domain: {
+          name: contractInfo.name,
+          version: contractInfo.version,
+          chainId: (await ethers.provider.getNetwork()).chainId,
+          verifyingContract: sale.address,
         },
-        expectedBefore: { avatarSupply: 0 },
-        expectedAfter: { avatarSupply: 1 },
+        msg,
       });
 
       await checkChange({
-        process: () => sale.claim([deployer.address, deployer.address]),
+        process: () =>
+          sale
+            .connect(beneficiary)
+            .claim({ ...sig, reserved: msg }, assignedAmount),
         status: async () => {
           const avatarSupply = (
-            await dava.balanceOf(deployer.address)
+            await dava.balanceOf(beneficiary.address)
           ).toNumber();
-          return { avatarSupply };
+          const totalClaimedAmount = await sale.totalClaimedAmount();
+          const claimedAmount = (
+            await sale.claimedAmountOf(beneficiary.address)
+          ).toNumber();
+          return { avatarSupply, totalClaimedAmount, claimedAmount };
         },
-        expectedBefore: { avatarSupply: 1 },
-        expectedAfter: { avatarSupply: 3 },
+        expectedBefore: {
+          avatarSupply: 0,
+          totalClaimedAmount: 0,
+          claimedAmount: 0,
+        },
+        expectedAfter: {
+          avatarSupply: assignedAmount,
+          totalClaimedAmount: assignedAmount,
+          claimedAmount: assignedAmount,
+        },
       });
     });
   });

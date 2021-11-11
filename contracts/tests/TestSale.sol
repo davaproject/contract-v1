@@ -41,4 +41,13 @@ contract TestSale is Sale {
         _verifyWhitelistSig(preSaleReq);
         return true;
     }
+
+    function verifyClaimSig(ClaimReq calldata claimReq)
+        external
+        view
+        returns (bool)
+    {
+        _verifyClaimSig(claimReq);
+        return true;
+    }
 }
