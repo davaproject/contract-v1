@@ -22,18 +22,12 @@ contract Sale is EIP712, Ownable {
     bytes32 public constant WHITELIST_TYPE_HASH =
         keccak256("Whitelist(uint256 ticketAmount,address beneficiary)");
 
-    uint256 public constant PARTS_PER_AVATAR = 3;
-    uint256 public constant MAX_MINT_PER_TICKET = 3;
-    uint256 public constant PRE_ALLOCATED_AMOUNT = 500;
+    uint16 public constant PARTS_PER_AVATAR = 3;
+    uint16 public constant MAX_MINT_PER_TICKET = 3;
+    uint16 public constant PRE_ALLOCATED_AMOUNT = 500;
 
-    uint256 public constant PRICE = 0.05 ether;
-    uint256 public constant MAX_MINT_PER_ACCOUNT = 30;
-    uint256 public constant MAX_MINT_PER_TX = 30;
-
-    uint256 public immutable PRE_SALE_OPENING_TIME;
-    uint256 public immutable PRE_SALE_CLOSING_TIME;
-    uint256 public immutable PUBLIC_SALE_OPENING_TIME;
-    uint256 public publicSaleClosingTime;
+    uint16 public constant MAX_MINT_PER_ACCOUNT = 30;
+    uint16 public constant MAX_MINT_PER_TX = 30;
 
     // Supply
     uint16 private constant MAX_TOTAL_SUPPLY = 10000;
@@ -41,12 +35,18 @@ contract Sale is EIP712, Ownable {
     uint16 public totalPreSaleAmount = 0;
     uint16 public totalPublicSaleAmount = 0;
 
-    mapping(address => uint256) public preSaleMintAmountOf;
+    uint32 public immutable PRE_SALE_OPENING_TIME;
+    uint32 public immutable PRE_SALE_CLOSING_TIME;
+    uint32 public immutable PUBLIC_SALE_OPENING_TIME;
+    uint32 public publicSaleClosingTime;
 
+    uint56 public constant PRICE = 0.05 ether;
     // Parts
     IDava public dava;
     IPartCollection public davaOfficial;
     IRandomBox private _randomBox;
+
+    mapping(address => uint256) public preSaleMintAmountOf;
 
     struct Whitelist {
         uint256 ticketAmount;
@@ -64,9 +64,9 @@ contract Sale is EIP712, Ownable {
         IDava dava_,
         IPartCollection davaOfficial_,
         IRandomBox randomBox_,
-        uint256 presaleStart,
-        uint256 presaleEnd,
-        uint256 publicStart
+        uint32 presaleStart,
+        uint32 presaleEnd,
+        uint32 publicStart
     ) EIP712("AvatarSale", "V1") {
         dava = dava_;
         davaOfficial = davaOfficial_;
@@ -74,7 +74,7 @@ contract Sale is EIP712, Ownable {
         PRE_SALE_OPENING_TIME = presaleStart;
         PRE_SALE_CLOSING_TIME = presaleEnd;
         PUBLIC_SALE_OPENING_TIME = publicStart;
-        publicSaleClosingTime = 2**256 - 1;
+        publicSaleClosingTime = 2**32 - 1;
     }
 
     modifier onlyDuringPreSale() {
@@ -101,7 +101,7 @@ contract Sale is EIP712, Ownable {
         _;
     }
 
-    function setPublicSaleClosingTime(uint256 closingTime_) external onlyOwner {
+    function setPublicSaleClosingTime(uint32 closingTime_) external onlyOwner {
         publicSaleClosingTime = closingTime_;
     }
 
@@ -119,11 +119,7 @@ contract Sale is EIP712, Ownable {
     }
 
     // this is for public sale.
-    function mint(uint256 purchaseAmount)
-        external
-        payable
-        onlyDuringPublicSale
-    {
+    function mint(uint16 purchaseAmount) external payable onlyDuringPublicSale {
         require(!soldOut(), "Sale: sold out");
         require(
             purchaseAmount <= MAX_MINT_PER_TX,
@@ -132,16 +128,16 @@ contract Sale is EIP712, Ownable {
         _checkEthAmount(purchaseAmount, msg.value);
 
         uint16 davaId = _getMintableId();
-        for (uint16 i = 0; i < uint16(purchaseAmount); i += 1) {
+        for (uint16 i = 0; i < purchaseAmount; i += 1) {
             _mintAvatarWithParts(davaId + i);
         }
-        totalPublicSaleAmount += uint16(purchaseAmount);
+        totalPublicSaleAmount += purchaseAmount;
     }
 
     // this is for pre sale.
     function mintWithWhitelist(
         PreSaleReq calldata preSaleReq,
-        uint256 purchaseAmount
+        uint16 purchaseAmount
     ) external payable onlyDuringPreSale {
         require(
             msg.sender == preSaleReq.whitelist.beneficiary,
@@ -159,10 +155,10 @@ contract Sale is EIP712, Ownable {
         preSaleMintAmountOf[msg.sender] += purchaseAmount;
 
         uint16 davaId = _getMintableId();
-        for (uint16 i = 0; i < uint16(purchaseAmount); i += 1) {
+        for (uint16 i = 0; i < purchaseAmount; i += 1) {
             _mintAvatarWithParts(davaId + i);
         }
-        totalPreSaleAmount += uint16(purchaseAmount);
+        totalPreSaleAmount += purchaseAmount;
     }
 
     function withdrawFunds(address payable receiver) external onlyOwner {
@@ -181,7 +177,7 @@ contract Sale is EIP712, Ownable {
 
         davaOfficial.unsafeMintBatch(avatar, partIds, amounts);
         Part[] memory parts = new Part[](PARTS_PER_AVATAR);
-        for (uint256 i = 0; i < PARTS_PER_AVATAR; i += 1) {
+        for (uint16 i = 0; i < PARTS_PER_AVATAR; i += 1) {
             parts[i] = Part(address(davaOfficial), uint96(partIds[i]));
         }
         IAvatar(avatar).dress(parts, new bytes32[](0));
@@ -191,7 +187,7 @@ contract Sale is EIP712, Ownable {
     function soldOut() public view returns (bool) {
         return (totalPreSaleAmount +
             totalPublicSaleAmount +
-            uint160(PRE_ALLOCATED_AMOUNT) ==
+            PRE_ALLOCATED_AMOUNT ==
             MAX_TOTAL_SUPPLY);
     }
 
@@ -216,7 +212,7 @@ contract Sale is EIP712, Ownable {
     }
 
     function _getMintableId() private view returns (uint16) {
-        uint16 id = uint16(PRE_ALLOCATED_AMOUNT) +
+        uint16 id = PRE_ALLOCATED_AMOUNT +
             totalPreSaleAmount +
             totalPublicSaleAmount;
         require(id < MAX_TOTAL_SUPPLY, "Sale: exceeds max supply");
@@ -224,11 +220,13 @@ contract Sale is EIP712, Ownable {
         return id;
     }
 
-    function _checkEthAmount(uint256 purchaseAmount, uint256 paidEth)
+    function _checkEthAmount(uint16 purchaseAmount, uint256 paidEth)
         private
         pure
     {
-        uint256 requiredEth = purchaseAmount * PRICE;
-        require(paidEth >= requiredEth, "Sale: not enough eth");
+        require(
+            paidEth >= uint256(purchaseAmount) * uint256(PRICE),
+            "Sale: not enough eth"
+        );
     }
 }

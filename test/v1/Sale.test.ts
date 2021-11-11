@@ -53,7 +53,7 @@ describe("Sale", () => {
       davaOfficial.address,
       randomBox.address,
       0,
-      Date.now() + 10000000,
+      2 ** 32 - 1,
       0
     );
     const minterRoleFromCollection = await davaOfficial.MINTER_ROLE();
@@ -127,8 +127,8 @@ describe("Sale", () => {
       await checkChange({
         process: () => sale.setPublicSaleClosingTime(closingTime),
         status: () => sale.publicSaleClosingTime(),
-        expectedBefore: ethers.BigNumber.from(2).pow(256).sub(1),
-        expectedAfter: ethers.BigNumber.from(closingTime),
+        expectedBefore: 2 ** 32 - 1,
+        expectedAfter: closingTime,
       });
     });
   });
@@ -270,9 +270,7 @@ describe("Sale", () => {
   describe("claim", () => {
     describe("should be reverted", () => {
       it("if exceeds pre allocated amount", async () => {
-        const PRE_ALLOCATED_AMOUNT = (
-          await sale.PRE_ALLOCATED_AMOUNT()
-        ).toNumber();
+        const PRE_ALLOCATED_AMOUNT = await sale.PRE_ALLOCATED_AMOUNT();
 
         const recipients = new Array(PRE_ALLOCATED_AMOUNT + 1)
           .fill(null)
@@ -498,7 +496,7 @@ describe("Sale", () => {
 
     describe("should be reverted", () => {
       it("if user try to mint more than MAX_MINT_PER_TX", async () => {
-        const MAX_MINT_PER_TX = (await sale.MAX_MINT_PER_TX()).toNumber();
+        const MAX_MINT_PER_TX = await sale.MAX_MINT_PER_TX();
 
         await expect(
           sale.mint(MAX_MINT_PER_TX + 1, {

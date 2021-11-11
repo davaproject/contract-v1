@@ -13,9 +13,9 @@ contract TestSale is Sale {
         IDava dava_,
         IPartCollection davaOfficial_,
         IRandomBox randomBox_,
-        uint256 presaleStart,
-        uint256 presaleEnd,
-        uint256 publicStart
+        uint32 presaleStart,
+        uint32 presaleEnd,
+        uint32 publicStart
     )
         Sale(
             dava_,
