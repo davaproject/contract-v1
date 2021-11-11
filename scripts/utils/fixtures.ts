@@ -123,14 +123,14 @@ export const fixtures = async (): Promise<Fixture> => {
   await registerCollection({ dava, collection: davaOfficial.address });
 
   // Setup default part
-  const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
+  const defaultCategory = await davaOfficial.DEFAULT_CATEGORY();
 
   const background = {
     tokenId: await (await davaOfficial.numberOfParts()).toNumber(),
     url: "https://ipfs.io/background.png",
   };
   await davaOfficial.createPart(
-    defaultPartType,
+    defaultCategory,
     "frame",
     "",
     background.url,
@@ -142,7 +142,7 @@ export const fixtures = async (): Promise<Fixture> => {
     url: "https://ipfs.io/foreground.png",
   };
   await davaOfficial.createPart(
-    defaultPartType,
+    defaultCategory,
     "frame",
     "",
     foreground.url,

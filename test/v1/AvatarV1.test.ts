@@ -13,7 +13,7 @@ import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { parseEther } from "@ethersproject/units";
 import { createImage, createImageUri } from "./utils/image";
-import { partType } from "./utils/part";
+import { categoryId } from "./utils/part";
 import { checkChange } from "./utils/compare";
 import data from "../../data.json";
 import { generateAvatarMetadataString } from "./utils/metadata";
@@ -80,21 +80,21 @@ describe("Avatar", () => {
 
   describe("part", () => {
     const name = "test";
-    const registeredPartType = partType(name);
+    const registeredCategory = categoryId(name);
     let partId: number;
     let partOwner: SignerWithAddress;
     before(async () => {
       partOwner = accounts[3];
 
-      await davaOfficial.createPartType(name, 0, 0, 0);
+      await davaOfficial.createCategory(name, 0, 0, 0);
       partId = (await davaOfficial.numberOfParts()).toNumber();
-      await davaOfficial.createPart(registeredPartType, "test", "", "", [], 1);
-      await dava.registerPartType(registeredPartType);
+      await davaOfficial.createPart(registeredCategory, "test", "", "", [], 1);
+      await dava.registerCategory(registeredCategory);
       await davaOfficial.mint(partOwner.address, partId, 1, "0x");
     });
 
     it("should return empty part if not put on", async () => {
-      const result = await mintedAvatar.part(registeredPartType);
+      const result = await mintedAvatar.part(registeredCategory);
       expect(result.collection).to.equal(ethers.constants.AddressZero);
       expect(result.id).to.equal(0);
     });
@@ -113,7 +113,7 @@ describe("Avatar", () => {
         [{ collection: davaOfficial.address, id: partId }],
         []
       );
-      const result = await mintedAvatar.part(registeredPartType);
+      const result = await mintedAvatar.part(registeredCategory);
       expect(result.collection).to.equal(davaOfficial.address);
       expect(result.id).to.equal(partId);
     });
@@ -121,12 +121,12 @@ describe("Avatar", () => {
 
   describe("allParts", () => {
     const name = "test0987654321";
-    const registeredPartType = partType(name);
+    const registeredCategory = categoryId(name);
     before(async () => {
-      await davaOfficial.createPartType(name, 0, 0, 9999);
+      await davaOfficial.createCategory(name, 0, 0, 9999);
       const partId = await davaOfficial.numberOfParts();
-      await davaOfficial.createPart(registeredPartType, "test", "", "", [], 1);
-      await dava.registerPartType(registeredPartType);
+      await davaOfficial.createPart(registeredCategory, "test", "", "", [], 1);
+      await dava.registerCategory(registeredCategory);
       await davaOfficial.mint(mintedAvatar.address, partId, 1, "0x");
       await mintedAvatar.dress(
         [{ collection: davaOfficial.address, id: partId }],
@@ -135,7 +135,7 @@ describe("Avatar", () => {
     });
 
     after(async () => {
-      await mintedAvatar.dress([], [registeredPartType]);
+      await mintedAvatar.dress([], [registeredCategory]);
     });
 
     it("return all parts that avatar currently put on", async () => {
@@ -147,7 +147,7 @@ describe("Avatar", () => {
           ).length;
           return putOnAmount;
         },
-        process: () => mintedAvatar.dress([], [registeredPartType]),
+        process: () => mintedAvatar.dress([], [registeredCategory]),
         expectedBefore: 1,
         expectedAfter: 0,
       });
@@ -229,7 +229,7 @@ describe("Avatar", () => {
         tokenId: number;
         zIndex: number;
         uri: string;
-        partTypeTitle: string;
+        category: string;
         partTitle: string;
       }>;
 
@@ -239,35 +239,35 @@ describe("Avatar", () => {
             tokenId: 0,
             zIndex: data.frames.background.zIndex - 1,
             uri: "https://davaproject.com/layer0",
-            partTypeTitle: "layer0",
+            category: "layer0",
             partTitle: "part0",
           },
           {
             tokenId: 0,
             zIndex: data.frames.background.zIndex + 1,
             uri: "https://davaproject.com/layer1",
-            partTypeTitle: "layer1",
+            category: "layer1",
             partTitle: "part1",
           },
           {
             tokenId: 0,
             zIndex: data.frames.body.zIndex + 1,
             uri: "https://davaproject.com/layer2",
-            partTypeTitle: "layer2",
+            category: "layer2",
             partTitle: "part2",
           },
           {
             tokenId: 0,
             zIndex: data.frames.head.zIndex + 1,
             uri: "https://davaproject.com/layer3",
-            partTypeTitle: "layer3",
+            category: "layer3",
             partTitle: "part3",
           },
           {
             tokenId: 0,
             zIndex: data.frames.signature.zIndex + 1,
             uri: "https://davaproject.com/layer4",
-            partTypeTitle: "layer4",
+            category: "layer4",
             partTitle: "part4",
           },
         ];
@@ -275,22 +275,22 @@ describe("Avatar", () => {
         await layers.reduce(
           (acc, layer) =>
             acc.then(async () => {
-              const { zIndex, uri, partTypeTitle, partTitle } = layer;
-              const name = partTypeTitle;
-              const partType = ethers.utils.keccak256(
-                ethers.utils.toUtf8Bytes(name)
+              const { zIndex, uri, category, partTitle } = layer;
+              const title = category;
+              const categoryId = ethers.utils.keccak256(
+                ethers.utils.toUtf8Bytes(title)
               );
-              await davaOfficial.createPartType(
-                name,
+              await davaOfficial.createCategory(
+                title,
                 background.tokenId,
                 foreground.tokenId,
                 zIndex
               );
-              await dava.registerPartType(partType);
+              await dava.registerCategory(categoryId);
 
               layer.tokenId = (await davaOfficial.numberOfParts()).toNumber();
               await davaOfficial.createPart(
-                partType,
+                categoryId,
                 layer.partTitle,
                 "",
                 uri,
@@ -376,8 +376,8 @@ describe("Avatar", () => {
           name: `DAVA #${mintedAvatarId}`,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
-            ...layers.map(({ partTypeTitle, partTitle }) => ({
-              trait_type: partTypeTitle,
+            ...layers.map(({ category, partTitle }) => ({
+              trait_type: category,
               value: partTitle,
             })),
           ],
@@ -396,7 +396,7 @@ describe("Avatar", () => {
       it("should return updated compiled metadata if avatar take off some", async () => {
         await mintedAvatar.dress(
           [],
-          [partType(layers[0].partTypeTitle), partType(layers[3].partTypeTitle)]
+          [categoryId(layers[0].category), categoryId(layers[3].category)]
         );
         const expectedImageUri = createImageUri({
           host,
@@ -430,8 +430,8 @@ describe("Avatar", () => {
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
             ...[layers[1], layers[2], layers[4]].map(
-              ({ partTypeTitle, partTitle }) => ({
-                trait_type: partTypeTitle,
+              ({ category, partTitle }) => ({
+                trait_type: category,
                 value: partTitle,
               })
             ),
@@ -452,7 +452,7 @@ describe("Avatar", () => {
 
   describe("dress", () => {
     interface Part {
-      partType: string;
+      category: string;
       id: number;
     }
     let parts: Part[] = [];
@@ -461,21 +461,21 @@ describe("Avatar", () => {
       await [null, null].reduce(
         (acc, _, i) =>
           acc.then(async () => {
-            const partTypeTitle = `test${Date.now()}${i}`;
-            await davaOfficial.createPartType(
-              partTypeTitle,
+            const category = `test${Date.now()}${i}`;
+            await davaOfficial.createCategory(
+              category,
               background.tokenId,
               foreground.tokenId,
               i + 1000
             );
 
-            const _partType = partType(partTypeTitle);
-            await dava.registerPartType(_partType);
+            const _categoryId = categoryId(category);
+            await dava.registerCategory(_categoryId);
 
             const partId = (await davaOfficial.numberOfParts()).toNumber();
-            await davaOfficial.createPart(_partType, "", "", "", [], 10);
+            await davaOfficial.createPart(_categoryId, "", "", "", [], 10);
 
-            parts.push({ partType: _partType, id: partId });
+            parts.push({ category: _categoryId, id: partId });
           }),
         Promise.resolve()
       );
@@ -503,7 +503,7 @@ describe("Avatar", () => {
 
       await checkChange({
         status: async () => {
-          const equippedPart = await mintedAvatar.part(targetPart.partType);
+          const equippedPart = await mintedAvatar.part(targetPart.category);
 
           return {
             collection: equippedPart.collection,
@@ -538,7 +538,7 @@ describe("Avatar", () => {
 
         await checkChange({
           status: async () => {
-            const equippedPart = await mintedAvatar.part(targetPart.partType);
+            const equippedPart = await mintedAvatar.part(targetPart.category);
 
             return {
               collection: equippedPart.collection,
@@ -586,14 +586,14 @@ describe("Avatar", () => {
       it("if avatar puton already", async () => {
         await checkChange({
           status: async () => {
-            const equippedPart = await mintedAvatar.part(targetPart.partType);
+            const equippedPart = await mintedAvatar.part(targetPart.category);
 
             return {
               collection: equippedPart.collection,
               id: equippedPart.id.toNumber(),
             };
           },
-          process: () => mintedAvatar.dress([], [targetPart.partType]),
+          process: () => mintedAvatar.dress([], [targetPart.category]),
           expectedBefore: {
             collection: davaOfficial.address,
             id: targetPart.id,

@@ -14,7 +14,7 @@ import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { checkChange } from "./utils/compare";
 import { genWhitelistSig } from "./utils/signature";
-import { partType } from "./utils/part";
+import { categoryId } from "./utils/part";
 import { BigNumberish } from "@ethersproject/bignumber";
 import BytesLikeArray from "./types/BytesLikeArray";
 import { partIdsToHex } from "./utils/bit";
@@ -66,17 +66,17 @@ describe("Sale", () => {
       const frameTokenId = 0;
       const zIndex = i;
 
-      await davaOfficial.createPartType(
+      await davaOfficial.createCategory(
         collectionName,
         frameTokenId,
         frameTokenId,
         zIndex
       );
-      await dava.registerPartType(partType(collectionName));
+      await dava.registerCategory(categoryId(collectionName));
 
       const partId = (await davaOfficial.numberOfParts()).toNumber();
       await davaOfficial.unsafeCreatePart(
-        partType(collectionName),
+        categoryId(collectionName),
         "test",
         "test",
         "test",
@@ -86,7 +86,7 @@ describe("Sale", () => {
       );
 
       partIds.push(partId);
-      partInfo.push(partType(collectionName));
+      partInfo.push(categoryId(collectionName));
     }
 
     await randomBox.setSeed();

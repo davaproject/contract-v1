@@ -11,13 +11,13 @@ interface IDava is IERC721, IHost {
 
     function registerCollection(address collection) external;
 
-    function registerPartType(bytes32 partType) external;
+    function registerCategory(bytes32 categoryId) external;
 
     function registerFrameCollection(address collection) external;
 
     function deregisterCollection(address collection) external;
 
-    function deregisterPartType(bytes32 partType) external;
+    function deregisterCategory(bytes32 categoryId) external;
 
     function zap(
         uint256 tokenId,
@@ -32,16 +32,19 @@ interface IDava is IERC721, IHost {
         view
         returns (bool);
 
-    function isSupportedPartType(bytes32 partType) external view returns (bool);
+    function isSupportedCategory(bytes32 categoryId)
+        external
+        view
+        returns (bool);
 
-    function isDavaPart(address collection, bytes32 partType)
+    function isDavaPart(address collection, bytes32 categoryId)
         external
         view
         returns (bool);
 
     function getAvatar(uint256 id) external view returns (address);
 
-    function getAllSupportedPartTypes()
+    function getAllSupportedCategories()
         external
         view
         returns (bytes32[] memory);

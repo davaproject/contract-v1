@@ -36,7 +36,7 @@ contract AvatarV1 is AvatarBase {
         for (uint256 i = 0; i < parts.length; i += 1) {
             if (parts[i].collection != address(0x0)) {
                 attributes[wearingPartAmount] = IPartCollection.Attribute(
-                    IPartCollection(parts[i].collection).partTypeTitle(
+                    IPartCollection(parts[i].collection).categoryTitle(
                         parts[i].id
                     ),
                     IPartCollection(parts[i].collection).partTitle(parts[i].id)

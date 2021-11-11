@@ -18,7 +18,7 @@ import { solidity } from "ethereum-waffle";
 import { constants } from "ethers";
 import { Contracts, fixtures } from "../../scripts/utils/fixtures";
 import { checkChange } from "./utils/compare";
-import { partType } from "./utils/part";
+import { categoryId } from "./utils/part";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -103,8 +103,8 @@ describe("Dava", () => {
     });
   });
 
-  describe("registerPartType", () => {
-    const newPartType = partType("TEST");
+  describe("registerCategory", () => {
+    const newCategoryId = categoryId("TEST");
 
     describe("should be reverted", () => {
       it("if msg.sender is not PART_MANAGER", async () => {
@@ -116,31 +116,31 @@ describe("Dava", () => {
         );
         expect(isManager).to.be.false;
 
-        await expect(dava.connect(nonManager).registerPartType(newPartType)).to
-          .be.reverted;
+        await expect(dava.connect(nonManager).registerCategory(newCategoryId))
+          .to.be.reverted;
       });
 
-      it("if partType is already registered", async () => {
-        await dava.registerPartType(newPartType);
-        await expect(dava.registerPartType(newPartType)).to.be.revertedWith(
-          "Dava: partType is already registered"
+      it("if categoryId is already registered", async () => {
+        await dava.registerCategory(newCategoryId);
+        await expect(dava.registerCategory(newCategoryId)).to.be.revertedWith(
+          "Dava: category is already registered"
         );
       });
     });
 
-    it("should add partType", async () => {
+    it("should add categoryId", async () => {
       await checkChange({
-        status: () => dava.isSupportedPartType(newPartType),
-        process: () => dava.registerPartType(newPartType),
+        status: () => dava.isSupportedCategory(newCategoryId),
+        process: () => dava.registerCategory(newCategoryId),
         expectedBefore: false,
         expectedAfter: true,
       });
     });
 
-    it("should emit 'PartTypeRegistered' event", async () => {
-      await expect(dava.registerPartType(newPartType))
-        .to.emit(dava, "PartTypeRegistered")
-        .withArgs(newPartType);
+    it("should emit 'CategoryRegistered' event", async () => {
+      await expect(dava.registerCategory(newCategoryId))
+        .to.emit(dava, "CategoryRegistered")
+        .withArgs(newCategoryId);
     });
   });
 
@@ -232,10 +232,10 @@ describe("Dava", () => {
     });
   });
 
-  describe("deregisterPartType", () => {
-    const newPartType = partType("TEST");
+  describe("deregisterCategory", () => {
+    const newCategoryId = categoryId("TEST");
     before(async () => {
-      await dava.registerPartType(newPartType);
+      await dava.registerCategory(newCategoryId);
     });
 
     describe("should be reverted", () => {
@@ -248,30 +248,30 @@ describe("Dava", () => {
         );
         expect(isManager).to.be.false;
 
-        await expect(dava.connect(nonManager).deregisterPartType(newPartType))
+        await expect(dava.connect(nonManager).deregisterCategory(newCategoryId))
           .to.be.reverted;
       });
 
-      it("if partType is not registered", async () => {
+      it("if category is not registered", async () => {
         await expect(
-          dava.deregisterPartType(partType("TEST_NEW"))
-        ).to.be.revertedWith("Dava: non registered partType");
+          dava.deregisterCategory(categoryId("TEST_NEW"))
+        ).to.be.revertedWith("Dava: non registered category");
       });
     });
 
-    it("should remove partType", async () => {
+    it("should remove category", async () => {
       await checkChange({
-        status: () => dava.isSupportedPartType(newPartType),
-        process: () => dava.deregisterPartType(newPartType),
+        status: () => dava.isSupportedCategory(newCategoryId),
+        process: () => dava.deregisterCategory(newCategoryId),
         expectedBefore: true,
         expectedAfter: false,
       });
     });
 
-    it("should emit 'PartTypeDeregistered' event", async () => {
-      await expect(dava.deregisterPartType(newPartType))
-        .to.emit(dava, "PartTypeDeregistered")
-        .withArgs(newPartType);
+    it("should emit 'CategoryDeregistered' event", async () => {
+      await expect(dava.deregisterCategory(newCategoryId))
+        .to.emit(dava, "CategoryDeregistered")
+        .withArgs(newCategoryId);
     });
   });
 
@@ -288,45 +288,45 @@ describe("Dava", () => {
     });
   });
 
-  describe("isSupportedPartType", () => {
-    const newPartType = partType("TEST X 10");
+  describe("isSupportedCategory", () => {
+    const newCategoryId = categoryId("TEST X 10");
 
-    it("should return false if partType is not registered", async () => {
-      const result = await dava.isSupportedPartType(newPartType);
+    it("should return false if category is not registered", async () => {
+      const result = await dava.isSupportedCategory(newCategoryId);
       expect(result).to.be.false;
     });
 
-    it("should return true if partType is registered", async () => {
-      await dava.registerPartType(newPartType);
-      const result = await dava.isSupportedPartType(newPartType);
+    it("should return true if category is registered", async () => {
+      await dava.registerCategory(newCategoryId);
+      const result = await dava.isSupportedCategory(newCategoryId);
       expect(result).to.be.true;
     });
   });
 
   describe("isDavaPart", () => {
-    const newPartType = partType("TEST X 10000");
+    const newCategoryId = categoryId("TEST X 10000");
     before(async () => {
-      await dava.registerPartType(newPartType);
+      await dava.registerCategory(newCategoryId);
     });
 
     it("should return false if collection is not registered", async () => {
       const result = await dava.isDavaPart(
         ethers.Wallet.createRandom().address,
-        newPartType
+        newCategoryId
       );
       expect(result).to.be.false;
     });
 
-    it("should return false if partType is not registered", async () => {
+    it("should return false if category is not registered", async () => {
       const result = await dava.isDavaPart(
         ethers.Wallet.createRandom().address,
-        partType(`${Date.now()}`)
+        categoryId(`${Date.now()}`)
       );
       expect(result).to.be.false;
     });
 
-    it("should return true if partType and collection are registered", async () => {
-      const result = await dava.isDavaPart(davaOfficial.address, newPartType);
+    it("should return true if category and collection are registered", async () => {
+      const result = await dava.isDavaPart(davaOfficial.address, newCategoryId);
       expect(result).to.be.true;
     });
   });
@@ -346,11 +346,11 @@ describe("Dava", () => {
     });
   });
 
-  describe("getAllSupportedPartTypes", () => {
-    it("should return all registered partTypes", async () => {
+  describe("getAllSupportedCategories", () => {
+    it("should return all registered categories", async () => {
       await checkChange({
-        status: () => dava.getAllSupportedPartTypes().then((v) => v.length),
-        process: () => dava.registerPartType(partType(`${Date.now()}`)),
+        status: () => dava.getAllSupportedCategories().then((v) => v.length),
+        process: () => dava.registerCategory(categoryId(`${Date.now()}`)),
         expectedBefore: 2,
         expectedAfter: 3,
       });
@@ -459,7 +459,7 @@ describe("Dava", () => {
   describe("zap", () => {
     let testAvatar: TestAvatarV1;
     let avatarOwner: SignerWithAddress;
-    let _partType: string;
+    let _categoryId: string;
     let partId: number;
     let nonHoldingPartId: number;
 
@@ -478,17 +478,17 @@ describe("Dava", () => {
       );
 
       const collectionName = "test";
-      const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
-      _partType = partType(collectionName);
-      await davaOfficial.createPart(defaultPartType, "test", "", "", [], 0);
-      await davaOfficial.createPartType(collectionName, 0, 0, 0);
-      await dava.registerPartType(_partType);
+      const defaultCategory = await davaOfficial.DEFAULT_CATEGORY();
+      _categoryId = categoryId(collectionName);
+      await davaOfficial.createPart(defaultCategory, "test", "", "", [], 0);
+      await davaOfficial.createCategory(collectionName, 0, 0, 0);
+      await dava.registerCategory(_categoryId);
       partId = (await davaOfficial.numberOfParts()).toNumber();
-      await davaOfficial.createPart(_partType, "TEST", "", "", [], 1);
+      await davaOfficial.createPart(_categoryId, "TEST", "", "", [], 1);
       await davaOfficial.mint(avatarOwner.address, partId, 1, "0x");
 
       nonHoldingPartId = partId + 1;
-      await davaOfficial.createPart(_partType, "TEST", "", "", [], 1);
+      await davaOfficial.createPart(_categoryId, "TEST", "", "", [], 1);
       await davaOfficial.mint(accounts[6].address, nonHoldingPartId, 1, "0x");
     });
 
@@ -537,7 +537,7 @@ describe("Dava", () => {
             await davaOfficial.balanceOf(testAvatar.address, partId)
           ).toNumber();
           const equipped =
-            (await testAvatar.part(_partType)).collection !=
+            (await testAvatar.part(_categoryId)).collection !=
             ethers.constants.AddressZero;
           return { ownerBalance, avatarBalance, equipped };
         },
@@ -563,11 +563,11 @@ describe("Dava", () => {
             await davaOfficial.balanceOf(testAvatar.address, partId)
           ).toNumber();
           const equipped =
-            (await testAvatar.part(_partType)).collection !=
+            (await testAvatar.part(_categoryId)).collection !=
             ethers.constants.AddressZero;
           return { ownerBalance, avatarBalance, equipped };
         },
-        process: () => dava.connect(avatarOwner).zap(0, [], [_partType]),
+        process: () => dava.connect(avatarOwner).zap(0, [], [_categoryId]),
         expectedBefore: { ownerBalance: 0, avatarBalance: 1, equipped: true },
         expectedAfter: { ownerBalance: 1, avatarBalance: 0, equipped: false },
       });

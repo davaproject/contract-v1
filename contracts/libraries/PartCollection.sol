@@ -21,17 +21,17 @@ struct PartInfo {
     mapping(uint256 => string) imgURIs;
     mapping(uint256 => uint256) maxSupply;
     mapping(uint256 => IPartCollection.Attribute[]) attributes;
-    mapping(uint256 => bytes32) types;
+    mapping(uint256 => bytes32) categoryIds;
 }
 
 struct CollectionInfo {
-    // part type => zIndex
+    // categoryId => zIndex
     mapping(bytes32 => uint256) zIndex;
-    // part type => title
+    // categoryId => title
     mapping(bytes32 => string) titles;
-    // part type => current contract tokenId
+    // categoryId => current contract tokenId
     mapping(bytes32 => uint256) backgroundImagePart;
-    // part type => current contract tokenId
+    // categoryId => current contract tokenId
     mapping(bytes32 => uint256) foregroundImagePart;
     // zIndex => bool
     mapping(uint256 => bool) zIndexExists;
@@ -47,7 +47,7 @@ abstract contract PartCollection is
     using Address for address;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
-    bytes32 public constant DEFAULT_PART_TYPE = keccak256("DEFAULT_PART");
+    bytes32 public constant DEFAULT_CATEGORY = keccak256("DEFAULT_CATEGORY");
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
@@ -60,7 +60,7 @@ abstract contract PartCollection is
     CollectionInfo private _collectionInfo;
     uint256 public override numberOfParts;
 
-    EnumerableSet.Bytes32Set private _supportedPartTypes;
+    EnumerableSet.Bytes32Set private _supportedCategoryIds;
 
     event PartCreated(uint256 partId);
 
@@ -74,7 +74,7 @@ abstract contract PartCollection is
         _setupRole(CREATOR_ROLE, msg.sender);
         _setRoleAdmin(CREATOR_ROLE, DEFAULT_ADMIN_ROLE);
 
-        _supportedPartTypes.add(DEFAULT_PART_TYPE);
+        _supportedCategoryIds.add(DEFAULT_CATEGORY);
     }
 
     function setBaseURI(string memory baseURI_) external onlyOwner {
@@ -82,7 +82,7 @@ abstract contract PartCollection is
     }
 
     function unsafeCreatePart(
-        bytes32 partType_,
+        bytes32 categoryId_,
         string memory title_,
         string memory description_,
         string memory uri_,
@@ -92,7 +92,7 @@ abstract contract PartCollection is
     ) external onlyRole(CREATOR_ROLE) {
         _unsafeSetTotalSupply(numberOfParts, filledSupply_);
         createPart(
-            partType_,
+            categoryId_,
             title_,
             description_,
             uri_,
@@ -102,7 +102,7 @@ abstract contract PartCollection is
     }
 
     function createPart(
-        bytes32 partType_,
+        bytes32 categoryId_,
         string memory title_,
         string memory description_,
         string memory uri_,
@@ -117,13 +117,13 @@ abstract contract PartCollection is
 
         // default part
         require(
-            _supportedPartTypes.contains(partType_),
-            "Part: non existent partType"
+            _supportedCategoryIds.contains(categoryId_),
+            "Part: non existent category"
         );
-        if (partType_ == DEFAULT_PART_TYPE) {
+        if (categoryId_ == DEFAULT_CATEGORY) {
             require(
                 maxSupply_ == 0,
-                "Part: maxSupply of default part should be zero"
+                "Part: maxSupply of default category should be zero"
             );
         } else {
             require(
@@ -132,7 +132,7 @@ abstract contract PartCollection is
             );
             emit PartCreated(tokenId);
         }
-        _partInfo.types[tokenId] = partType_;
+        _partInfo.categoryIds[tokenId] = categoryId_;
 
         for (uint256 i = 0; i < attributes.length; i += 1) {
             _partInfo.attributes[tokenId].push(attributes[i]);
@@ -141,16 +141,16 @@ abstract contract PartCollection is
         numberOfParts += 1;
     }
 
-    function createPartType(
+    function createCategory(
         string memory title_,
         uint256 backgroundImageTokenId_,
         uint256 foregroundImageTokenId_,
         uint256 zIndex_
     ) public virtual override onlyRole(CREATOR_ROLE) {
-        bytes32 _partType = keccak256(abi.encodePacked(title_));
+        bytes32 _categoryId = keccak256(abi.encodePacked(title_));
         require(
-            !_supportedPartTypes.contains(_partType),
-            "Part: already exists partType"
+            !_supportedCategoryIds.contains(_categoryId),
+            "Part: already exists category"
         );
         require(
             !_collectionInfo.zIndexExists[zIndex_],
@@ -158,22 +158,24 @@ abstract contract PartCollection is
         );
 
         require(
-            _partInfo.types[backgroundImageTokenId_] == DEFAULT_PART_TYPE &&
-                _partInfo.types[foregroundImageTokenId_] == DEFAULT_PART_TYPE,
-            "Part: background image is not created"
+            _partInfo.categoryIds[backgroundImageTokenId_] ==
+                DEFAULT_CATEGORY &&
+                _partInfo.categoryIds[foregroundImageTokenId_] ==
+                DEFAULT_CATEGORY,
+            "Part: frame image is not created"
         );
 
-        _collectionInfo.zIndex[_partType] = zIndex_;
-        _collectionInfo.titles[_partType] = title_;
+        _collectionInfo.zIndex[_categoryId] = zIndex_;
+        _collectionInfo.titles[_categoryId] = title_;
         _collectionInfo.backgroundImagePart[
-            _partType
+            _categoryId
         ] = backgroundImageTokenId_;
         _collectionInfo.foregroundImagePart[
-            _partType
+            _categoryId
         ] = foregroundImageTokenId_;
         _collectionInfo.zIndexExists[zIndex_] = true;
 
-        _supportedPartTypes.add(_partType);
+        _supportedCategoryIds.add(_categoryId);
     }
 
     function mint(
@@ -218,10 +220,10 @@ abstract contract PartCollection is
     function uri(uint256 tokenId) public view override returns (string memory) {
         string[] memory imgURIs = new string[](3);
         uint256 backgroundTokenId = _collectionInfo.backgroundImagePart[
-            _partInfo.types[tokenId]
+            _partInfo.categoryIds[tokenId]
         ];
         uint256 foregroundTokenId = _collectionInfo.foregroundImagePart[
-            _partInfo.types[tokenId]
+            _partInfo.categoryIds[tokenId]
         ];
 
         imgURIs[0] = _partInfo.imgURIs[backgroundTokenId];
@@ -262,7 +264,7 @@ abstract contract PartCollection is
         );
         attributes[_partInfo.attributes[tokenId].length + 1] = Attribute(
             "TYPE",
-            partTypeTitle(tokenId)
+            categoryTitle(tokenId)
         );
 
         return
@@ -309,8 +311,12 @@ abstract contract PartCollection is
         return OnchainMetadata.compileImages(imgURIs);
     }
 
-    function getAllSupportedPartTypes() public view returns (bytes32[] memory) {
-        return _supportedPartTypes.values();
+    function getAllSupportedCategoryIds()
+        public
+        view
+        returns (bytes32[] memory)
+    {
+        return _supportedCategoryIds.values();
     }
 
     function maxSupply(uint256 tokenId)
@@ -335,14 +341,14 @@ abstract contract PartCollection is
             super.supportsInterface(interfaceId);
     }
 
-    function partTypeTitle(uint256 tokenId)
+    function categoryTitle(uint256 tokenId)
         public
         view
         override
         returns (string memory)
     {
-        bytes32 _partType = _partInfo.types[tokenId];
-        return _collectionInfo.titles[_partType];
+        bytes32 _categoryId = _partInfo.categoryIds[tokenId];
+        return _collectionInfo.titles[_categoryId];
     }
 
     /**
@@ -357,7 +363,7 @@ abstract contract PartCollection is
         return _partInfo.titles[tokenId];
     }
 
-    function partTypeInfo(bytes32 partType_)
+    function categoryInfo(bytes32 categoryId_)
         public
         view
         override
@@ -368,14 +374,23 @@ abstract contract PartCollection is
             uint256 zIndex_
         )
     {
-        title_ = _collectionInfo.titles[partType_];
-        backgroundImgTokenId_ = _collectionInfo.backgroundImagePart[partType_];
-        foregroundImgTokenId_ = _collectionInfo.foregroundImagePart[partType_];
-        zIndex_ = _collectionInfo.zIndex[partType_];
+        title_ = _collectionInfo.titles[categoryId_];
+        backgroundImgTokenId_ = _collectionInfo.backgroundImagePart[
+            categoryId_
+        ];
+        foregroundImgTokenId_ = _collectionInfo.foregroundImagePart[
+            categoryId_
+        ];
+        zIndex_ = _collectionInfo.zIndex[categoryId_];
     }
 
-    function partType(uint256 tokenId) public view override returns (bytes32) {
-        return _partInfo.types[tokenId];
+    function categoryId(uint256 tokenId)
+        public
+        view
+        override
+        returns (bytes32)
+    {
+        return _partInfo.categoryIds[tokenId];
     }
 
     /**
@@ -388,8 +403,8 @@ abstract contract PartCollection is
         override
         returns (uint256)
     {
-        bytes32 _partType = _partInfo.types[tokenId];
-        uint256 zIndex_ = _collectionInfo.zIndex[_partType];
+        bytes32 _categoryId = _partInfo.categoryIds[tokenId];
+        uint256 zIndex_ = _collectionInfo.zIndex[_categoryId];
         return zIndex_;
     }
 

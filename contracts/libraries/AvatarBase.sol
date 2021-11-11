@@ -16,8 +16,8 @@ import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
     using Strings for uint256;
 
-    event PutOn(bytes32 indexed partType, address collection, uint256 id);
-    event TakeOff(bytes32 indexed partType, address collection, uint256 id);
+    event PutOn(bytes32 indexed categoryId, address collection, uint256 id);
+    event TakeOff(bytes32 indexed categoryId, address collection, uint256 id);
 
     // DO NOT DECLARE state variables in the proxy contract.
     // If you wanna access to the existing state variables, use _props().
@@ -59,9 +59,14 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         return _props().davaId;
     }
 
-    function part(bytes32 partType) public view override returns (Part memory) {
+    function part(bytes32 categoryId)
+        public
+        view
+        override
+        returns (Part memory)
+    {
         // Try to retrieve from the storage
-        Part memory part_ = _props().parts[partType];
+        Part memory part_ = _props().parts[categoryId];
         if (part_.collection == address(0x0)) {
             return Part(address(0x0), 0);
         }
@@ -84,11 +89,11 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         returns (Part[] memory parts)
     {
         IDava _dava = IDava(dava());
-        bytes32[] memory allTypes = _dava.getAllSupportedPartTypes();
+        bytes32[] memory allCategories = _dava.getAllSupportedCategories();
 
-        parts = new Part[](allTypes.length);
-        for (uint256 i = 0; i < allTypes.length; i += 1) {
-            parts[i] = part(allTypes[i]);
+        parts = new Part[](allCategories.length);
+        for (uint256 i = 0; i < allCategories.length; i += 1) {
+            parts[i] = part(allCategories[i]);
         }
     }
 
@@ -116,15 +121,17 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         returns (string memory);
 
     function _putOn(Part memory part_) internal {
-        bytes32 partType = IPartCollection(part_.collection).partType(part_.id);
-        _props().parts[partType] = part_;
-        emit PutOn(partType, part_.collection, part_.id);
+        bytes32 categoryId = IPartCollection(part_.collection).categoryId(
+            part_.id
+        );
+        _props().parts[categoryId] = part_;
+        emit PutOn(categoryId, part_.collection, part_.id);
     }
 
-    function _takeOff(bytes32 partType) internal {
-        Part memory target = _props().parts[partType];
-        delete _props().parts[partType];
-        emit TakeOff(partType, target.collection, target.id);
+    function _takeOff(bytes32 categoryId) internal {
+        Part memory target = _props().parts[categoryId];
+        delete _props().parts[categoryId];
+        emit TakeOff(categoryId, target.collection, target.id);
     }
 
     function _isEligible(Part memory part_)
@@ -136,7 +143,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         require(
             IDava(dava()).isDavaPart(
                 part_.collection,
-                IPartCollection(part_.collection).partType(part_.id)
+                IPartCollection(part_.collection).categoryId(part_.id)
             ),
             "Avatar: not a registered part."
         );

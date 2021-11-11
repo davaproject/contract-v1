@@ -6,7 +6,7 @@ import { Dava, DavaOfficial } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { createImage, createImageUri } from "./utils/image";
-import { partType } from "./utils/part";
+import { categoryId } from "./utils/part";
 import { checkChange } from "./utils/compare";
 import { generatePartMetadataString } from "./utils/metadata";
 
@@ -16,13 +16,12 @@ const { expect } = chai;
 describe("DavaOfficial", () => {
   let snapshot: string;
   let davaOfficial: DavaOfficial;
-  let dava: Dava;
   let [deployer, ...accounts]: SignerWithAddress[] = [];
   let host: string;
   let background: { tokenId: number; url: string };
   let foreground: { tokenId: number; url: string };
 
-  const testPartType = {
+  const testCategory = {
     backgroundImageTokenId: 0,
     foregroundImageTokenId: 0,
     name: "testPart0123",
@@ -30,7 +29,7 @@ describe("DavaOfficial", () => {
   };
   const testParts = new Array(2).fill(null).map((_, i) => ({
     tokenId: 0,
-    partType: partType(testPartType.name),
+    category: categoryId(testCategory.name),
     title: `new part ${i}`,
     creator: ethers.Wallet.createRandom().address,
     description: `new description ${i}`,
@@ -43,17 +42,16 @@ describe("DavaOfficial", () => {
     [deployer, ...accounts] = await ethers.getSigners();
     const { contracts, parts } = await fixtures();
     davaOfficial = contracts.parts.davaOfficial;
-    dava = contracts.dava;
     ({ host } = parts);
     ({ background, foreground } = parts.defaultPart);
-    testPartType.backgroundImageTokenId = background.tokenId;
-    testPartType.foregroundImageTokenId = foreground.tokenId;
+    testCategory.backgroundImageTokenId = background.tokenId;
+    testCategory.foregroundImageTokenId = foreground.tokenId;
 
-    await davaOfficial.createPartType(
-      testPartType.name,
-      testPartType.backgroundImageTokenId,
-      testPartType.foregroundImageTokenId,
-      testPartType.zIndex
+    await davaOfficial.createCategory(
+      testCategory.name,
+      testCategory.backgroundImageTokenId,
+      testCategory.foregroundImageTokenId,
+      testCategory.zIndex
     );
     await testParts.reduce(
       (acc, v) =>
@@ -61,7 +59,7 @@ describe("DavaOfficial", () => {
           const tokenId = (await davaOfficial.numberOfParts()).toNumber();
           v.tokenId = tokenId;
           await davaOfficial.createPart(
-            v.partType,
+            v.category,
             v.title,
             v.description,
             v.uri,
@@ -225,12 +223,12 @@ describe("DavaOfficial", () => {
     });
   });
 
-  describe("getAllSupportedPartTypes", () => {
-    it("should return all registered part types", async () => {
-      const DEFAULT_PART_TYPE = await davaOfficial.DEFAULT_PART_TYPE();
+  describe("getAllSupportedCategoryIds", () => {
+    it("should return all registered category ids", async () => {
+      const DEFAULT_CATEGORY = await davaOfficial.DEFAULT_CATEGORY();
 
-      const result = await davaOfficial.getAllSupportedPartTypes();
-      expect(result).to.eql([DEFAULT_PART_TYPE, partType(testPartType.name)]);
+      const result = await davaOfficial.getAllSupportedCategoryIds();
+      expect(result).to.eql([DEFAULT_CATEGORY, categoryId(testCategory.name)]);
     });
   });
 
@@ -243,11 +241,11 @@ describe("DavaOfficial", () => {
     });
   });
 
-  describe("partTypeTitle", () => {
-    it("should return proper partTypeTitle", async () => {
-      const result = await davaOfficial.partTypeTitle(testParts[0].tokenId);
+  describe("categoryTitle", () => {
+    it("should return proper categoryTitle", async () => {
+      const result = await davaOfficial.categoryTitle(testParts[0].tokenId);
 
-      expect(result).to.equal(testPartType.name);
+      expect(result).to.equal(testCategory.name);
     });
   });
 
@@ -260,21 +258,21 @@ describe("DavaOfficial", () => {
     });
   });
 
-  describe("partType", () => {
-    it("should return proper partType", async () => {
+  describe("category", () => {
+    it("should return proper category", async () => {
       const targetPart = testParts[0];
-      const result = await davaOfficial.partType(targetPart.tokenId);
+      const result = await davaOfficial.categoryId(targetPart.tokenId);
 
-      expect(result).to.equal(targetPart.partType);
+      expect(result).to.equal(targetPart.category);
     });
   });
 
   describe("zIndex", () => {
-    it("should return proper partType", async () => {
+    it("should return proper category zIndex", async () => {
       const targetPart = testParts[0];
       const result = await davaOfficial.zIndex(targetPart.tokenId);
 
-      expect(result).to.equal(testPartType.zIndex);
+      expect(result).to.equal(testCategory.zIndex);
     });
   });
 
@@ -300,39 +298,43 @@ describe("DavaOfficial", () => {
     });
   });
 
-  describe("partTypeInfo", () => {
-    it("should return proper partType information", async () => {
-      const result = await davaOfficial.partTypeInfo(
-        partType(testPartType.name)
+  describe("categoryInfo", () => {
+    it("should return proper category information", async () => {
+      const result = await davaOfficial.categoryInfo(
+        categoryId(testCategory.name)
       );
-      expect(result[0]).to.equal(testPartType.name);
-      expect(result[1]).to.equal(testPartType.backgroundImageTokenId);
-      expect(result[2]).to.equal(testPartType.foregroundImageTokenId);
-      expect(result[3]).to.equal(testPartType.zIndex);
+      expect(result[0]).to.equal(testCategory.name);
+      expect(result[1]).to.equal(testCategory.backgroundImageTokenId);
+      expect(result[2]).to.equal(testCategory.foregroundImageTokenId);
+      expect(result[3]).to.equal(testCategory.zIndex);
     });
   });
 
-  describe("createPartType", () => {
-    it("create new partType", async () => {
-      const newPartType = {
-        name: "new part type",
-        backgroundImageTokenId: testPartType.backgroundImageTokenId,
-        foregroundImageTokenId: testPartType.foregroundImageTokenId,
+  describe("createCategory", () => {
+    it("create new category", async () => {
+      const newCategory = {
+        title: "new category",
+        backgroundImageTokenId: testCategory.backgroundImageTokenId,
+        foregroundImageTokenId: testCategory.foregroundImageTokenId,
         zIndex: 99999,
       };
 
       await checkChange({
         status: async () => {
-          const amountOfPartTypes = (
-            await davaOfficial.getAllSupportedPartTypes()
+          const amountOfCategories = (
+            await davaOfficial.getAllSupportedCategoryIds()
           ).length;
-          const [name, backgroundImageTokenId, foregroundImageTokenId, zIndex] =
-            await davaOfficial.partTypeInfo(partType(newPartType.name));
+          const [
+            title,
+            backgroundImageTokenId,
+            foregroundImageTokenId,
+            zIndex,
+          ] = await davaOfficial.categoryInfo(categoryId(newCategory.title));
 
           return {
-            amountOfPartTypes,
-            partTypeInfo: {
-              name,
+            amountOfCategories,
+            categoryInfo: {
+              title,
               backgroundImageTokenId,
               foregroundImageTokenId,
               zIndex,
@@ -340,32 +342,32 @@ describe("DavaOfficial", () => {
           };
         },
         process: () =>
-          davaOfficial.createPartType(
-            newPartType.name,
-            newPartType.backgroundImageTokenId,
-            newPartType.foregroundImageTokenId,
-            newPartType.zIndex
+          davaOfficial.createCategory(
+            newCategory.title,
+            newCategory.backgroundImageTokenId,
+            newCategory.foregroundImageTokenId,
+            newCategory.zIndex
           ),
         expectedBefore: {
-          amountOfPartTypes: 2,
-          partTypeInfo: {
-            name: "",
+          amountOfCategories: 2,
+          categoryInfo: {
+            title: "",
             backgroundImageTokenId: ethers.BigNumber.from(0),
             foregroundImageTokenId: ethers.BigNumber.from(0),
             zIndex: ethers.BigNumber.from(0),
           },
         },
         expectedAfter: {
-          amountOfPartTypes: 3,
-          partTypeInfo: {
-            name: newPartType.name,
+          amountOfCategories: 3,
+          categoryInfo: {
+            title: newCategory.title,
             backgroundImageTokenId: ethers.BigNumber.from(
-              newPartType.backgroundImageTokenId
+              newCategory.backgroundImageTokenId
             ),
             foregroundImageTokenId: ethers.BigNumber.from(
-              newPartType.foregroundImageTokenId
+              newCategory.foregroundImageTokenId
             ),
-            zIndex: ethers.BigNumber.from(newPartType.zIndex),
+            zIndex: ethers.BigNumber.from(newCategory.zIndex),
           },
         },
       });
@@ -374,53 +376,53 @@ describe("DavaOfficial", () => {
     describe("should be reverted", () => {
       it("for already registered name", async () => {
         await expect(
-          davaOfficial.createPartType(
-            testPartType.name,
+          davaOfficial.createCategory(
+            testCategory.name,
             background.tokenId,
             foreground.tokenId,
             1000
           )
-        ).to.be.revertedWith("Part: already exists partType");
+        ).to.be.revertedWith("Part: already exists category");
       });
 
       it("for already registered zIndex", async () => {
         await expect(
-          davaOfficial.createPartType(
-            testPartType.name + "123",
+          davaOfficial.createCategory(
+            testCategory.name + "123",
             background.tokenId,
             foreground.tokenId,
-            testPartType.zIndex
+            testCategory.zIndex
           )
         ).to.be.revertedWith("Part: already used zIndex");
       });
 
       it("for non existent background", async () => {
         await expect(
-          davaOfficial.createPartType(
-            testPartType.name + "123",
+          davaOfficial.createCategory(
+            testCategory.name + "123",
             background.tokenId + 100,
             foreground.tokenId + 100,
-            testPartType.zIndex + 1
+            testCategory.zIndex + 1
           )
-        ).to.be.revertedWith("Part: background image is not created");
+        ).to.be.revertedWith("Part: frame image is not created");
       });
 
       it("for non default part as a background", async () => {
         await expect(
-          davaOfficial.createPartType(
-            testPartType.name + "123",
+          davaOfficial.createCategory(
+            testCategory.name + "123",
             testParts[0].tokenId,
             testParts[1].tokenId,
-            testPartType.zIndex + 1
+            testCategory.zIndex + 1
           )
-        ).to.be.revertedWith("Part: background image is not created");
+        ).to.be.revertedWith("Part: frame image is not created");
       });
     });
   });
 
   describe("createPart", () => {
     const newPart = {
-      partType: partType(testPartType.name),
+      category: categoryId(testCategory.name),
       title: "new part test",
       creator: ethers.Wallet.createRandom().address,
       description: "create part test",
@@ -435,14 +437,14 @@ describe("DavaOfficial", () => {
       await checkChange({
         status: async () => {
           const numberOfParts = (await davaOfficial.numberOfParts()).toNumber();
-          const partType = await davaOfficial.partType(tokenId);
+          const category = await davaOfficial.categoryId(tokenId);
           const partTitle = await davaOfficial.partTitle(tokenId);
           const maxSupply = (await davaOfficial.maxSupply(tokenId)).toNumber();
           const imageUri = await davaOfficial.imageUri(tokenId);
 
           return {
             numberOfParts,
-            partType,
+            category,
             partTitle,
             maxSupply,
             imageUri,
@@ -450,7 +452,7 @@ describe("DavaOfficial", () => {
         },
         process: () =>
           davaOfficial.createPart(
-            newPart.partType,
+            newPart.category,
             newPart.title,
             newPart.description,
             newPart.uri,
@@ -459,7 +461,7 @@ describe("DavaOfficial", () => {
           ),
         expectedBefore: {
           numberOfParts: 4,
-          partType:
+          category:
             "0x0000000000000000000000000000000000000000000000000000000000000000",
           partTitle: "",
           maxSupply: 0,
@@ -467,7 +469,7 @@ describe("DavaOfficial", () => {
         },
         expectedAfter: {
           numberOfParts: 4 + 1,
-          partType: newPart.partType,
+          category: newPart.category,
           partTitle: newPart.title,
           maxSupply: newPart.maxSupply,
           imageUri: newPart.uri,
@@ -477,23 +479,25 @@ describe("DavaOfficial", () => {
 
     describe("should be reverted", () => {
       it("if defaultPart has non zero maxSupply", async () => {
-        const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
+        const defaultCategory = await davaOfficial.DEFAULT_CATEGORY();
         await expect(
           davaOfficial.createPart(
-            defaultPartType,
+            defaultCategory,
             newPart.title,
             newPart.description,
             newPart.uri,
             newPart.attributes,
             newPart.maxSupply
           )
-        ).to.be.revertedWith("Part: maxSupply of default part should be zero");
+        ).to.be.revertedWith(
+          "Part: maxSupply of default category should be zero"
+        );
       });
 
       it("if maxSupply is zero", async () => {
         await expect(
           davaOfficial.createPart(
-            newPart.partType,
+            newPart.category,
             newPart.title,
             newPart.description,
             newPart.uri,
@@ -503,31 +507,29 @@ describe("DavaOfficial", () => {
         ).to.be.revertedWith("Part: maxSupply should be greater than zero");
       });
 
-      it("if partType does not exist", async () => {
-        const newCollectionType = ethers.utils.keccak256(
-          ethers.utils.toUtf8Bytes(new Date().toString())
-        );
+      it("if category does not exist", async () => {
+        const newCategory = categoryId(new Date().toString());
 
         await expect(
           davaOfficial.createPart(
-            newCollectionType,
+            newCategory,
             newPart.title,
             newPart.description,
             newPart.uri,
             newPart.attributes,
             newPart.maxSupply
           )
-        ).to.be.revertedWith("Part: non existent partType");
+        ).to.be.revertedWith("Part: non existent category");
       });
     });
   });
 
   describe("uri", () => {
-    const collectionName = "test";
+    const category = "test";
     const zIndex = 1;
 
     const partInfo = {
-      collectionType: partType(collectionName),
+      category: categoryId(category),
       title: "testTitle",
       description: "testDescription",
       uri: "https://test.com",
@@ -547,15 +549,15 @@ describe("DavaOfficial", () => {
     let tokenId: number;
 
     beforeEach(async () => {
-      await davaOfficial.createPartType(
-        collectionName,
+      await davaOfficial.createCategory(
+        category,
         background.tokenId,
         foreground.tokenId,
         zIndex
       );
       tokenId = await (await davaOfficial.numberOfParts()).toNumber();
       await davaOfficial.createPart(
-        partInfo.collectionType,
+        partInfo.category,
         partInfo.title,
         partInfo.description,
         partInfo.uri,
@@ -585,7 +587,7 @@ describe("DavaOfficial", () => {
         collection: davaOfficial.address,
         tokenId: `${tokenId}`,
         maxSupply: partInfo.maxSupply.toString(),
-        type: collectionName,
+        type: category,
         host,
       });
 

@@ -17,7 +17,7 @@ interface IAvatar {
 
     function davaId() external view returns (uint256);
 
-    function part(bytes32 partType) external view returns (Part memory);
+    function part(bytes32 categoryId) external view returns (Part memory);
 
     function allParts() external view returns (Part[] memory parts);
 

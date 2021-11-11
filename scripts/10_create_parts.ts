@@ -15,7 +15,7 @@ const createPart = async ({
 }: {
   davaOfficial: DavaOfficial;
   part: {
-    partType: string;
+    categoryId: string;
     title: string;
     description: string;
     uri: string;
@@ -23,12 +23,13 @@ const createPart = async ({
   };
 }): Promise<void> => {
   console.log(`Start register part <${part.title}> to <DavaOfficial>`);
-  const tx = await davaOfficial.createPart(
-    part.partType,
+  const tx = await davaOfficial.unsafeCreatePart(
+    part.categoryId,
     part.title,
     part.description,
     part.uri,
     [],
+    part.maxSupply,
     part.maxSupply
   );
   await tx.wait(1);
@@ -48,15 +49,15 @@ const run: HardhatScript = async () => {
 
   const deployedData: { [key: string]: string } = getData(
     network,
-    "collections"
+    "categories"
   );
 
   await Object.entries(data.parts).reduce(
-    (acc, [partTypeTitle, partDataList]) =>
+    (acc, [categoryTitle, partDataList]) =>
       acc.then(async () => {
         return await partDataList.reduce(async (acc_, partData) => {
           const part = {
-            partType: deployedData[partTypeTitle],
+            categoryId: deployedData[categoryTitle],
             title: partData.title,
             description: partData.description,
             uri: partData.uri,

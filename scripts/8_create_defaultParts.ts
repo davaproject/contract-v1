@@ -19,7 +19,7 @@ const run: HardhatScript = async () => {
   const DavaOfficial = new DavaOfficial__factory(deployer);
   const davaOfficial = DavaOfficial.attach(davaOfficialAddress);
 
-  const defaultPartType = await davaOfficial.DEFAULT_PART_TYPE();
+  const defaultCategory = await davaOfficial.DEFAULT_CATEGORY();
   const parts = Object.entries(data.images.bases);
 
   const result: { [key: string]: number } = {};
@@ -30,7 +30,7 @@ const run: HardhatScript = async () => {
 
         console.log(`Start create default part <${title}> to <DavaOfficial>`);
         const tx = await davaOfficial.createPart(
-          defaultPartType,
+          defaultCategory,
           "",
           "",
           partUri,

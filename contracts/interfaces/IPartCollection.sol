@@ -11,7 +11,7 @@ interface IPartCollection is IERC1155 {
     }
 
     function createPart(
-        bytes32 partType_,
+        bytes32 categoryId_,
         string memory title_,
         string memory description_,
         string memory uri_,
@@ -19,8 +19,8 @@ interface IPartCollection is IERC1155 {
         uint256 maxSupply_
     ) external;
 
-    function createPartType(
-        string memory name_,
+    function createCategory(
+        string memory title_,
         uint256 backgroundImageTokenId_,
         uint256 foregroundImageTokenId_,
         uint256 zIndex_
@@ -36,7 +36,7 @@ interface IPartCollection is IERC1155 {
 
     function zIndex(uint256 tokenId_) external view returns (uint256);
 
-    function partTypeInfo(bytes32 partType_)
+    function categoryInfo(bytes32 categoryId_)
         external
         view
         returns (
@@ -46,9 +46,9 @@ interface IPartCollection is IERC1155 {
             uint256 zIndex_
         );
 
-    function partType(uint256 tokenId_) external view returns (bytes32);
+    function categoryId(uint256 tokenId_) external view returns (bytes32);
 
-    function partTypeTitle(uint256 tokenId_)
+    function categoryTitle(uint256 tokenId_)
         external
         view
         returns (string memory);

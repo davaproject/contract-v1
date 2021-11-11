@@ -14,48 +14,44 @@ import { getData } from "./utils/data-log";
 const network = getNetwork();
 const id = 9;
 
-const createPartType = async ({
+const createCategory = async ({
   davaOfficial,
-  collection,
+  category,
 }: {
   davaOfficial: DavaOfficial;
-  collection: {
+  category: {
     title: string;
     backgroundImageTokenId: number;
     foregroundImageTokenId: number;
     zIndex: number;
   };
 }): Promise<string> => {
-  console.log(
-    `Start register collection <${collection.title}> to <DavaOfficial>`
-  );
-  const tx = await davaOfficial.createPartType(
-    collection.title,
-    collection.backgroundImageTokenId,
-    collection.foregroundImageTokenId,
-    collection.zIndex
+  console.log(`Start register category <${category.title}> to <DavaOfficial>`);
+  const tx = await davaOfficial.createCategory(
+    category.title,
+    category.backgroundImageTokenId,
+    category.foregroundImageTokenId,
+    category.zIndex
   );
   await tx.wait(1);
 
-  console.log(
-    `collection <${collection.title}> is registered in <DavaOfficial>`
-  );
+  console.log(`category <${category.title}> is registered in <DavaOfficial>`);
 
-  return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(collection.title));
+  return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(category.title));
 };
 
-const registerPartType = async ({
+const registerCategory = async ({
   dava,
-  partType,
+  categoryId,
 }: {
   dava: Dava;
-  partType: string;
+  categoryId: string;
 }) => {
-  console.log(`Start registering partType <${partType}> to <Dava>`);
-  const tx = await dava.registerPartType(partType);
+  console.log(`Start registering categoryId <${categoryId}> to <Dava>`);
+  const tx = await dava.registerCategory(categoryId);
   await tx.wait(1);
 
-  console.log(`partType <${partType}> is registered in <Dava>`);
+  console.log(`categoryId <${categoryId}> is registered in <Dava>`);
 };
 
 const run: HardhatScript = async () => {
@@ -78,32 +74,32 @@ const run: HardhatScript = async () => {
 
   const deployedData: { [key: string]: number } = getData(network, "default");
 
-  const collections: { [key: string]: string } = {};
-  await Object.entries(data.collections).reduce(
-    (acc, [partTitle, data]) =>
+  const categories: { [key: string]: string } = {};
+  await Object.entries(data.categories).reduce(
+    (acc, [categoryTitle, data]) =>
       acc.then(async () => {
-        const collection = {
-          title: partTitle,
+        const category = {
+          title: categoryTitle,
           backgroundImageTokenId: deployedData[data.backgroundImage],
           foregroundImageTokenId: deployedData[data.foregroundImage],
           zIndex: data.zIndex,
         };
 
-        const partType = await createPartType({
+        const categoryId = await createCategory({
           davaOfficial,
-          collection,
+          category,
         });
-        collections[partTitle] = partType;
+        categories[categoryTitle] = categoryId;
 
-        await registerPartType({
+        await registerCategory({
           dava,
-          partType,
+          categoryId,
         });
       }),
     Promise.resolve()
   );
 
-  return { data: { collections } };
+  return { data: { categories } };
 };
 
 main(network, id, run)

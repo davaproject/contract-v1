@@ -30,7 +30,7 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
     address public override frameCollection;
 
     EnumerableSet.AddressSet private _registeredCollections;
-    EnumerableSet.Bytes32Set private _supportedPartTypes;
+    EnumerableSet.Bytes32Set private _supportedCategories;
     address private _minimalProxy;
 
     uint48 public constant MAX_SUPPLY = 10000;
@@ -38,8 +38,8 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
     event CollectionRegistered(address collection);
     event CollectionDeregistered(address collection);
     event DefaultCollectionRegistered(address collection);
-    event PartTypeRegistered(bytes32 partType);
-    event PartTypeDeregistered(bytes32 partType);
+    event CategoryRegistered(bytes32 categoryId);
+    event CategoryDeregistered(bytes32 categoryId);
 
     // DAO contract owns this registry
     constructor(address minimalProxy_, string memory baseURI_)
@@ -103,18 +103,18 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
         emit CollectionRegistered(collection);
     }
 
-    function registerPartType(bytes32 partType)
+    function registerCategory(bytes32 categoryId)
         external
         override
         onlyRole(PART_MANAGER_ROLE)
     {
         require(
-            !_supportedPartTypes.contains(partType),
-            "Dava: partType is already registered"
+            !_supportedCategories.contains(categoryId),
+            "Dava: category is already registered"
         );
-        _supportedPartTypes.add(partType);
+        _supportedCategories.add(categoryId);
 
-        emit PartTypeRegistered(partType);
+        emit CategoryRegistered(categoryId);
     }
 
     function registerFrameCollection(address collection)
@@ -149,18 +149,18 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
         emit CollectionDeregistered(collection);
     }
 
-    function deregisterPartType(bytes32 partType)
+    function deregisterCategory(bytes32 categoryId)
         external
         override
         onlyRole(PART_MANAGER_ROLE)
     {
         require(
-            _supportedPartTypes.contains(partType),
-            "Dava: non registered partType"
+            _supportedCategories.contains(categoryId),
+            "Dava: non registered category"
         );
-        _supportedPartTypes.remove(partType);
+        _supportedCategories.remove(categoryId);
 
-        emit PartTypeDeregistered(partType);
+        emit CategoryDeregistered(categoryId);
     }
 
     function zap(
@@ -222,16 +222,16 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
         return _registeredCollections.contains(collection);
     }
 
-    function isSupportedPartType(bytes32 partType)
+    function isSupportedCategory(bytes32 categoryId)
         external
         view
         override
         returns (bool)
     {
-        return _supportedPartTypes.contains(partType);
+        return _supportedCategories.contains(categoryId);
     }
 
-    function isDavaPart(address collection, bytes32 partType)
+    function isDavaPart(address collection, bytes32 categoryId)
         external
         view
         override
@@ -239,7 +239,7 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
     {
         return
             _registeredCollections.contains(collection) &&
-            _supportedPartTypes.contains(partType);
+            _supportedCategories.contains(categoryId);
     }
 
     function getAvatar(uint256 tokenId) public view override returns (address) {
@@ -250,13 +250,13 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
             );
     }
 
-    function getAllSupportedPartTypes()
+    function getAllSupportedCategories()
         external
         view
         override
-        returns (bytes32[] memory partTypes)
+        returns (bytes32[] memory categoryIds)
     {
-        return _supportedPartTypes.values();
+        return _supportedCategories.values();
     }
 
     function getRegisteredCollections()
