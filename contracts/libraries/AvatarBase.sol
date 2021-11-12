@@ -39,11 +39,11 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         override
         onlyOwnerOrDava
     {
-        for (uint256 i = 0; i < partsOn.length; i += 1) {
-            _putOn(partsOn[i]);
-        }
         for (uint256 i = 0; i < partsOff.length; i += 1) {
             _takeOff(partsOff[i]);
+        }
+        for (uint256 i = 0; i < partsOn.length; i += 1) {
+            _putOn(partsOn[i]);
         }
     }
 

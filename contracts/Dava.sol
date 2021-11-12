@@ -174,6 +174,24 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
             "Dava: msg.sender is not the owner of avatar"
         );
         address avatarAddress = getAvatar(tokenId);
+        IAvatar avatar = IAvatar(avatarAddress);
+        for (uint256 i = 0; i < partsOff.length; i += 1) {
+            Part memory equippedPart = avatar.part(partsOff[i]);
+            IERC1155 collection = IERC1155(equippedPart.collection);
+            if (
+                equippedPart.collection != address(0x0) &&
+                collection.balanceOf(avatarAddress, equippedPart.id) > 0
+            ) {
+                collection.safeTransferFrom(
+                    avatarAddress,
+                    msg.sender,
+                    equippedPart.id,
+                    1,
+                    ""
+                );
+            }
+        }
+
         for (uint256 i = 0; i < partsOn.length; i += 1) {
             IERC1155 collection = IERC1155(partsOn[i].collection);
             require(
@@ -191,24 +209,6 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
                 1,
                 ""
             );
-        }
-
-        IAvatar avatar = IAvatar(avatarAddress);
-        for (uint256 i = 0; i < partsOff.length; i += 1) {
-            Part memory equippedPart = avatar.part(partsOff[i]);
-            IERC1155 collection = IERC1155(equippedPart.collection);
-            if (
-                equippedPart.collection != address(0x0) &&
-                collection.balanceOf(avatarAddress, equippedPart.id) > 0
-            ) {
-                collection.safeTransferFrom(
-                    avatarAddress,
-                    msg.sender,
-                    equippedPart.id,
-                    1,
-                    ""
-                );
-            }
         }
 
         IAvatar(getAvatar(tokenId)).dress(partsOn, partsOff);
