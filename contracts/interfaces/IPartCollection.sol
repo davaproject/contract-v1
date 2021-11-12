@@ -14,7 +14,7 @@ interface IPartCollection is IERC1155 {
         bytes32 categoryId_,
         string memory title_,
         string memory description_,
-        string memory uri_,
+        string memory ipfsHash_,
         Attribute[] memory attributes_,
         uint256 maxSupply_
     ) external;

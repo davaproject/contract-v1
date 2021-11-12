@@ -94,7 +94,7 @@ contract AvatarV1 is AvatarBase {
 
         Part[] memory parts = allParts();
         address frameCollection = _dava.frameCollection();
-        IFrameCollection.Frame[] memory frames = IFrameCollection(
+        IFrameCollection.FrameWithUri[] memory frames = IFrameCollection(
             frameCollection
         ).getAllFrames();
 
@@ -151,7 +151,7 @@ contract AvatarV1 is AvatarBase {
 
         Part[] memory parts = allParts();
         address frameCollection = _dava.frameCollection();
-        IFrameCollection.Frame[] memory frames = IFrameCollection(
+        IFrameCollection.FrameWithUri[] memory frames = IFrameCollection(
             frameCollection
         ).getAllFrames();
 

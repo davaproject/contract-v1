@@ -1,12 +1,11 @@
 import { ethers } from "hardhat";
 import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
-import data from "../data.json";
 import { DavaOfficial__factory } from "../types";
 import { getDeployed } from "./utils/deploy-log";
 
 const network = getNetwork();
-const id = 7;
+const id = 9;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
@@ -17,9 +16,14 @@ const run: HardhatScript = async () => {
     throw Error("Dava is not deployed yet");
   }
 
+  const gatewayHandler = getDeployed(network, "GatewayHandler");
+  if (!gatewayHandler) {
+    throw Error("GatewayHandler is not deployed yet");
+  }
+
   console.log("Start deploying <DavaOfficial>");
   const DavaOfficial = new DavaOfficial__factory(deployer);
-  const davaOfficial = await DavaOfficial.deploy(data.baseURI, dava);
+  const davaOfficial = await DavaOfficial.deploy(gatewayHandler, dava);
   await davaOfficial.deployed();
   console.log("<DavaOfficial> Contract deployed at:", davaOfficial.address);
 

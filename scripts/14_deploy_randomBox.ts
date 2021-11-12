@@ -4,7 +4,7 @@ import { getNetwork } from "./utils/network";
 import { RandomBox__factory } from "../types";
 
 const network = getNetwork();
-const id = 12;
+const id = 14;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();

@@ -11,27 +11,31 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
+import {GatewayHandler} from "./libraries/GatewayHandler.sol";
 import {Part, IAvatar} from "./interfaces/IAvatar.sol";
 import {IFrameCollection} from "./interfaces/IFrameCollection.sol";
 import {IPartCollection} from "./interfaces/IPartCollection.sol";
 import {IDava} from "./interfaces/IDava.sol";
+import {IGatewayHandler} from "./interfaces/IGatewayHandler.sol";
 
 contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Clones for address;
 
+    bytes32 public constant DAVA_GATEWAY_KEY = keccak256("DAVA_GATEWAY");
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PART_MANAGER_ROLE = keccak256("PART_MANAGER_ROLE");
     bytes32 public constant UPGRADE_MANAGER_ROLE =
         keccak256("UPGRADE_MANAGER_ROLE");
 
-    string public override baseURI;
     address public override frameCollection;
 
     EnumerableSet.AddressSet private _registeredCollections;
     EnumerableSet.Bytes32Set private _supportedCategories;
     address private _minimalProxy;
+    IGatewayHandler public gatewayHandler;
 
     uint48 public constant MAX_SUPPLY = 10000;
 
@@ -42,13 +46,13 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
     event CategoryDeregistered(bytes32 categoryId);
 
     // DAO contract owns this registry
-    constructor(address minimalProxy_, string memory baseURI_)
+    constructor(address minimalProxy_, IGatewayHandler gatewayHandler_)
         ERC721("Dava", "DAVA")
         UpgradeableBeacon(minimalProxy_)
         Ownable()
     {
         _minimalProxy = minimalProxy_;
-        baseURI = baseURI_;
+        gatewayHandler = gatewayHandler_;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
@@ -59,11 +63,8 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
         _setRoleAdmin(UPGRADE_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
-    function setBaseURI(string memory baseURI_)
-        external
-        onlyRole(UPGRADE_MANAGER_ROLE)
-    {
-        baseURI = baseURI_;
+    function baseURI() external view override returns (string memory) {
+        return gatewayHandler.gateways(DAVA_GATEWAY_KEY);
     }
 
     function upgradeTo(address newImplementation)

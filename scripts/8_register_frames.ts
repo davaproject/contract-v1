@@ -6,7 +6,7 @@ import { getDeployed } from "./utils/deploy-log";
 import data from "../data.json";
 
 const network = getNetwork();
-const id = 6;
+const id = 8;
 
 const registerFrame = async ({
   davaFrame,

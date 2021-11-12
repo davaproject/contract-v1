@@ -1,18 +1,11 @@
 import { ethers } from "hardhat";
 import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
-import {
-  DavaOfficial__factory,
-  Dava__factory,
-  RandomBox__factory,
-  Sale__factory,
-} from "../types";
+import { DavaOfficial__factory, Dava__factory } from "../types";
 import { getDeployed } from "./utils/deploy-log";
-import data from "../data.json";
-import BytesLikeArray from "./types/BytesLikeArray";
 
 const network = getNetwork();
-const id = 14;
+const id = 17;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();

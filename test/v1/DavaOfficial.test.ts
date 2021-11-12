@@ -2,13 +2,14 @@ import chai from "chai";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Dava, DavaOfficial } from "../../types";
+import { DavaOfficial } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { createImage, createImageUri } from "./utils/image";
 import { categoryId } from "./utils/part";
 import { checkChange } from "./utils/compare";
 import { generatePartMetadataString } from "./utils/metadata";
+import registeredData from "../../data.json";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -18,8 +19,9 @@ describe("DavaOfficial", () => {
   let davaOfficial: DavaOfficial;
   let [deployer, ...accounts]: SignerWithAddress[] = [];
   let host: string;
-  let background: { tokenId: number; url: string };
-  let foreground: { tokenId: number; url: string };
+  let background: { tokenId: number; ipfsHash: string };
+  let foreground: { tokenId: number; ipfsHash: string };
+  const gateway = registeredData.gatewayHandler.ipfsGateway.gateway;
 
   const testCategory = {
     backgroundImageTokenId: 0,
@@ -33,7 +35,7 @@ describe("DavaOfficial", () => {
     title: `new part ${i}`,
     creator: ethers.Wallet.createRandom().address,
     description: `new description ${i}`,
-    uri: `http://test.com/${i}`,
+    ipfsHash: `${i}`,
     attributes: [],
     maxSupply: 10,
   }));
@@ -62,7 +64,7 @@ describe("DavaOfficial", () => {
             v.category,
             v.title,
             v.description,
-            v.uri,
+            v.ipfsHash,
             v.attributes,
             v.maxSupply
           );
@@ -76,27 +78,6 @@ describe("DavaOfficial", () => {
   });
   afterEach(async () => {
     await ethers.provider.send("evm_revert", [snapshot]);
-  });
-
-  describe("setBaseURI", () => {
-    it("should be reverted if non owner tries to call", async () => {
-      const nonOwner = accounts[1];
-      const owner = await davaOfficial.baseURI();
-      expect(owner).not.to.equal(nonOwner.address);
-
-      await expect(davaOfficial.connect(nonOwner).setBaseURI("TEST")).to.be
-        .reverted;
-    });
-
-    it("should set baseUri", async () => {
-      const newUri = "test";
-      await checkChange({
-        status: () => davaOfficial.baseURI(),
-        process: () => davaOfficial.setBaseURI(newUri),
-        expectedBefore: host,
-        expectedAfter: newUri,
-      });
-    });
   });
 
   describe("mint", () => {
@@ -204,13 +185,13 @@ describe("DavaOfficial", () => {
   describe("imageUri", () => {
     it("should return empty for non-existent token", async () => {
       const result = await davaOfficial.imageUri(99999);
-      expect(result).to.equal("");
+      expect(result).to.equal(gateway + "/");
     });
 
     it("should return imageUri for existent token", async () => {
       const targetPart = testParts[0];
       const result = await davaOfficial.imageUri(targetPart.tokenId);
-      expect(result).to.equal(targetPart.uri);
+      expect(result).to.equal(gateway + "/" + targetPart.ipfsHash);
     });
   });
 
@@ -218,7 +199,7 @@ describe("DavaOfficial", () => {
     it("should return image with SVG tag", async () => {
       const targetPart = testParts[0];
       const result = await davaOfficial.image(targetPart.tokenId);
-      const expectedResult = createImage([targetPart.uri]);
+      const expectedResult = createImage([gateway + "/" + targetPart.ipfsHash]);
       expect(result).to.equal(expectedResult);
     });
   });
@@ -426,7 +407,7 @@ describe("DavaOfficial", () => {
       title: "new part test",
       creator: ethers.Wallet.createRandom().address,
       description: "create part test",
-      uri: "https://new.test.com/123",
+      ipfsHash: "123",
       attributes: [{ trait_type: "tesKey", value: "testVal" }],
       maxSupply: 10,
     };
@@ -455,7 +436,7 @@ describe("DavaOfficial", () => {
             newPart.category,
             newPart.title,
             newPart.description,
-            newPart.uri,
+            newPart.ipfsHash,
             newPart.attributes,
             newPart.maxSupply
           ),
@@ -465,14 +446,14 @@ describe("DavaOfficial", () => {
             "0x0000000000000000000000000000000000000000000000000000000000000000",
           partTitle: "",
           maxSupply: 0,
-          imageUri: "",
+          imageUri: gateway + "/",
         },
         expectedAfter: {
           numberOfParts: 4 + 1,
           category: newPart.category,
           partTitle: newPart.title,
           maxSupply: newPart.maxSupply,
-          imageUri: newPart.uri,
+          imageUri: gateway + "/" + newPart.ipfsHash,
         },
       });
     });
@@ -485,7 +466,7 @@ describe("DavaOfficial", () => {
             defaultCategory,
             newPart.title,
             newPart.description,
-            newPart.uri,
+            newPart.ipfsHash,
             newPart.attributes,
             newPart.maxSupply
           )
@@ -500,7 +481,7 @@ describe("DavaOfficial", () => {
             newPart.category,
             newPart.title,
             newPart.description,
-            newPart.uri,
+            newPart.ipfsHash,
             newPart.attributes,
             0
           )
@@ -515,7 +496,7 @@ describe("DavaOfficial", () => {
             newCategory,
             newPart.title,
             newPart.description,
-            newPart.uri,
+            newPart.ipfsHash,
             newPart.attributes,
             newPart.maxSupply
           )
@@ -532,7 +513,7 @@ describe("DavaOfficial", () => {
       category: categoryId(category),
       title: "testTitle",
       description: "testDescription",
-      uri: "https://test.com",
+      ipfsHash: "test",
       attributes: [
         {
           trait_type: "testTrait1",
@@ -560,7 +541,7 @@ describe("DavaOfficial", () => {
         partInfo.category,
         partInfo.title,
         partInfo.description,
-        partInfo.uri,
+        partInfo.ipfsHash,
         partInfo.attributes,
         partInfo.maxSupply
       );
@@ -575,9 +556,13 @@ describe("DavaOfficial", () => {
         attributes: partInfo.attributes,
         rawImage:
           "data:image/svg+xml;utf8," +
-          createImage([background.url, partInfo.uri, foreground.url]),
+          createImage([
+            gateway + "/" + background.ipfsHash,
+            gateway + "/" + partInfo.ipfsHash,
+            gateway + "/" + foreground.ipfsHash,
+          ]),
         imageUri: createImageUri({
-          host: "https://api.davaproject.com",
+          host: registeredData.gatewayHandler.davaGateway.gateway,
           layers: [
             { address: davaOfficialAddress, tokenId: background.tokenId },
             { address: davaOfficialAddress, tokenId },

@@ -2,12 +2,15 @@ import chai from "chai";
 
 import { ethers } from "hardhat";
 import {
+  GatewayHandler,
   TestFrameCollection,
   TestFrameCollection__factory,
 } from "../../../types";
 import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { checkChange } from "../utils/compare";
+import { fixtures } from "../../../scripts/utils/fixtures";
+import registeredData from "../../../data.json";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -19,26 +22,34 @@ describe("FrameCollection", () => {
   let data = [
     {
       id: 0,
-      imgUri: "https://test.com/testImg0.png",
+      ipfsHash: "testImg0.png",
       zIndex: 5,
     },
     {
       id: 1,
-      imgUri: "https://test.com/testImg1.png",
+      ipfsHash: "testImg1.png",
       zIndex: 7,
     },
   ];
+  let gatewayHandler: GatewayHandler;
+  const gateway = registeredData.gatewayHandler.ipfsGateway.gateway;
 
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
+
+    ({
+      contracts: { gatewayHandler },
+    } = await fixtures());
     const frameCollectionTestContract = new TestFrameCollection__factory(
       deployer
     );
-    frameCollection = await frameCollectionTestContract.deploy();
+    frameCollection = await frameCollectionTestContract.deploy(
+      gatewayHandler.address
+    );
     await frameCollection.deployed();
 
-    await frameCollection.registerFrame(data[0].imgUri, data[0].zIndex);
-    await frameCollection.registerFrame(data[1].imgUri, data[1].zIndex);
+    await frameCollection.registerFrame(data[0].ipfsHash, data[0].zIndex);
+    await frameCollection.registerFrame(data[1].ipfsHash, data[1].zIndex);
   });
 
   beforeEach(async () => {
@@ -62,7 +73,7 @@ describe("FrameCollection", () => {
       await expect(
         frameCollection
           .connect(nonOperator)
-          .registerFrame(data[0].imgUri, data[0].zIndex)
+          .registerFrame(data[0].ipfsHash, data[0].zIndex)
       ).to.be.reverted;
     });
 
@@ -71,11 +82,17 @@ describe("FrameCollection", () => {
       await checkChange({
         status: () => frameCollection.frameOf(data.length),
         process: () =>
-          frameCollection.registerFrame(data[0].imgUri, data[0].zIndex),
-        expectedBefore: [zeroBigNumber, "", zeroBigNumber],
+          frameCollection.registerFrame(data[0].ipfsHash, data[0].zIndex),
+        expectedBefore: [
+          ethers.BigNumber.from(data.length),
+          "",
+          gateway + "/",
+          zeroBigNumber,
+        ],
         expectedAfter: [
           ethers.BigNumber.from(data.length),
-          data[0].imgUri,
+          data[0].ipfsHash,
+          gateway + "/" + data[0].ipfsHash,
           ethers.BigNumber.from(data[0].zIndex),
         ],
       });
@@ -102,10 +119,11 @@ describe("FrameCollection", () => {
         process: () => frameCollection.removeFrame(data[0].id),
         expectedBefore: [
           zeroBigNumber,
-          data[0].imgUri,
+          data[0].ipfsHash,
+          gateway + "/" + data[0].ipfsHash,
           ethers.BigNumber.from(data[0].zIndex),
         ],
-        expectedAfter: [zeroBigNumber, "", zeroBigNumber],
+        expectedAfter: [zeroBigNumber, "", gateway + "/", zeroBigNumber],
       });
     });
   });
@@ -114,7 +132,8 @@ describe("FrameCollection", () => {
     it("should return proper frame", async () => {
       const result = await frameCollection.frameOf(data[0].id);
       expect(result.id.toNumber()).to.equal(data[0].id);
-      expect(result.imgUri).to.equal(data[0].imgUri);
+      expect(result.ipfsHash).to.equal(data[0].ipfsHash);
+      expect(result.imgUri).to.equal(gateway + "/" + data[0].ipfsHash);
       expect(result.zIndex.toNumber()).to.equal(data[0].zIndex);
     });
   });
@@ -124,7 +143,8 @@ describe("FrameCollection", () => {
       const result = await frameCollection.getAllFrames();
       result.forEach((frame, i) => {
         expect(frame.id.toNumber()).to.equal(data[i].id);
-        expect(frame.imgUri).to.equal(data[i].imgUri);
+        expect(frame.ipfsHash).to.equal(data[i].ipfsHash);
+        expect(frame.imgUri).to.equal(gateway + "/" + data[i].ipfsHash);
         expect(frame.zIndex.toNumber()).to.equal(data[i].zIndex);
       });
     });

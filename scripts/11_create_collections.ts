@@ -12,7 +12,7 @@ import data from "../data.json";
 import { getData } from "./utils/data-log";
 
 const network = getNetwork();
-const id = 9;
+const id = 11;
 
 const createCategory = async ({
   davaOfficial,

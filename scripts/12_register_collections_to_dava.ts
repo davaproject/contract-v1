@@ -5,7 +5,7 @@ import { getDeployed } from "./utils/deploy-log";
 import { Dava__factory } from "../types";
 
 const network = getNetwork();
-const id = 4;
+const id = 12;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
@@ -13,20 +13,25 @@ const run: HardhatScript = async () => {
 
   const davaAddress = getDeployed(network, "Dava");
   if (!davaAddress) {
-    throw Error("Dava is not deployed yet");
+    throw Error(`${davaAddress} is not deployed yet`);
+  }
+  const Dava = new Dava__factory(deployer);
+  const dava = Dava.attach(davaAddress);
+
+  const davaFrame = getDeployed(network, "DavaFrame");
+  if (!davaFrame) {
+    throw Error(`${davaFrame} is not deployed yet`);
+  }
+  const tx1 = await dava.registerFrameCollection(davaFrame);
+  await tx1.wait(1);
+
+  const davaOfficial = getDeployed(network, "DavaOfficial");
+  if (!davaOfficial) {
+    throw Error(`${davaOfficial} is not deployed yet`);
   }
 
-  const avatarV1 = getDeployed(network, "AvatarV1");
-  if (!avatarV1) {
-    throw Error("AvatarV1 is not deployed yet");
-  }
-
-  console.log("Start upgrading <Dava> with <AvatarV1>");
-  const DavaContract = new Dava__factory(deployer);
-  const dava = DavaContract.attach(davaAddress);
-  const tx = await dava.connect(deployer).upgradeTo(avatarV1);
-  await tx.wait(1);
-  console.log("Finish upgrading <Dava> with <AvatarV1>");
+  const tx2 = await dava.registerCollection(davaOfficial);
+  await tx2.wait(1);
 
   return {};
 };

@@ -1,32 +1,31 @@
 import { ethers } from "hardhat";
 import { HardhatScript, main } from "./utils/script-runner";
 import { getNetwork } from "./utils/network";
+import { DavaFrame__factory } from "../types";
 import { getDeployed } from "./utils/deploy-log";
-import { Dava__factory } from "../types";
-import data from "../data.json";
 
 const network = getNetwork();
-const id = 2;
+const id = 7;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const minimalProxy = getDeployed(network, "MinimalProxy");
-  if (!minimalProxy) {
-    throw Error("MinimalProxy is not deployed yet");
+  const gatewayHandler = getDeployed(network, "GatewayHandler");
+  if (!gatewayHandler) {
+    throw Error("GatewayHandler is not deployed yet");
   }
 
-  console.log("Start deploying <Dava>");
-  const DavaContract = new Dava__factory(deployer);
-  const dava = await DavaContract.deploy(minimalProxy, data.baseURI);
-  await dava.deployed();
-  console.log("<Dava> Contract deployed at:", dava.address);
+  console.log("Start deploying <DavaFrame>");
+  const DavaFrame = new DavaFrame__factory(deployer);
+  const davaFrame = await DavaFrame.deploy(gatewayHandler);
+  await davaFrame.deployed();
+  console.log("<DavaFrame> Contract deployed at:", davaFrame.address);
 
   return {
     deployedContract: {
-      contractName: "Dava",
-      address: dava.address,
+      contractName: "DavaFrame",
+      address: davaFrame.address,
     },
   };
 };

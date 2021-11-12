@@ -4,13 +4,18 @@ pragma solidity >=0.8.0;
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {GatewayHandler} from "./GatewayHandler.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
+import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 
 abstract contract FrameCollection is AccessControl, IFrameCollection {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    bytes32 public constant IPFS_GATEWAY_KEY = keccak256("IPFS_GATEWAY");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
+    IGatewayHandler public gatewayHandler;
 
     // frameId => Frame
     mapping(uint256 => Frame) private _frameOf;
@@ -18,17 +23,19 @@ abstract contract FrameCollection is AccessControl, IFrameCollection {
     EnumerableSet.UintSet private _frameIds;
     uint256 private _nextFrameId = 0;
 
-    constructor() {
+    constructor(IGatewayHandler gatewayHandler_) {
+        gatewayHandler = gatewayHandler_;
+
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(OPERATOR_ROLE, msg.sender);
         _setRoleAdmin(OPERATOR_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
-    function registerFrame(string calldata imgUri_, uint256 zIndex_)
+    function registerFrame(string calldata ipfsHash_, uint256 zIndex_)
         external
         onlyRole(OPERATOR_ROLE)
     {
-        _frameOf[_nextFrameId] = Frame(_nextFrameId, imgUri_, zIndex_);
+        _frameOf[_nextFrameId] = Frame(zIndex_, ipfsHash_);
         _frameIds.add(_nextFrameId);
         _nextFrameId += 1;
     }
@@ -43,21 +50,38 @@ abstract contract FrameCollection is AccessControl, IFrameCollection {
     }
 
     function frameOf(uint256 frameId_)
+        public
+        view
+        override
+        returns (FrameWithUri memory)
+    {
+        FrameWithUri memory frame = FrameWithUri(
+            frameId_,
+            _frameOf[frameId_].ipfsHash,
+            string(
+                abi.encodePacked(
+                    gatewayHandler.gateways(IPFS_GATEWAY_KEY),
+                    "/",
+                    _frameOf[frameId_].ipfsHash
+                )
+            ),
+            _frameOf[frameId_].zIndex
+        );
+        return frame;
+    }
+
+    function getAllFrames()
         external
         view
         override
-        returns (Frame memory)
+        returns (FrameWithUri[] memory)
     {
-        return _frameOf[frameId_];
-    }
-
-    function getAllFrames() external view override returns (Frame[] memory) {
         uint256 amountOfFrames = _frameIds.length();
-        Frame[] memory frames = new Frame[](amountOfFrames);
+        FrameWithUri[] memory frames = new FrameWithUri[](amountOfFrames);
 
         for (uint256 i = 0; i < amountOfFrames; i += 1) {
             uint256 frameId = _frameIds.at(i);
-            frames[i] = _frameOf[frameId];
+            frames[i] = frameOf(frameId);
         }
 
         return frames;

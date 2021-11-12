@@ -6,7 +6,7 @@ import { DavaOfficial__factory } from "../types";
 import data from "../data.json";
 
 const network = getNetwork();
-const id = 8;
+const id = 10;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();

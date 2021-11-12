@@ -11,6 +11,7 @@ import {
   DavaFrame__factory,
   DavaOfficial,
   DavaOfficial__factory,
+  GatewayHandler,
   TestAvatarV1,
   TestAvatarV1__factory,
 } from "../../types";
@@ -25,6 +26,7 @@ const { expect } = chai;
 
 describe("Dava", () => {
   let snapshot: string;
+  let gatewayHandler: GatewayHandler;
   let avatarV1: AvatarV1;
   let dava: Dava;
   let davaOfficial: DavaOfficial;
@@ -35,6 +37,7 @@ describe("Dava", () => {
     [deployer, ...accounts] = await ethers.getSigners();
     ({ contracts } = await fixtures());
     ({
+      gatewayHandler,
       dava,
       avatarV1,
       parts: { davaOfficial },
@@ -53,7 +56,10 @@ describe("Dava", () => {
     let newCollection: DavaOfficial;
     before(async () => {
       const Collection = new DavaOfficial__factory(deployer);
-      newCollection = await Collection.deploy("", dava.address);
+      newCollection = await Collection.deploy(
+        gatewayHandler.address,
+        dava.address
+      );
       await newCollection.deployed();
     });
 
@@ -148,7 +154,7 @@ describe("Dava", () => {
     let newFrameCollection: DavaFrame;
     before(async () => {
       const FrameCollection = new DavaFrame__factory(deployer);
-      newFrameCollection = await FrameCollection.deploy();
+      newFrameCollection = await FrameCollection.deploy(gatewayHandler.address);
     });
 
     describe("should be reverted", () => {
@@ -361,7 +367,10 @@ describe("Dava", () => {
     let newCollection: DavaOfficial;
     before(async () => {
       const Collection = new DavaOfficial__factory(deployer);
-      newCollection = await Collection.deploy("", dava.address);
+      newCollection = await Collection.deploy(
+        gatewayHandler.address,
+        dava.address
+      );
       await newCollection.deployed();
     });
 

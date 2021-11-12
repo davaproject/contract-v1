@@ -1,37 +1,42 @@
 {
+  "gatewayHandler": {
+    "ipfsGateway": {
+      "key": "0xaeba4d62c52d64cecad0da9e0302eaa9150e0ceea6b06933b875192a1edba67a",
+      "gateway": "https://ipfs.io/ipfs"
+    },
+    "davaGateway": {
+      "key": "0x4bcafa307edced29184180ecf3a3ef99cd92e9f26df7c14cbec7a5c02db836f5",
+      "gateway": "https://api.davaproject.com"
+    }
+  },
   "baseURI": "https://api.davaproject.com",
   "images": {
     "frames": {
-      "frameBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
-      "frameBody": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
-      "frameHead": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png",
-      "signature": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png"
+      "frameBackground": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "frameBody": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
+      "frameHead": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png"
     },
     "bases": {
-      "empty": "https://gateway.pinata.cloud/ipfs/QmfUXdFrURAqR6xMi293D51rWTpBnnTRufTRxT9Uav8d5R",
-      "emptyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
-      "emptyHeadBody": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBody.png",
-      "emptyBodyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_BodyBackground.png",
-      "emptyHeadBodyBackground": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBodyBackground.png",
-      "emptyHead": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_Head.png"
+      "empty": "QmfUXdFrURAqR6xMi293D51rWTpBnnTRufTRxT9Uav8d5R",
+      "emptyBackground": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "emptyHeadBody": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBody.png",
+      "emptyBodyBackground": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_BodyBackground.png",
+      "emptyHeadBodyBackground": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_HeadBodyBackground.png",
+      "emptyHead": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/EM_Head.png"
     }
   },
   "frames": {
     "background": {
-      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
+      "image": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Background.png",
       "zIndex": 5000
     },
     "body": {
-      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
+      "image": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Body.png",
       "zIndex": 25000
     },
     "head": {
-      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png",
+      "image": "QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/FR_Head.png",
       "zIndex": 35000
-    },
-    "signature": {
-      "image": "https://ipfs.io/ipfs/QmQGGx1kRuEXVMUyw16zHWSq9xjwRuVj3m93HiBSnT8pqu/Signature.png",
-      "zIndex": 70000
     }
   },
   "categories": {
@@ -72,7 +77,7 @@
         "title": "TEST_BACKGROUND",
         "creator": "",
         "description": "this is test background",
-        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/BG_GrSunshine.png",
+        "uri": "QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/BG_GrSunshine.png",
         "maxSupply": 100
       }
     ],
@@ -81,7 +86,7 @@
         "title": "TEST_SUIT_ADD_ON",
         "creator": "",
         "description": "this is test suit add on",
-        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/SA_SamuraiSword.png",
+        "uri": "QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/SA_SamuraiSword.png",
         "maxSupply": 100
       }
     ],
@@ -90,7 +95,7 @@
         "title": "TEST_SUIT",
         "creator": "",
         "description": "this is test suit",
-        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/ST_ShinyLeather.png",
+        "uri": "QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/ST_ShinyLeather.png",
         "maxSupply": 100
       }
     ],
@@ -99,7 +104,7 @@
         "title": "TEST_EMOTION",
         "creator": "",
         "description": "this is test emotion",
-        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/EM_LedFrowning.png",
+        "uri": "QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/EM_LedFrowning.png",
         "maxSupply": 100
       }
     ],
@@ -108,7 +113,7 @@
         "title": "TEST_HELMET",
         "creator": "",
         "description": "this is test helmet",
-        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/HM_CatMask.png",
+        "uri": "QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/HM_CatMask.png",
         "maxSupply": 100
       }
     ],
@@ -117,7 +122,7 @@
         "title": "TEST_HELMET_ADD_ON",
         "creator": "",
         "description": "this is test helmet add on",
-        "uri": "https://ipfs.io/ipfs/QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/HA_BunnyEars.png",
+        "uri": "QmWknP7eKakTSH29H3C4TvGQG1PQiNjfboHkQqeaJC8CQ6/HA_BunnyEars.png",
         "maxSupply": 100
       }
     ]

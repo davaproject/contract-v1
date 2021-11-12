@@ -15,6 +15,8 @@ import {
   RandomBox__factory,
   Sale,
   Sale__factory,
+  GatewayHandler__factory,
+  GatewayHandler,
 } from "../../types";
 import data from "../../data.json";
 
@@ -22,17 +24,18 @@ export type Parts = {
   defaultPart: {
     background: {
       tokenId: number;
-      url: string;
+      ipfsHash: string;
     };
     foreground: {
       tokenId: number;
-      url: string;
+      ipfsHash: string;
     };
   };
   host: string;
 };
 
 export type Contracts = {
+  gatewayHandler: GatewayHandler;
   minimalProxy: MinimalProxy;
   dava: Dava;
   avatarV1: AvatarV1;
@@ -78,6 +81,21 @@ export const fixtures = async (): Promise<Fixture> => {
   const [deployer] = await ethers.getSigners();
   // "Deploying contracts with the account
 
+  // Start deploying <GatewayHandler>
+  const GatewayHandlerContract = new GatewayHandler__factory(deployer);
+  const gatewayHandler = await GatewayHandlerContract.deploy();
+  await gatewayHandler.deployed();
+
+  // Start registering gateways
+  await Object.values(data.gatewayHandler).reduce(
+    (acc, { key, gateway }) =>
+      acc.then(async () => {
+        const tx = await gatewayHandler.setGateway(key, gateway);
+        await tx.wait(1);
+      }),
+    Promise.resolve()
+  );
+
   // Start deploying <MinimalProxy>
   const MinimalProxyContract = new MinimalProxy__factory(deployer);
   const minimalProxy = await MinimalProxyContract.deploy();
@@ -85,7 +103,10 @@ export const fixtures = async (): Promise<Fixture> => {
 
   // Start deploying <Dava>
   const DavaContract = new Dava__factory(deployer);
-  const dava = await DavaContract.deploy(minimalProxy.address, host);
+  const dava = await DavaContract.deploy(
+    minimalProxy.address,
+    gatewayHandler.address
+  );
   await dava.deployed();
 
   // Start deploying <AvatarV1>
@@ -100,7 +121,7 @@ export const fixtures = async (): Promise<Fixture> => {
 
   // Start deploying <DavaFrame>
   const DavaFrameContract = new DavaFrame__factory(deployer);
-  const davaFrame = await DavaFrameContract.deploy();
+  const davaFrame = await DavaFrameContract.deploy(gatewayHandler.address);
   await davaFrame.deployed();
   await registerFrameCollection({
     dava,
@@ -118,7 +139,10 @@ export const fixtures = async (): Promise<Fixture> => {
 
   // Start deploying <DavaOfficial>
   const DavaOfficialContract = new DavaOfficial__factory(deployer);
-  const davaOfficial = await DavaOfficialContract.deploy(host, dava.address);
+  const davaOfficial = await DavaOfficialContract.deploy(
+    gatewayHandler.address,
+    dava.address
+  );
   await davaOfficial.deployed();
   await registerCollection({ dava, collection: davaOfficial.address });
 
@@ -127,25 +151,25 @@ export const fixtures = async (): Promise<Fixture> => {
 
   const background = {
     tokenId: await (await davaOfficial.numberOfParts()).toNumber(),
-    url: "https://ipfs.io/background.png",
+    ipfsHash: "background.png",
   };
   await davaOfficial.createPart(
     defaultCategory,
     "frame",
     "",
-    background.url,
+    background.ipfsHash,
     [],
     0
   );
   const foreground = {
     tokenId: await (await davaOfficial.numberOfParts()).toNumber(),
-    url: "https://ipfs.io/foreground.png",
+    ipfsHash: "foreground.png",
   };
   await davaOfficial.createPart(
     defaultCategory,
     "frame",
     "",
-    foreground.url,
+    foreground.ipfsHash,
     [],
     0
   );
@@ -178,6 +202,7 @@ export const fixtures = async (): Promise<Fixture> => {
 
   return {
     contracts: {
+      gatewayHandler,
       minimalProxy,
       dava,
       avatarV1,

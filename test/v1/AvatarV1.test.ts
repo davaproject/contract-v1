@@ -32,9 +32,10 @@ describe("Avatar", () => {
   let davaOfficial: DavaOfficial;
   let davaFrame: DavaFrame;
 
+  let gateway = data.gatewayHandler.ipfsGateway.gateway;
   let host: string;
-  let background: { tokenId: number; url: string };
-  let foreground: { tokenId: number; url: string };
+  let background: { tokenId: number; ipfsHash: string };
+  let foreground: { tokenId: number; ipfsHash: string };
 
   before(async () => {
     [deployer, ...accounts] = await ethers.getSigners();
@@ -192,7 +193,9 @@ describe("Avatar", () => {
     describe("without part", () => {
       it("should return default pfp", async () => {
         const expectedPfp = createImage(
-          Object.values(Object.values(data.frames).map(({ image }) => image))
+          Object.values(
+            Object.values(data.frames).map(({ image }) => gateway + "/" + image)
+          )
         );
         const pfp = await mintedAvatar.getPFP();
 
@@ -228,7 +231,7 @@ describe("Avatar", () => {
       let layers: Array<{
         tokenId: number;
         zIndex: number;
-        uri: string;
+        ipfsHash: string;
         category: string;
         partTitle: string;
       }>;
@@ -238,44 +241,37 @@ describe("Avatar", () => {
           {
             tokenId: 0,
             zIndex: data.frames.background.zIndex - 1,
-            uri: "https://davaproject.com/layer0",
+            ipfsHash: "layer0",
             category: "layer0",
             partTitle: "part0",
           },
           {
             tokenId: 0,
             zIndex: data.frames.background.zIndex + 1,
-            uri: "https://davaproject.com/layer1",
+            ipfsHash: "layer1",
             category: "layer1",
             partTitle: "part1",
           },
           {
             tokenId: 0,
             zIndex: data.frames.body.zIndex + 1,
-            uri: "https://davaproject.com/layer2",
+            ipfsHash: "layer2",
             category: "layer2",
             partTitle: "part2",
           },
           {
             tokenId: 0,
             zIndex: data.frames.head.zIndex + 1,
-            uri: "https://davaproject.com/layer3",
+            ipfsHash: "layer3",
             category: "layer3",
             partTitle: "part3",
-          },
-          {
-            tokenId: 0,
-            zIndex: data.frames.signature.zIndex + 1,
-            uri: "https://davaproject.com/layer4",
-            category: "layer4",
-            partTitle: "part4",
           },
         ];
 
         await layers.reduce(
           (acc, layer) =>
             acc.then(async () => {
-              const { zIndex, uri, category, partTitle } = layer;
+              const { zIndex, ipfsHash, category } = layer;
               const title = category;
               const categoryId = ethers.utils.keccak256(
                 ethers.utils.toUtf8Bytes(title)
@@ -293,7 +289,7 @@ describe("Avatar", () => {
                 categoryId,
                 layer.partTitle,
                 "",
-                uri,
+                ipfsHash,
                 [],
                 1
               );
@@ -322,15 +318,13 @@ describe("Avatar", () => {
 
       it("should return compiled pfp", async () => {
         const expectedPfp = createImage([
-          layers[0].uri,
-          data.frames.background.image,
-          layers[1].uri,
-          data.frames.body.image,
-          layers[2].uri,
-          data.frames.head.image,
-          layers[3].uri,
-          data.frames.signature.image,
-          layers[4].uri,
+          gateway + "/" + layers[0].ipfsHash,
+          gateway + "/" + data.frames.background.image,
+          gateway + "/" + layers[1].ipfsHash,
+          gateway + "/" + data.frames.body.image,
+          gateway + "/" + layers[2].ipfsHash,
+          gateway + "/" + data.frames.head.image,
+          gateway + "/" + layers[3].ipfsHash,
         ]);
         const pfp = await mintedAvatar.getPFP();
         expect(pfp).to.equal(expectedPfp);
@@ -361,14 +355,6 @@ describe("Avatar", () => {
             {
               address: davaOfficial.address.toLowerCase(),
               tokenId: layers[3].tokenId,
-            },
-            {
-              address: davaFrame.address.toLowerCase(),
-              tokenId: 3,
-            },
-            {
-              address: davaOfficial.address.toLowerCase(),
-              tokenId: layers[4].tokenId,
             },
           ],
         });
@@ -415,26 +401,16 @@ describe("Avatar", () => {
               tokenId: layers[2].tokenId,
             },
             { address: davaFrame.address.toLowerCase(), tokenId: 2 },
-            {
-              address: davaFrame.address.toLowerCase(),
-              tokenId: 3,
-            },
-            {
-              address: davaOfficial.address.toLowerCase(),
-              tokenId: layers[4].tokenId,
-            },
           ],
         });
         const expectedResult = generateAvatarMetadataString({
           name: `DAVA #${mintedAvatarId}`,
           description: `Genesis Avatar (${mintedAvatar.address.toLowerCase()})`,
           attributes: [
-            ...[layers[1], layers[2], layers[4]].map(
-              ({ category, partTitle }) => ({
-                trait_type: category,
-                value: partTitle,
-              })
-            ),
+            ...[layers[1], layers[2]].map(({ category, partTitle }) => ({
+              trait_type: category,
+              value: partTitle,
+            })),
           ],
           rawImage: "data:image/svg+xml;utf8," + (await mintedAvatar.getPFP()),
           imageUri: expectedImageUri,
