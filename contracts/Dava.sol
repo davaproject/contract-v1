@@ -8,6 +8,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {UpgradeableBeacon} from "./libraries/UpgradeableBeacon.sol";
 import {MinimalProxy} from "./libraries/MinimalProxy.sol";
@@ -18,7 +19,7 @@ import {IPartCollection} from "./interfaces/IPartCollection.sol";
 import {IDava} from "./interfaces/IDava.sol";
 import {IGatewayHandler} from "./interfaces/IGatewayHandler.sol";
 
-contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
+contract Dava is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Clones for address;
@@ -298,11 +299,12 @@ contract Dava is AccessControl, ERC721, Ownable, IDava, UpgradeableBeacon {
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(AccessControl, ERC721, IERC165)
+        override(IERC165, AccessControl, ERC721)
         returns (bool)
     {
         return
             interfaceId == type(IDava).interfaceId ||
+            interfaceId == type(IAccessControl).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 

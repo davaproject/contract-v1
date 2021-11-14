@@ -13,7 +13,7 @@ import {IDava} from "../interfaces/IDava.sol";
 import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 
-abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
+abstract contract AvatarBase is MinimalProxy, IAvatar, Account {
     using Strings for uint256;
 
     event PutOn(bytes32 indexed categoryId, address collection, uint256 id);
@@ -101,7 +101,7 @@ abstract contract AvatarBase is MinimalProxy, Account, IAvatar {
         public
         view
         virtual
-        override(Account)
+        override
         returns (bool)
     {
         return

@@ -11,11 +11,11 @@ import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import {Transaction, IAccount} from "../interfaces/IAccount.sol";
 
 abstract contract Account is
+    IAccount,
+    IERC1271,
     Context,
     ERC721Holder,
-    ERC1155Holder,
-    IERC1271,
-    IAccount
+    ERC1155Holder
 {
     using ECDSA for bytes32;
 
@@ -73,7 +73,7 @@ abstract contract Account is
         public
         view
         virtual
-        override(ERC1155Receiver)
+        override
         returns (bool)
     {
         return

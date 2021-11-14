@@ -9,7 +9,7 @@ import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 
-abstract contract FrameCollection is AccessControl, IFrameCollection {
+abstract contract FrameCollection is IFrameCollection, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
 
     bytes32 public constant IPFS_GATEWAY_KEY = keccak256("IPFS_GATEWAY");
@@ -95,7 +95,7 @@ abstract contract FrameCollection is AccessControl, IFrameCollection {
         public
         view
         virtual
-        override(AccessControl, IERC165)
+        override(IERC165, AccessControl)
         returns (bool)
     {
         return
