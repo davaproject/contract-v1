@@ -271,16 +271,12 @@ abstract contract PartCollection is
 
         // partInfo => maxSupply, collection title
         Attribute[] memory attributes = new Attribute[](
-            _partInfo.attributes[tokenId].length + 2
+            _partInfo.attributes[tokenId].length + 1
         );
         for (uint256 i = 0; i < _partInfo.attributes[tokenId].length; i += 1) {
             attributes[i] = _partInfo.attributes[tokenId][i];
         }
         attributes[_partInfo.attributes[tokenId].length] = Attribute(
-            "MAX SUPPLY",
-            _partInfo.maxSupply[tokenId].toString()
-        );
-        attributes[_partInfo.attributes[tokenId].length + 1] = Attribute(
             "TYPE",
             categoryTitle(tokenId)
         );
