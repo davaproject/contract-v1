@@ -28,8 +28,7 @@ contract Sale is EIP712, Ownable {
     uint16 public constant MAX_MINT_PER_TICKET = 3;
     uint16 public constant PRE_ALLOCATED_AMOUNT = 500;
 
-    uint16 public constant MAX_MINT_PER_ACCOUNT = 30;
-    uint16 public constant MAX_MINT_PER_TX = 30;
+    uint16 public constant MAX_MINT_PER_ACCOUNT = 100;
 
     // Supply
     uint16 private constant MAX_TOTAL_SUPPLY = 10000;
@@ -49,6 +48,7 @@ contract Sale is EIP712, Ownable {
     IRandomBox private _randomBox;
 
     mapping(address => uint256) public preSaleMintAmountOf;
+    mapping(address => uint256) public mainSaleMintAmountOf;
     mapping(address => uint256) public claimedAmountOf;
 
     struct Reserved {
@@ -147,9 +147,11 @@ contract Sale is EIP712, Ownable {
     // this is for public sale.
     function mint(uint16 purchaseAmount) external payable onlyDuringPublicSale {
         require(!soldOut(), "Sale: sold out");
+
+        mainSaleMintAmountOf[msg.sender] += purchaseAmount;
         require(
-            purchaseAmount <= MAX_MINT_PER_TX,
-            "Sale: can not purchase more than MAX_MINT_PER_TX"
+            mainSaleMintAmountOf[msg.sender] <= MAX_MINT_PER_ACCOUNT,
+            "Sale: can not purchase more than MAX_MINT_PER_ACCOUNT"
         );
         _checkEthAmount(purchaseAmount, msg.value);
 
