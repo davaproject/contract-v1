@@ -6,7 +6,7 @@ import { Sale__factory } from "../types";
 import { getDeployed } from "./utils/deploy-log";
 
 const network = getNetwork();
-const id = 16;
+const id = 15;
 
 const run: HardhatScript = async () => {
   const [deployer] = await ethers.getSigners();
