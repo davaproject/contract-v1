@@ -38,8 +38,6 @@ describe("ExclusiveSale", () => {
   const partInfo: Array<string> = [];
 
   before(async () => {
-    await ethers.provider.send("evm_setNextBlockTimestamp", [1]);
-
     [deployer, ...accounts] = await ethers.getSigners();
     const { contracts } = await fixtures();
     ({
@@ -106,8 +104,6 @@ describe("ExclusiveSale", () => {
   });
 
   beforeEach(async () => {
-    const closingTime = await sale.CLOSING_TIME();
-    await ethers.provider.send("evm_setNextBlockTimestamp", [closingTime]);
     await ethers.provider.send("evm_mine", []);
     snapshot = await ethers.provider.send("evm_snapshot", []);
   });
