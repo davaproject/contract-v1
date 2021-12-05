@@ -1,4 +1,24 @@
 {
-  "rinkeby": {},
-  "mainnet": {}
+  "rinkeby": {
+    "MinimalProxy": "0x67b0f2E7bD09F193e3E1FDB2280A74feCa946683",
+    "Dava": "0xeA430870A7C3418b9D273cD52350D03b3d387e7F",
+    "AvatarV1": "0xCF6064aBecf16e16f34Be2256fd4C7F6AC7D9F1F",
+    "DavaFrame": "0x037de3Aa0d9c3090Ae6C15CC708d4EA6cbF72EAE",
+    "DavaOfficial": "0x55ef2c5f0a68f8d116b507212d16989aAA665531",
+    "RandomBox": "0x531D37aa60Bf329FbA106a23CF105f7Bad89cc03",
+    "Sale": "0xFfa02E53e90FBB6Ef68E36dDDD8f559b663f0b10",
+    "GatewayHandler": "0x0565F6d7EE63D28Bfa730fE0Ba0Bfe8CB1aBA503",
+    "ExclusiveSale": "0x62F2d9a2DB2A738734bC9672ef3246d0529987EA"
+  },
+  "mainnet": {
+    "GatewayHandler": "0xe0172b80b1410E198f94a8213842C635383Ceed2",
+    "MinimalProxy": "0x2F5E324EC0E2Fd9925165c66e0DAAde39837ADb5",
+    "Dava": "0xC0CB97a0e22E9c14fB0B39da6cF6ccdab8078fa9",
+    "AvatarV1": "0xc659CE541178ad49A5Fc85B514D923cC8e1BD2F5",
+    "DavaFrame": "0x54D6f5f284dA3752485713B04AE254c472dcaB4b",
+    "DavaOfficial": "0xBa3BDc36e751E2Ffa2C216416666b909Af7fB49B",
+    "RandomBox": "0xfa11f52848f220edff379d9367c0f2ca11adc61c",
+    "Sale": "0x39edfFb48fD5CaC073e5ffa512C2150D5b5aAabc",
+    "ExclusiveSale": "0x848719A199f79224744dC5761a358D0e2a45677D"
+  }
 }
