@@ -56,7 +56,7 @@ const run: HardhatScript = async () => {
   console.log("Frames are registered in <DavaFrame>");
 
   return {
-    data: { frames: {} },
+    data: { frames },
   };
 };
 
