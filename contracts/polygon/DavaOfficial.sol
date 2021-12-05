@@ -68,4 +68,18 @@ contract PolygonDavaOfficial is PartCollection {
     {
         _burnBatch(_msgSender(), ids, amounts);
     }
+
+    function isApprovedForAll(address owner_, address operator_)
+        public
+        view
+        override
+        returns (bool isOperator)
+    {
+        // if OpenSea's ERC1155 Proxy Address is detected, auto-return true
+        if (operator_ == address(0x207Fa8Df3a17D96Ca7EA4f2893fcdCb78a304101)) {
+            return true;
+        }
+        // otherwise, use the default ERC1155.isApprovedForAll()
+        return super.isApprovedForAll(owner_, operator_);
+    }
 }

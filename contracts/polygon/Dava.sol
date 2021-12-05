@@ -139,4 +139,19 @@ contract PolygonDava is Dava {
         // in L1
         return abi.encode(tokenURI(tokenId));
     }
+
+    function isApprovedForAll(address owner_, address operator_)
+        public
+        view
+        override
+        returns (bool isOperator)
+    {
+        // if OpenSea's ERC721 Proxy Address is detected, auto-return true
+        if (operator_ == address(0x58807baD0B376efc12F5AD86aAc70E78ed67deaE)) {
+            return true;
+        }
+
+        // otherwise, use the default ERC721.isApprovedForAll()
+        return super.isApprovedForAll(owner_, operator_);
+    }
 }
