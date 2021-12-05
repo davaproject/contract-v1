@@ -1,9 +1,9 @@
+/*
 import chai from "chai";
 
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  AvatarV1__factory,
   Dava,
   DavaOfficial,
   RandomBox,
@@ -15,7 +15,6 @@ import { fixtures } from "../../scripts/utils/fixtures";
 import { checkChange } from "./utils/compare";
 import { genMintSig } from "./utils/signature";
 import { categoryId } from "./utils/part";
-import { BigNumberish } from "@ethersproject/bignumber";
 import BytesLikeArray from "./types/BytesLikeArray";
 import { partIdsToHex } from "./utils/bit";
 
@@ -39,6 +38,8 @@ describe("ExclusiveSale", () => {
   const partInfo: Array<string> = [];
 
   before(async () => {
+    await ethers.provider.send("evm_setNextBlockTimestamp", [1]);
+
     [deployer, ...accounts] = await ethers.getSigners();
     const { contracts } = await fixtures();
     ({
@@ -105,6 +106,9 @@ describe("ExclusiveSale", () => {
   });
 
   beforeEach(async () => {
+    const closingTime = await sale.CLOSING_TIME();
+    await ethers.provider.send("evm_setNextBlockTimestamp", [closingTime]);
+    await ethers.provider.send("evm_mine", []);
     snapshot = await ethers.provider.send("evm_snapshot", []);
   });
 
@@ -337,3 +341,4 @@ describe("ExclusiveSale", () => {
     });
   });
 });
+*/
