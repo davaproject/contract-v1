@@ -43,7 +43,6 @@ export const generatePartMetadataString = (partData: PartMetadata) => {
     description: partData.description,
     attributes: [
       ...partData.attributes,
-      { trait_type: "MAX SUPPLY", value: partData.maxSupply },
       { trait_type: "TYPE", value: partData.type },
     ],
     raw_image: partData.rawImage,
