@@ -72,3 +72,44 @@ export const genClaimSig = async ({
 
   return { vSig: v, rSig: r, sSig: s };
 };
+
+export const genMintSig = async ({
+  signer,
+  domain,
+  msg,
+}: {
+  signer: SignerWithAddress;
+  domain: {
+    name: string;
+    version: string;
+    chainId: number;
+    verifyingContract: string;
+  };
+  msg: {
+    price: number;
+    amount: number;
+    beneficiary: string;
+  };
+}): Promise<{ vSig: number; rSig: string; sSig: string }> => {
+  const types = {
+    Ticket: [
+      {
+        name: "price",
+        type: "uint256",
+      },
+      {
+        name: "amount",
+        type: "uint16",
+      },
+      {
+        name: "beneficiary",
+        type: "address",
+      },
+    ],
+  };
+
+  const sig = await signer._signTypedData(domain, types, msg);
+  const { v, r, s } = ethers.utils.splitSignature(sig);
+
+  return { vSig: v, rSig: r, sSig: s };
+};
