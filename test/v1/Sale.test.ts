@@ -735,15 +735,17 @@ describe("Sale", () => {
     });
 
     describe("should be reverted", () => {
-      it("if user try to mint more than MAX_MINT_PER_TX", async () => {
-        const MAX_MINT_PER_TX = await sale.MAX_MINT_PER_TX();
+      it("if user try to mint more than MAX_MINT_PER_ACCOUNT", async () => {
+        const MAX_MINT_PER_ACCOUNT = await sale.MAX_MINT_PER_ACCOUNT();
 
         await expect(
-          sale.mint(MAX_MINT_PER_TX + 1, {
-            value: ethers.utils.parseEther(`${(MAX_MINT_PER_TX + 1) * 0.05}`),
+          sale.mint(MAX_MINT_PER_ACCOUNT + 1, {
+            value: ethers.utils.parseEther(
+              `${(MAX_MINT_PER_ACCOUNT + 1) * 0.05}`
+            ),
           })
         ).to.be.revertedWith(
-          "Sale: can not purchase more than MAX_MINT_PER_TX"
+          "Sale: can not purchase more than MAX_MINT_PER_ACCOUNT"
         );
       });
 
