@@ -3,8 +3,9 @@ pragma solidity >=0.8.0;
 
 import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 import {PartCollection} from "../libraries/PartCollection.sol";
+import {ContextMixin} from "./ContextMixin.sol";
 
-contract PolygonDavaOfficial is PartCollection {
+contract PolygonDavaOfficial is PartCollection, ContextMixin {
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
 
     constructor(
@@ -15,8 +16,11 @@ contract PolygonDavaOfficial is PartCollection {
         _setupRole(DEPOSITOR_ROLE, childChainManager_);
     }
 
+    /**
+     * This is used instead of msg.sender as transactions won't be sent by the original token owner, but by OpenSea.
+     */
     function _msgSender() internal view override returns (address sender) {
-        return msg.sender;
+        return ContextMixin.msgSender();
     }
 
     function name() public pure returns (string memory) {

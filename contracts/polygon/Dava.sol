@@ -4,8 +4,9 @@ pragma abicoder v2;
 
 import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 import {Dava} from "../Dava.sol";
+import {ContextMixin} from "./ContextMixin.sol";
 
-contract PolygonDava is Dava {
+contract PolygonDava is Dava, ContextMixin {
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
 
     // limit batching of tokens due to gas limit restrictions
@@ -27,8 +28,11 @@ contract PolygonDava is Dava {
         _setupRole(DEPOSITOR_ROLE, childChainManager_);
     }
 
+    /**
+     * This is used instead of msg.sender as transactions won't be sent by the original token owner, but by OpenSea.
+     */
     function _msgSender() internal view override returns (address sender) {
-        return msg.sender;
+        return ContextMixin.msgSender();
     }
 
     /**
