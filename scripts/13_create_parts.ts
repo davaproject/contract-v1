@@ -9,6 +9,9 @@ import { getData, recordData } from "./utils/data-log";
 const network = getNetwork();
 const id = 13;
 
+const responseTime = 50;
+const sleep = () => new Promise((resolve) => setTimeout(resolve, responseTime));
+
 const createPart = async ({
   davaOfficial,
   part,
@@ -18,6 +21,7 @@ const createPart = async ({
     categoryId: string;
     title: string;
     description: string;
+    attributes: Array<{ trait_type: string; value: string }>;
     ipfsHash: string;
     maxSupply: number;
     filledSupply: number;
@@ -30,14 +34,14 @@ const createPart = async ({
     part.title,
     part.description,
     part.ipfsHash,
-    [],
+    part.attributes,
     part.maxSupply,
     part.filledSupply
   );
-  await tx.wait(1);
+  console.log(`nonce: ${tx.nonce}`);
   console.log(`part <${part.title}> is registered in <DavaOfficial>`);
 
-  return partId.toNumber();
+  return partId ? partId.toNumber() : 0;
 };
 
 const run: HardhatScript = async () => {
@@ -63,6 +67,7 @@ const run: HardhatScript = async () => {
               categoryId: part.categoryId,
               title: part.title,
               description: part.description,
+              attributes: part.attributes,
               ipfsHash: part.ipfsHash,
               maxSupply: part.maxSupply,
               filledSupply: part.filledSupply,
@@ -73,6 +78,7 @@ const run: HardhatScript = async () => {
       Promise.resolve()
     );
   } catch (e) {
+    console.error(e);
     recordData(network, { parts: result });
   }
 
