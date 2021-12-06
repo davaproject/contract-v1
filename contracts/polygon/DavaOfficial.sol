@@ -3,16 +3,21 @@ pragma solidity >=0.8.0;
 
 import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 import {PartCollection} from "../libraries/PartCollection.sol";
-import {ContextMixin} from "./ContextMixin.sol";
+import {ContextMixin} from "./metaTx/ContextMixin.sol";
+import {NativeMetaTransaction} from "./metaTx/NativeMetaTransaction.sol";
 
-contract PolygonDavaOfficial is PartCollection, ContextMixin {
+contract PolygonDavaOfficial is
+    PartCollection,
+    ContextMixin,
+    NativeMetaTransaction
+{
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
 
     constructor(
         IGatewayHandler gatewayHandler_,
         address dava_,
         address childChainManager_
-    ) PartCollection(gatewayHandler_, dava_) {
+    ) PartCollection(gatewayHandler_, dava_) NativeMetaTransaction(name()) {
         _setupRole(DEPOSITOR_ROLE, childChainManager_);
     }
 

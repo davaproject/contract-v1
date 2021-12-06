@@ -4,9 +4,10 @@ pragma abicoder v2;
 
 import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 import {Dava} from "../Dava.sol";
-import {ContextMixin} from "./ContextMixin.sol";
+import {ContextMixin} from "./metaTx/ContextMixin.sol";
+import {NativeMetaTransaction} from "./metaTx/NativeMetaTransaction.sol";
 
-contract PolygonDava is Dava, ContextMixin {
+contract PolygonDava is Dava, ContextMixin, NativeMetaTransaction {
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
 
     // limit batching of tokens due to gas limit restrictions
@@ -24,7 +25,7 @@ contract PolygonDava is Dava, ContextMixin {
         address minimalProxy_,
         IGatewayHandler gatewayHandler_,
         address childChainManager_
-    ) Dava(minimalProxy_, gatewayHandler_) {
+    ) Dava(minimalProxy_, gatewayHandler_) NativeMetaTransaction("Dava") {
         _setupRole(DEPOSITOR_ROLE, childChainManager_);
     }
 
