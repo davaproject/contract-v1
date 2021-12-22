@@ -113,3 +113,39 @@ export const genMintSig = async ({
 
   return { vSig: v, rSig: r, sSig: s };
 };
+
+export const genDropsClaimSig = async ({
+  signer,
+  domain,
+  msg,
+}: {
+  signer: SignerWithAddress;
+  domain: {
+    name: string;
+    version: string;
+    chainId: number;
+    verifyingContract: string;
+  };
+  msg: {
+    amount: number;
+    beneficiary: string;
+  };
+}): Promise<{ vSig: number; rSig: string; sSig: string }> => {
+  const types = {
+    SnapShot: [
+      {
+        name: "amount",
+        type: "uint256",
+      },
+      {
+        name: "beneficiary",
+        type: "address",
+      },
+    ],
+  };
+
+  const sig = await signer._signTypedData(domain, types, msg);
+  const { v, r, s } = ethers.utils.splitSignature(sig);
+
+  return { vSig: v, rSig: r, sSig: s };
+};
