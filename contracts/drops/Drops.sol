@@ -110,7 +110,7 @@ contract Drops is ERC1155Holder, EIP712, AccessControl {
         amounts[0] = 1;
         for (uint256 i = 1; i < claimedAmount; i += 1) {
             bool isNewId = true;
-            for (uint256 j = 0; j < i; j += 1) {
+            for (uint256 j = 0; j < amountOfUniqueId; j += 1) {
                 if (ids[j] == indexList[i]) {
                     amounts[j] += 1;
                     isNewId = false;
