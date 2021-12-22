@@ -18,3 +18,20 @@ export const partIdsToHex = (ids: Array<number>): string => {
   beforeHex = beforeHex.padEnd(256, "0");
   return "0x" + bin2hex(beforeHex);
 };
+
+export const numbersToBytes = (numbers: Array<number>): string => {
+  let bytes =
+    "0x" +
+    numbers
+      .map((num) => {
+        if (num >= 2 ** 8) {
+          throw new Error("number should be less than " + 2 ** 8);
+        }
+        const hex = num.toString(16);
+        if (hex.length == 1) return "0" + hex;
+        else return hex;
+      })
+      .join("");
+
+  return bytes;
+};
