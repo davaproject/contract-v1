@@ -106,12 +106,13 @@ contract Drops is ERC1155Holder, EIP712, AccessControl {
         uint256[] memory amounts = new uint256[](claimedAmount);
 
         uint256 amountOfUniqueId = 1;
-        ids[0] = indexList[0];
+        ids[0] = _partsIds.at(indexList[0]);
         amounts[0] = 1;
         for (uint256 i = 1; i < claimedAmount; i += 1) {
             bool isNewId = true;
+            uint256 partsId = _partsIds.at(indexList[i]);
             for (uint256 j = 0; j < amountOfUniqueId; j += 1) {
-                if (ids[j] == indexList[i]) {
+                if (ids[j] == partsId) {
                     amounts[j] += 1;
                     isNewId = false;
                     break;
@@ -119,7 +120,7 @@ contract Drops is ERC1155Holder, EIP712, AccessControl {
             }
 
             if (isNewId) {
-                ids[amountOfUniqueId] = _partsIds.at(indexList[i]);
+                ids[amountOfUniqueId] = partsId;
                 amounts[amountOfUniqueId] = 1;
                 amountOfUniqueId += 1;
             }
@@ -215,6 +216,9 @@ contract Drops is ERC1155Holder, EIP712, AccessControl {
             claimReq.rSig,
             claimReq.sSig
         );
-        require(hasRole(DEFAULT_ADMIN_ROLE, signer), "Sale: invalid signature");
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, signer),
+            "Drops: invalid signature"
+        );
     }
 }
