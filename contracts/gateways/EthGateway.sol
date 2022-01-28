@@ -112,6 +112,14 @@ contract EthGateway is AccessControl {
         );
     }
 
+    function hashData(
+        address requester,
+        bytes32[] memory data,
+        uint256 timestamp
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(requester, data, timestamp));
+    }
+
     function encodeData(
         address addr,
         uint48 tokenId,
@@ -121,13 +129,5 @@ contract EthGateway is AccessControl {
             mstore(0x00, xor(xor(shl(96, addr), shl(48, tokenId)), amount))
             return(0x00, 32)
         }
-    }
-
-    function hashData(
-        address requester,
-        bytes32[] memory data,
-        uint256 timestamp
-    ) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(requester, data, timestamp));
     }
 }
