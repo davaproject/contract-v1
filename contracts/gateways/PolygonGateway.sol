@@ -26,7 +26,12 @@ contract PolygonGateway is AccessControl {
     address public immutable ethDava;
     IDava public immutable dava;
 
-    event Unlocked(address indexed requester, bytes32[] data, bytes32 dataHash);
+    event Unlocked(
+        address indexed requester,
+        bytes32[] data,
+        uint256 timestamp,
+        bytes32 dataHash
+    );
 
     constructor(address ethDava_, IDava dava_) {
         ethDava = ethDava_;
@@ -47,11 +52,12 @@ contract PolygonGateway is AccessControl {
     function unlock(
         address requester,
         bytes32[] calldata data,
+        uint256 timestamp,
         bytes32 dataHash
     ) external onlyRole(MANAGER_ROLE) {
         require(!isExecuted[dataHash], "PolygonGateway: already executed data");
         require(
-            dataHash == keccak256(abi.encodePacked(requester, data)),
+            dataHash == keccak256(abi.encodePacked(requester, data, timestamp)),
             "PolygonGateway: invalid data"
         );
 
@@ -77,7 +83,7 @@ contract PolygonGateway is AccessControl {
         }
 
         isExecuted[dataHash] = true;
-        emit Unlocked(requester, data, dataHash);
+        emit Unlocked(requester, data, timestamp, dataHash);
     }
 
     function decodeData(bytes32 data)

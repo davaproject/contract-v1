@@ -16,7 +16,12 @@ contract EthGateway is AccessControl {
     IDava public immutable dava;
     EnumerableSet.AddressSet private erc1155List;
 
-    event Locked(address indexed requester, bytes32[] data, bytes32 dataHash);
+    event Locked(
+        address indexed requester,
+        bytes32[] data,
+        uint256 timestamp,
+        bytes32 dataHash
+    );
 
     constructor(IDava dava_) {
         dava = dava_;
@@ -37,7 +42,12 @@ contract EthGateway is AccessControl {
             dava.transferFrom(msg.sender, address(this), tokenIds[i]);
             data[i] = encodeData(address(dava), tokenIds[i], 1);
         }
-        emit Locked(msg.sender, data, hashData(msg.sender, data));
+        emit Locked(
+            msg.sender,
+            data,
+            block.timestamp,
+            hashData(msg.sender, data, block.timestamp)
+        );
     }
 
     function batchReceive1155(
@@ -70,7 +80,12 @@ contract EthGateway is AccessControl {
                 uint48(amounts[i])
             );
         }
-        emit Locked(msg.sender, data, hashData(msg.sender, data));
+        emit Locked(
+            msg.sender,
+            data,
+            block.timestamp,
+            hashData(msg.sender, data, block.timestamp)
+        );
     }
 
     function batchTransferAvatar(address receiver, uint256[] calldata tokenIds)
@@ -108,11 +123,11 @@ contract EthGateway is AccessControl {
         }
     }
 
-    function hashData(address requester, bytes32[] memory data)
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(requester, data));
+    function hashData(
+        address requester,
+        bytes32[] memory data,
+        uint256 timestamp
+    ) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(requester, data, timestamp));
     }
 }
