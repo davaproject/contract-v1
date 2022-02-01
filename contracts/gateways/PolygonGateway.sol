@@ -18,6 +18,7 @@ interface IMintablePartCollection {
 }
 
 contract PolygonGateway is AccessControl {
+    mapping(address => bool) public receivedMatic;
     mapping(address => address) public mapped1155;
     mapping(bytes32 => bool) public isExecuted;
 
@@ -54,7 +55,7 @@ contract PolygonGateway is AccessControl {
         bytes32[] calldata data,
         uint256 timestamp,
         bytes32 dataHash
-    ) external onlyRole(MANAGER_ROLE) {
+    ) external payable onlyRole(MANAGER_ROLE) {
         require(!isExecuted[dataHash], "PolygonGateway: already executed data");
         require(
             dataHash == keccak256(abi.encodePacked(requester, data, timestamp)),
@@ -84,6 +85,14 @@ contract PolygonGateway is AccessControl {
 
         isExecuted[dataHash] = true;
         emit Unlocked(requester, data, timestamp, dataHash);
+
+        if (msg.value > 0) {
+            if (receivedMatic[requester]) {
+                payable(msg.sender).transfer(msg.value);
+            } else {
+                payable(requester).transfer(msg.value);
+            }
+        }
     }
 
     function decodeData(bytes32 data)
