@@ -3,111 +3,116 @@ pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {IAvatar, Part} from "../interfaces/IAvatar.sol";
 import {IDava} from "../interfaces/IDava.sol";
 
 interface IMintablePartCollection {
-    function mint(
-        address account,
-        uint256 id,
-        uint256 amount,
+    function mintBatch(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
         bytes memory data
     ) external;
 }
 
 contract PolygonGateway is AccessControl {
-    mapping(address => bool) public receivedMatic;
-    mapping(address => address) public mapped1155;
-    mapping(bytes32 => bool) public isExecuted;
-
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-    address public immutable ethDava;
-    IDava public immutable dava;
+    mapping(address => bool) public receivedMatic;
+    mapping(bytes32 => bool) public isExecuted;
 
-    event Unlocked(
+    uint256 public grantMaticAmount = 1 ether;
+
+    address public immutable ethDava;
+    address public immutable ethParts;
+    IDava public immutable dava;
+    IMintablePartCollection public immutable parts;
+
+    event SetGrantMaticAmount(uint256 amount);
+
+    event DavaReleased(address indexed requester, uint256[] ids);
+
+    // To prevent malicious user, duplicate request is declined.
+    // Owner should handle that case manually
+    event PartsReleased(
         address indexed requester,
-        bytes32[] data,
-        uint256 timestamp,
+        uint256[] ids,
+        uint256[] amounts,
         bytes32 dataHash
     );
 
-    constructor(address ethDava_, IDava dava_) {
+    event GrantMatic(address indexed beneficiary, uint256 amount);
+
+    constructor(
+        address ethDava_,
+        address ethParts_,
+        IDava dava_,
+        IMintablePartCollection parts_
+    ) {
         ethDava = ethDava_;
+        ethParts = ethParts_;
         dava = dava_;
+        parts = parts_;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MANAGER_ROLE, msg.sender);
         _setRoleAdmin(MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
-    function map1155(address eth1155, address polygon1155)
+    function setGrantMaticAmount(uint256 amount)
         external
         onlyRole(MANAGER_ROLE)
     {
-        mapped1155[eth1155] = polygon1155;
+        grantMaticAmount = amount;
+        emit SetGrantMaticAmount(amount);
     }
 
-    function unlock(
+    function batchReleaseAvatars(address requester, uint256[] calldata tokenIds)
+        external
+        onlyRole(MANAGER_ROLE)
+    {
+        _grantMatic(requester);
+        for (uint256 i = 0; i < tokenIds.length; i += 1) {
+            dava.mint(requester, tokenIds[i]);
+        }
+
+        emit DavaReleased(requester, tokenIds);
+    }
+
+    function batchReleaseParts(
         address requester,
-        bytes32[] calldata data,
-        uint256 timestamp,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
         bytes32 dataHash
-    ) external payable onlyRole(MANAGER_ROLE) {
+    ) external onlyRole(MANAGER_ROLE) {
         require(!isExecuted[dataHash], "PolygonGateway: already executed data");
         require(
-            dataHash == keccak256(abi.encodePacked(requester, data, timestamp)),
-            "PolygonGateway: invalid data"
+            dataHash == _hashData(requester, tokenIds, amounts),
+            "PolygonGateway: invalid dataHash"
         );
 
-        for (uint256 i = 0; i < data.length; i += 1) {
-            (
-                address targetContract,
-                uint256 tokenId,
-                uint256 amount
-            ) = decodeData(data[i]);
-            if (targetContract == ethDava) {
-                require(amount == 1, "PolygonGateway: invalid dava amount");
-                dava.mint(requester, tokenId);
-            } else if (mapped1155[targetContract] != address(0x0)) {
-                IMintablePartCollection(mapped1155[targetContract]).mint(
-                    requester,
-                    tokenId,
-                    amount,
-                    ""
-                );
-            } else {
-                revert("PolygonGateway: invalid erc1155 contract");
-            }
-        }
+        _grantMatic(requester);
+        parts.mintBatch(requester, tokenIds, amounts, "");
 
-        isExecuted[dataHash] = true;
-        emit Unlocked(requester, data, timestamp, dataHash);
+        emit PartsReleased(requester, tokenIds, amounts, dataHash);
+    }
 
-        if (msg.value > 0) {
-            if (receivedMatic[requester]) {
-                payable(msg.sender).transfer(msg.value);
-            } else {
-                payable(requester).transfer(msg.value);
-            }
+    function withdrawMatic(address receiver) external onlyRole(MANAGER_ROLE) {
+        payable(receiver).transfer(address(this).balance);
+    }
+
+    function _grantMatic(address beneficiary) private {
+        if (!receivedMatic[beneficiary]) {
+            payable(beneficiary).transfer(grantMaticAmount);
+            receivedMatic[beneficiary] = true;
+            emit GrantMatic(beneficiary, grantMaticAmount);
         }
     }
 
-    function decodeData(bytes32 data)
-        private
-        pure
-        returns (
-            address,
-            uint256,
-            uint256
-        )
-    {
-        return (
-            address(uint160(uint256(data >> 96))),
-            uint256((data << 160) >> 208),
-            uint256((data << 208) >> 208)
-        );
+    function _hashData(
+        address requester,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts
+    ) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(requester, tokenIds, amounts));
     }
 }
