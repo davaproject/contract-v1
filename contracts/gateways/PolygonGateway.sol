@@ -82,18 +82,17 @@ contract PolygonGateway is AccessControl {
         address requester,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
-        bytes32 dataHash
+        bytes32 ethLockTxHash
     ) external onlyRole(MANAGER_ROLE) {
-        require(!isExecuted[dataHash], "PolygonGateway: already executed data");
         require(
-            dataHash == _hashData(requester, tokenIds, amounts),
-            "PolygonGateway: invalid dataHash"
+            !isExecuted[ethLockTxHash],
+            "PolygonGateway: already executed data"
         );
 
         _grantMatic(requester);
         parts.mintBatch(requester, tokenIds, amounts, "");
 
-        emit PartsReleased(requester, tokenIds, amounts, dataHash);
+        emit PartsReleased(requester, tokenIds, amounts, ethLockTxHash);
     }
 
     function withdrawMatic(address receiver) external onlyRole(MANAGER_ROLE) {
@@ -106,13 +105,5 @@ contract PolygonGateway is AccessControl {
             receivedMatic[beneficiary] = true;
             emit GrantMatic(beneficiary, grantMaticAmount);
         }
-    }
-
-    function _hashData(
-        address requester,
-        uint256[] calldata tokenIds,
-        uint256[] calldata amounts
-    ) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(requester, tokenIds, amounts));
     }
 }
