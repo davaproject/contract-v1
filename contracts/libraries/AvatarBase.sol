@@ -34,7 +34,7 @@ abstract contract AvatarBase is MinimalProxy, IAvatar, Account {
     receive() external payable override(Proxy, Account) {}
 
     function dress(Part[] calldata partsOn, bytes32[] calldata partsOff)
-        external
+        public
         virtual
         override
         onlyOwnerOrDava
