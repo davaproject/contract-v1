@@ -3,16 +3,20 @@ pragma solidity >=0.8.0;
 
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
+import {IERC721Freezable} from "../interfaces/IERC721Freezable.sol";
 import {IDavaV2} from "../interfaces/IDavaV2.sol";
 import {IFrozenDava} from "../interfaces/IFrozenDava.sol";
 
 contract Switcher is Context, AccessControl {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
-    IDavaV2 public dava;
+    address public dava;
     IFrozenDava public frozenDava;
 
-    constructor() {
+    constructor(address dava_, IFrozenDava frozenDava_) {
+        dava = dava_;
+        frozenDava = frozenDava_;
+
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(OPERATOR_ROLE, msg.sender);
         _setRoleAdmin(OPERATOR_ROLE, DEFAULT_ADMIN_ROLE);
@@ -24,12 +28,16 @@ contract Switcher is Context, AccessControl {
             "Switcher: requested token is already frozen"
         );
         require(
-            dava.isApprovedOrOwner(_msgSender(), tokenId),
+            IDavaV2(dava).isApprovedOrOwner(_msgSender(), tokenId),
             "Switcher: caller is not owner nor approved"
         );
 
-        dava.freeze(tokenId);
-        frozenDava.mint(dava.ownerOf(tokenId), generateId(tokenId), tokenId);
+        IERC721Freezable(dava).freeze(tokenId);
+        frozenDava.mint(
+            IDavaV2(dava).ownerOf(tokenId),
+            generateId(tokenId),
+            tokenId
+        );
     }
 
     function unFreeze(uint256 tokenId) external {
@@ -37,10 +45,10 @@ contract Switcher is Context, AccessControl {
             frozenDava.tokenIdOfOriginal(tokenId) != 0,
             "Switcher: requested token is not frozen"
         );
-        require(dava.isApprovedOrOwner(_msgSender(), tokenId));
+        require(IDavaV2(dava).isApprovedOrOwner(_msgSender(), tokenId));
 
         frozenDava.burn(frozenDava.tokenIdOfOriginal(tokenId));
-        dava.unFreeze(tokenId);
+        IERC721Freezable(dava).unfreeze(tokenId);
     }
 
     function generateId(uint256 tokenId) private view returns (uint256) {

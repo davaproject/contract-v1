@@ -9,7 +9,7 @@ import {Account} from "./Account.sol";
 import {MinimalProxy, Proxy} from "./MinimalProxy.sol";
 import {IAccount} from "../interfaces/IAccount.sol";
 import {IAvatar, Part} from "../interfaces/IAvatar.sol";
-import {IDavaV2} from "../interfaces/IDavaV2.sol";
+import {IERC721Freezable} from "../interfaces/IERC721Freezable.sol";
 import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
 import {Transaction} from "../interfaces/IAccount.sol";
@@ -17,7 +17,7 @@ import {AvatarBase} from "./AvatarBase.sol";
 
 abstract contract AvatarBaseV2 is AvatarBase {
     modifier onlyNotFrozen() {
-        IDavaV2 _dava = IDavaV2(dava());
+        IERC721Freezable _dava = IERC721Freezable(dava());
         require(!_dava.isFrozen(_props().davaId), "Avatar: dava is frozen");
         _;
     }

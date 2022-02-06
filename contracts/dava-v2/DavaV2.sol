@@ -2,30 +2,26 @@
 pragma solidity >=0.8.0;
 pragma abicoder v2;
 
-import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IERC721, ERC721, IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC721, IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {UpgradeableBeacon} from "../libraries/UpgradeableBeacon.sol";
-import {MinimalProxy} from "../libraries/MinimalProxy.sol";
-import {GatewayHandler} from "../libraries/GatewayHandler.sol";
 import {Part, IAvatar} from "../interfaces/IAvatar.sol";
-import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
-import {IPartCollection} from "../interfaces/IPartCollection.sol";
-import {IDava} from "../interfaces/IDava.sol";
-import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
+import {IDavaV2} from "../interfaces/IDavaV2.sol";
+import {ERC721Account} from "./ERC721Account.sol";
+import {ERC721Freezable} from "./ERC721Freezable.sol";
+import {Wearable} from "./Wearable.sol";
 
-contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
-    using EnumerableSet for EnumerableSet.AddressSet;
-    using EnumerableSet for EnumerableSet.Bytes32Set;
-    using Clones for address;
-
-    bytes32 public constant DAVA_GATEWAY_KEY = keccak256("DAVA_GATEWAY");
-
+contract DavaV2 is
+    IDavaV2,
+    Ownable,
+    AccessControl,
+    Wearable,
+    ERC721Account,
+    ERC721Freezable
+{
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PART_MANAGER_ROLE = keccak256("PART_MANAGER_ROLE");
     bytes32 public constant UPGRADE_MANAGER_ROLE =
@@ -33,38 +29,15 @@ contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
     bytes32 public constant TRANSPORTER_MANAGER_ROLE =
         keccak256("TRANSPORTER_MANAGER_ROLE");
 
+    string public baseURI = "https://ipfs.io/ipfs/";
     uint48 public constant MAX_SUPPLY = 10000;
 
-    address public override frameCollection;
-    IGatewayHandler public gatewayHandler;
-    mapping(uint256 => bool) public isFrozen;
-
-    EnumerableSet.AddressSet private _allowedTransporters;
-    EnumerableSet.AddressSet private _registeredCollections;
-    EnumerableSet.Bytes32Set private _supportedCategories;
-    address private _minimalProxy;
-    bool public paused = true;
-
-    event CollectionRegistered(address collection);
-    event CollectionDeregistered(address collection);
-    event DefaultCollectionRegistered(address collection);
-    event CategoryRegistered(bytes32 categoryId);
-    event CategoryDeregistered(bytes32 categoryId);
-    event TransporterRegistered(address transporter);
-    event TransporterDeregistered(address transporter);
-
-    event Paused(address account);
-    event Unpaused(address account);
-
     // DAO contract owns this registry
-    constructor(address minimalProxy_, IGatewayHandler gatewayHandler_)
+    constructor(address minimalProxy_)
         ERC721("Dava", "DAVA")
-        UpgradeableBeacon(minimalProxy_)
+        ERC721Account(minimalProxy_)
         Ownable()
     {
-        _minimalProxy = minimalProxy_;
-        gatewayHandler = gatewayHandler_;
-
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
@@ -76,14 +49,19 @@ contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
         _setRoleAdmin(TRANSPORTER_MANAGER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
+    function setBaseURI(string calldata baseURI_)
+        external
+        onlyRole(UPGRADE_MANAGER_ROLE)
+    {
+        baseURI = baseURI_;
+    }
+
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        paused = true;
-        emit Paused(_msgSender());
+        _pause();
     }
 
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
-        paused = false;
-        emit Unpaused(_msgSender());
+        _unpause();
     }
 
     function upgradeTo(address newImplementation)
@@ -95,115 +73,58 @@ contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
 
     function registerCollection(address collection)
         external
-        override
         onlyRole(PART_MANAGER_ROLE)
     {
-        require(
-            IERC165(collection).supportsInterface(
-                type(IPartCollection).interfaceId
-            ),
-            "Dava: Does not support IPartCollection interface"
-        );
-        require(
-            !_registeredCollections.contains(collection),
-            "Dava: already registered collection"
-        );
-        _registeredCollections.add(collection);
-
-        emit CollectionRegistered(collection);
+        _registerCollection(collection);
     }
 
     function registerCategory(bytes32 categoryId)
         external
-        override
         onlyRole(PART_MANAGER_ROLE)
     {
-        require(
-            !_supportedCategories.contains(categoryId),
-            "Dava: category is already registered"
-        );
-        _supportedCategories.add(categoryId);
-
-        emit CategoryRegistered(categoryId);
+        _registerCategory(categoryId);
     }
 
     function registerFrameCollection(address collection)
         external
-        override
         onlyRole(PART_MANAGER_ROLE)
     {
-        require(
-            IERC165(collection).supportsInterface(
-                type(IFrameCollection).interfaceId
-            ),
-            "Dava: Does not support IFrameCollection interface"
-        );
-
-        frameCollection = collection;
-
-        emit DefaultCollectionRegistered(collection);
+        _registerFrameCollection(collection);
     }
 
     function registerTransporter(address transporter)
         external
         onlyRole(TRANSPORTER_MANAGER_ROLE)
     {
-        require(
-            !_allowedTransporters.contains(transporter),
-            "Dava: transporter is already registered"
-        );
-        _allowedTransporters.add(transporter);
-
-        emit TransporterRegistered(transporter);
+        _registerTransporter(transporter);
     }
 
     function deregisterTransporter(address transporter)
         external
         onlyRole(TRANSPORTER_MANAGER_ROLE)
     {
-        require(
-            _allowedTransporters.contains(transporter),
-            "Dava: not registered transporter"
-        );
-        _allowedTransporters.remove(transporter);
-
-        emit TransporterDeregistered(transporter);
+        _deregisterTransporter(transporter);
     }
 
     function deregisterCollection(address collection)
         external
-        override
         onlyRole(PART_MANAGER_ROLE)
     {
-        require(
-            _registeredCollections.contains(collection),
-            "Dava: Not registered collection"
-        );
-
-        _registeredCollections.remove(collection);
-
-        emit CollectionDeregistered(collection);
+        _deregisterCollection(collection);
     }
 
     function deregisterCategory(bytes32 categoryId)
         external
-        override
         onlyRole(PART_MANAGER_ROLE)
     {
-        require(
-            _supportedCategories.contains(categoryId),
-            "Dava: non registered category"
-        );
-        _supportedCategories.remove(categoryId);
-
-        emit CategoryDeregistered(categoryId);
+        _deregisterCategory(categoryId);
     }
 
     function zap(
         uint256 tokenId,
         Part[] calldata partsOn,
         bytes32[] calldata partsOff
-    ) external override {
+    ) external {
         require(
             msg.sender == ownerOf(tokenId),
             "Dava: msg.sender is not the owner of avatar"
@@ -249,47 +170,6 @@ contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
         IAvatar(getAvatar(tokenId)).dress(partsOn, partsOff);
     }
 
-    function isRegisteredCollection(address collection)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return _registeredCollections.contains(collection);
-    }
-
-    function isSupportedCategory(bytes32 categoryId)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return _supportedCategories.contains(categoryId);
-    }
-
-    function isDavaPart(address collection, bytes32 categoryId)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return
-            _registeredCollections.contains(collection) &&
-            _supportedCategories.contains(categoryId);
-    }
-
-    function baseURI() external view override returns (string memory) {
-        return gatewayHandler.gateways(DAVA_GATEWAY_KEY);
-    }
-
-    function freeze(uint256 tokenId) public {
-        require(
-            _isApprovedOrOwner(_msgSender(), tokenId),
-            "ERC721: transfer caller is not owner nor approved"
-        );
-        isFrozen[tokenId] = true;
-    }
-
     function mint(address to, uint256 id)
         external
         override
@@ -297,46 +177,8 @@ contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
         returns (address)
     {
         require(id < uint256(MAX_SUPPLY), "Dava: Invalid id");
-        return _mintWithProxy(to, id);
-    }
-
-    function getAvatar(uint256 tokenId) public view override returns (address) {
-        return
-            _minimalProxy.predictDeterministicAddress(
-                bytes32(tokenId),
-                address(this)
-            );
-    }
-
-    function getAllSupportedCategories()
-        external
-        view
-        override
-        returns (bytes32[] memory categoryIds)
-    {
-        return _supportedCategories.values();
-    }
-
-    function getRegisteredCollections()
-        external
-        view
-        override
-        returns (address[] memory)
-    {
-        return _registeredCollections.values();
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, IERC721Metadata)
-        returns (string memory)
-    {
-        require(
-            _exists(tokenId),
-            "ERC721Metadata: URI query for nonexistent token"
-        );
-        return IAvatar(getAvatar(tokenId)).getMetadata();
+        super._mint(to, id);
+        return _mintWithProxy(id);
     }
 
     function getPFP(uint256 tokenId)
@@ -352,6 +194,28 @@ contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
         return IAvatar(getAvatar(tokenId)).getPFP();
     }
 
+    function isApprovedOrOwner(address spender, uint256 tokenId)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _isApprovedOrOwner(spender, tokenId);
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(IERC721Metadata, ERC721)
+        returns (string memory)
+    {
+        require(
+            _exists(tokenId),
+            "ERC721Metadata: URI query for nonexistent token"
+        );
+        return IAvatar(getAvatar(tokenId)).getMetadata();
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -359,63 +223,8 @@ contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
         returns (bool)
     {
         return
-            interfaceId == type(IDava).interfaceId ||
+            interfaceId == type(IDavaV2).interfaceId ||
             interfaceId == type(IAccessControl).interfaceId ||
             super.supportsInterface(interfaceId);
-    }
-
-    function _mintWithProxy(address to, uint256 id) internal returns (address) {
-        address avatar = _minimalProxy.cloneDeterministic(bytes32(id));
-        MinimalProxy(payable(avatar)).initialize(id);
-        super._mint(to, id);
-        return avatar;
-    }
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public override(ERC721, IERC721) {
-        _beforeTransferAttempt();
-        super.transferFrom(from, to, tokenId);
-    }
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) public override(ERC721, IERC721) {
-        _beforeTransferAttempt();
-        super.safeTransferFrom(from, to, tokenId, "");
-    }
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory _data
-    ) public override(ERC721, IERC721) {
-        _beforeTransferAttempt();
-        super.safeTransferFrom(from, to, tokenId, _data);
-    }
-
-    function _beforeTransferAttempt() private view {
-        if (paused) {
-            require(
-                _allowedTransporters.contains(_msgSender()),
-                "Dava: only authorized transporter can transfer"
-            );
-        }
-    }
-
-    function _isApprovedOrOwner(address spender, uint256 tokenId)
-        internal
-        view
-        override
-        returns (bool)
-    {
-        return
-            super._isApprovedOrOwner(spender, tokenId) ||
-            _allowedTransporters.contains(spender);
     }
 }
