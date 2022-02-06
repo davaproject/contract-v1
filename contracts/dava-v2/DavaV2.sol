@@ -19,7 +19,7 @@ import {IPartCollection} from "../interfaces/IPartCollection.sol";
 import {IDava} from "../interfaces/IDava.sol";
 import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 
-contract Dava is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
+contract DavaV2 is IDava, Ownable, UpgradeableBeacon, AccessControl, ERC721 {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
     using Clones for address;
