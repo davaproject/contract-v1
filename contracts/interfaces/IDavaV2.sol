@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
-import {IDava} from "./IDava.sol";
+import {IDava, IERC721Metadata} from "./IDava.sol";
 
 interface IDavaV2 is IDava {
     function freeze(uint256 tokenId) external;
@@ -15,5 +15,9 @@ interface IDavaV2 is IDava {
         view
         returns (bool);
 
-    function tokenURI(uint256 tokenId) external view returns (string memory);
+    function tokenURI(uint256 tokenId)
+        external
+        view
+        override(IERC721Metadata)
+        returns (string memory);
 }
