@@ -4,18 +4,15 @@ pragma solidity >=0.8.0;
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {GatewayHandler} from "./GatewayHandler.sol";
 import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import {IFrameCollection} from "../interfaces/IFrameCollection.sol";
-import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 
 abstract contract FrameCollection is IFrameCollection, AccessControl {
     using EnumerableSet for EnumerableSet.UintSet;
 
-    bytes32 public constant IPFS_GATEWAY_KEY = keccak256("IPFS_GATEWAY");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
-    IGatewayHandler public gatewayHandler;
+    string public baseURI = "https://ipfs.io/ipfs/";
 
     // frameId => Frame
     mapping(uint256 => Frame) private _frameOf;
@@ -23,12 +20,20 @@ abstract contract FrameCollection is IFrameCollection, AccessControl {
     EnumerableSet.UintSet private _frameIds;
     uint256 private _nextFrameId = 0;
 
-    constructor(IGatewayHandler gatewayHandler_) {
-        gatewayHandler = gatewayHandler_;
+    event SetBaseURI(string baseURI);
 
+    constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(OPERATOR_ROLE, msg.sender);
         _setRoleAdmin(OPERATOR_ROLE, DEFAULT_ADMIN_ROLE);
+    }
+
+    function setBaseURI(string calldata baseURI_)
+        external
+        onlyRole(OPERATOR_ROLE)
+    {
+        baseURI = baseURI_;
+        emit SetBaseURI(baseURI_);
     }
 
     function registerFrame(string calldata ipfsHash_, uint256 zIndex_)
@@ -58,13 +63,7 @@ abstract contract FrameCollection is IFrameCollection, AccessControl {
         FrameWithUri memory frame = FrameWithUri(
             frameId_,
             _frameOf[frameId_].ipfsHash,
-            string(
-                abi.encodePacked(
-                    gatewayHandler.gateways(IPFS_GATEWAY_KEY),
-                    "/",
-                    _frameOf[frameId_].ipfsHash
-                )
-            ),
+            string(abi.encodePacked(baseURI, _frameOf[frameId_].ipfsHash)),
             _frameOf[frameId_].zIndex
         );
         return frame;

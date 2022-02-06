@@ -49,30 +49,28 @@ abstract contract PartCollection is
     using Address for address;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
-    bytes32 public constant IPFS_GATEWAY_KEY = keccak256("IPFS_GATEWAY");
-    bytes32 public constant DAVA_GATEWAY_KEY = keccak256("DAVA_GATEWAY");
     bytes32 public constant DEFAULT_CATEGORY = keccak256("DEFAULT_CATEGORY");
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     address public override dava;
+    string public ipfsBaseURI = "https://ipfs.io/ipfs/";
+    string public davaApiURI = "https://api.davaproject.com/v1";
 
     PartInfo private _partInfo;
     CollectionInfo private _collectionInfo;
-    IGatewayHandler public gatewayHandler;
 
     uint256 public override numberOfParts;
 
     EnumerableSet.Bytes32Set private _supportedCategoryIds;
 
     event PartCreated(uint256 partId);
+    event SetIpfsBaseURI(string ipfsBaseURI);
+    event SetDavaApiURI(string davaApiURI);
 
-    constructor(IGatewayHandler gatewayHandler_, address dava_)
-        ERC1155("")
-        Ownable()
-    {
-        gatewayHandler = gatewayHandler_;
+    constructor(address dava_) ERC1155("") Ownable() {
         dava = dava_;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -80,8 +78,26 @@ abstract contract PartCollection is
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
         _setupRole(CREATOR_ROLE, msg.sender);
         _setRoleAdmin(CREATOR_ROLE, DEFAULT_ADMIN_ROLE);
+        _setupRole(OPERATOR_ROLE, msg.sender);
+        _setRoleAdmin(OPERATOR_ROLE, DEFAULT_ADMIN_ROLE);
 
         _supportedCategoryIds.add(DEFAULT_CATEGORY);
+    }
+
+    function setIpfsBaseURI(string calldata ipfsBaseURI_)
+        external
+        onlyRole(OPERATOR_ROLE)
+    {
+        ipfsBaseURI = ipfsBaseURI_;
+        emit SetIpfsBaseURI(ipfsBaseURI_);
+    }
+
+    function setDavaApiURI(string calldata davaApiURI_)
+        external
+        onlyRole(OPERATOR_ROLE)
+    {
+        davaApiURI = davaApiURI_;
+        emit SetDavaApiURI(davaApiURI_);
     }
 
     function unsafeCreatePart(
@@ -229,21 +245,18 @@ abstract contract PartCollection is
             _partInfo.categoryIds[tokenId]
         ];
 
-        string memory ipfsBaseUri = gatewayHandler.gateways(IPFS_GATEWAY_KEY);
         imgURIs[0] = string(
             abi.encodePacked(
-                ipfsBaseUri,
-                "/",
+                ipfsBaseURI,
                 _partInfo.ipfsHashes[backgroundTokenId]
             )
         );
         imgURIs[1] = string(
-            abi.encodePacked(ipfsBaseUri, "/", _partInfo.ipfsHashes[tokenId])
+            abi.encodePacked(ipfsBaseURI, _partInfo.ipfsHashes[tokenId])
         );
         imgURIs[2] = string(
             abi.encodePacked(
-                ipfsBaseUri,
-                "/",
+                ipfsBaseURI,
                 _partInfo.ipfsHashes[foregroundTokenId]
             )
         );
@@ -286,13 +299,9 @@ abstract contract PartCollection is
                 _partInfo.titles[tokenId],
                 _partInfo.descriptions[tokenId],
                 imgURIs,
+                URICompiler.getFullUri(davaApiURI, imgParams, queries),
                 URICompiler.getFullUri(
-                    gatewayHandler.gateways(DAVA_GATEWAY_KEY),
-                    imgParams,
-                    queries
-                ),
-                URICompiler.getFullUri(
-                    gatewayHandler.gateways(DAVA_GATEWAY_KEY),
+                    davaApiURI,
                     infoParams,
                     new URICompiler.Query[](0)
                 ),
@@ -315,14 +324,9 @@ abstract contract PartCollection is
         override
         returns (string memory)
     {
-        string memory ipfsGateway = gatewayHandler.gateways(IPFS_GATEWAY_KEY);
         return
             string(
-                abi.encodePacked(
-                    ipfsGateway,
-                    "/",
-                    _partInfo.ipfsHashes[tokenId]
-                )
+                abi.encodePacked(ipfsBaseURI, _partInfo.ipfsHashes[tokenId])
             );
     }
 
@@ -332,10 +336,9 @@ abstract contract PartCollection is
         override
         returns (string memory)
     {
-        string memory ipfsGateway = gatewayHandler.gateways(IPFS_GATEWAY_KEY);
         string[] memory imgURIs = new string[](1);
         imgURIs[0] = string(
-            abi.encodePacked(ipfsGateway, "/", _partInfo.ipfsHashes[tokenId])
+            abi.encodePacked(ipfsBaseURI, _partInfo.ipfsHashes[tokenId])
         );
         return OnchainMetadata.compileImages(imgURIs);
     }
