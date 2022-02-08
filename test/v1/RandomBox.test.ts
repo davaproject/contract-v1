@@ -4,9 +4,9 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { TestRandomBox, TestRandomBox__factory } from "../../types";
 import { solidity } from "ethereum-waffle";
-import { checkChange } from "./utils/compare";
+import { checkChange } from "../utils/compare";
 import { BytesLike } from "@ethersproject/bytes";
-import BytesLikeArray from "./types/BytesLikeArray";
+import BytesLikeArray from "../types/BytesLikeArray";
 
 chai.use(solidity);
 const { expect } = chai;

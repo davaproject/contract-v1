@@ -12,12 +12,12 @@ import {
 } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
-import { checkChange } from "./utils/compare";
-import { genWhitelistSig, genClaimSig } from "./utils/signature";
-import { categoryId } from "./utils/part";
+import { checkChange } from "../utils/compare";
+import { genWhitelistSig, genClaimSig } from "../utils/signature";
+import { categoryId } from "../utils/part";
 import { BigNumberish } from "@ethersproject/bignumber";
-import BytesLikeArray from "./types/BytesLikeArray";
-import { partIdsToHex } from "./utils/bit";
+import BytesLikeArray from "../types/BytesLikeArray";
+import { partIdsToHex } from "../utils/bit";
 
 chai.use(solidity);
 const { expect } = chai;

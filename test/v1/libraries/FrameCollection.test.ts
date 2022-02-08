@@ -8,7 +8,7 @@ import {
 } from "../../../types";
 import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { checkChange } from "../utils/compare";
+import { checkChange } from "../../utils/compare";
 import { fixtures } from "../../../scripts/utils/fixtures";
 import registeredData from "../../../data.json";
 

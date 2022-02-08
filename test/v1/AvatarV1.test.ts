@@ -12,11 +12,11 @@ import {
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
 import { parseEther } from "@ethersproject/units";
-import { createImage, createImageUri } from "./utils/image";
-import { categoryId } from "./utils/part";
-import { checkChange } from "./utils/compare";
+import { createImage, createImageUri } from "../utils/image";
+import { categoryId } from "../utils/part";
+import { checkChange } from "../utils/compare";
 import data from "../../data.json";
-import { generateAvatarMetadataString } from "./utils/metadata";
+import { generateAvatarMetadataString } from "../utils/metadata";
 
 chai.use(solidity);
 const { expect } = chai;

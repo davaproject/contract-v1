@@ -5,10 +5,10 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { DavaOfficial } from "../../types";
 import { solidity } from "ethereum-waffle";
 import { fixtures } from "../../scripts/utils/fixtures";
-import { createImage, createImageUri } from "./utils/image";
-import { categoryId } from "./utils/part";
-import { checkChange } from "./utils/compare";
-import { generatePartMetadataString } from "./utils/metadata";
+import { createImage, createImageUri } from "../utils/image";
+import { categoryId } from "../utils/part";
+import { checkChange } from "../utils/compare";
+import { generatePartMetadataString } from "../utils/metadata";
 import registeredData from "../../data.json";
 
 chai.use(solidity);
