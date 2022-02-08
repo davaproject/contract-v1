@@ -57,7 +57,7 @@ abstract contract PartCollection is
 
     address public override dava;
     string public ipfsBaseURI = "https://ipfs.io/ipfs/";
-    string public davaApiURI = "https://api.davaproject.com/v1";
+    string public davaApiURI = "https://api.davaproject.com";
 
     PartInfo private _partInfo;
     CollectionInfo private _collectionInfo;
