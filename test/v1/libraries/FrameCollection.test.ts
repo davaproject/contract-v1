@@ -43,9 +43,7 @@ describe("FrameCollection", () => {
     const frameCollectionTestContract = new TestFrameCollection__factory(
       deployer
     );
-    frameCollection = await frameCollectionTestContract.deploy(
-      gatewayHandler.address
-    );
+    frameCollection = await frameCollectionTestContract.deploy();
     await frameCollection.deployed();
 
     await frameCollection.registerFrame(data[0].ipfsHash, data[0].zIndex);

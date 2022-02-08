@@ -56,10 +56,7 @@ describe("Dava", () => {
     let newCollection: DavaOfficial;
     before(async () => {
       const Collection = new DavaOfficial__factory(deployer);
-      newCollection = await Collection.deploy(
-        gatewayHandler.address,
-        dava.address
-      );
+      newCollection = await Collection.deploy(dava.address);
       await newCollection.deployed();
     });
 
@@ -154,7 +151,7 @@ describe("Dava", () => {
     let newFrameCollection: DavaFrame;
     before(async () => {
       const FrameCollection = new DavaFrame__factory(deployer);
-      newFrameCollection = await FrameCollection.deploy(gatewayHandler.address);
+      newFrameCollection = await FrameCollection.deploy();
     });
 
     describe("should be reverted", () => {
@@ -367,10 +364,7 @@ describe("Dava", () => {
     let newCollection: DavaOfficial;
     before(async () => {
       const Collection = new DavaOfficial__factory(deployer);
-      newCollection = await Collection.deploy(
-        gatewayHandler.address,
-        dava.address
-      );
+      newCollection = await Collection.deploy(dava.address);
       await newCollection.deployed();
     });
 

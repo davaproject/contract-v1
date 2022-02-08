@@ -5,9 +5,7 @@ import {IGatewayHandler} from "../interfaces/IGatewayHandler.sol";
 import {FrameCollection} from "../libraries/FrameCollection.sol";
 
 contract DavaFrame is FrameCollection {
-    constructor(IGatewayHandler gatewayHandler_)
-        FrameCollection(gatewayHandler_)
-    {}
+    constructor() FrameCollection() {}
 
     function name() public pure returns (string memory) {
         return "dava-frame";

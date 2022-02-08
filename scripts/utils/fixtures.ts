@@ -121,7 +121,7 @@ export const fixtures = async (): Promise<Fixture> => {
 
   // Start deploying <DavaFrame>
   const DavaFrameContract = new DavaFrame__factory(deployer);
-  const davaFrame = await DavaFrameContract.deploy(gatewayHandler.address);
+  const davaFrame = await DavaFrameContract.deploy();
   await davaFrame.deployed();
   await registerFrameCollection({
     dava,
@@ -139,10 +139,7 @@ export const fixtures = async (): Promise<Fixture> => {
 
   // Start deploying <DavaOfficial>
   const DavaOfficialContract = new DavaOfficial__factory(deployer);
-  const davaOfficial = await DavaOfficialContract.deploy(
-    gatewayHandler.address,
-    dava.address
-  );
+  const davaOfficial = await DavaOfficialContract.deploy(dava.address);
   await davaOfficial.deployed();
   await registerCollection({ dava, collection: davaOfficial.address });
 

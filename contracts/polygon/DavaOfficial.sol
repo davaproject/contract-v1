@@ -13,11 +13,10 @@ contract PolygonDavaOfficial is
 {
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
 
-    constructor(
-        IGatewayHandler gatewayHandler_,
-        address dava_,
-        address childChainManager_
-    ) PartCollection(gatewayHandler_, dava_) NativeMetaTransaction(name()) {
+    constructor(address dava_, address childChainManager_)
+        PartCollection(dava_)
+        NativeMetaTransaction(name())
+    {
         _setupRole(DEPOSITOR_ROLE, childChainManager_);
     }
 
