@@ -14,6 +14,7 @@ contract FrozenDava is Ownable, AccessControl, ERC721Pausable {
     IDava public immutable dava;
 
     mapping(uint256 => bool) public alreadyUsedId;
+    mapping(uint256 => bool) public alreadyUsedOriginalId;
     mapping(uint256 => uint256) public originalTokenIdOf;
     mapping(uint256 => uint256) public tokenIdOfOriginal;
 
@@ -35,7 +36,12 @@ contract FrozenDava is Ownable, AccessControl, ERC721Pausable {
         uint256 originalTokenId
     ) external onlyRole(SWITCHER_ROLE) {
         require(!alreadyUsedId[tokenId], "FrozenDava: already used tokenId");
+        require(
+            !alreadyUsedOriginalId[originalTokenId],
+            "FrozenDava: already used original tokenId"
+        );
         alreadyUsedId[tokenId] = true;
+        alreadyUsedOriginalId[originalTokenId] = true;
         originalTokenIdOf[tokenId] = originalTokenId;
         tokenIdOfOriginal[originalTokenId] = tokenId;
 
@@ -46,6 +52,7 @@ contract FrozenDava is Ownable, AccessControl, ERC721Pausable {
         uint256 originalTokenId = originalTokenIdOf[tokenId];
         delete originalTokenIdOf[tokenId];
         delete tokenIdOfOriginal[originalTokenId];
+        alreadyUsedOriginalId[originalTokenId] = false;
         _burn(tokenId);
     }
 
