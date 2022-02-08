@@ -51,6 +51,17 @@ contract Switcher is Context, AccessControl {
         IERC721Freezable(dava).unfreeze(tokenId);
     }
 
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external {
+        require(IDavaV2(dava).isApprovedOrOwner(_msgSender(), tokenId));
+        require(!IERC721Freezable(dava).isFrozen(tokenId));
+
+        IDavaV2(dava).safeTransferFrom(from, to, tokenId, "");
+    }
+
     function generateId(uint256 tokenId) private view returns (uint256) {
         return uint256(keccak256(abi.encodePacked(tokenId, block.number)));
     }
