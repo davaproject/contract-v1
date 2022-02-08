@@ -11,7 +11,7 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 import {Part, IAvatar} from "../interfaces/IAvatar.sol";
 import {IDavaV2} from "../interfaces/IDavaV2.sol";
 import {ERC721Account} from "./ERC721Account.sol";
-import {ERC721Freezable} from "./ERC721Freezable.sol";
+import {ERC721Freezable, IERC721Freezable} from "./ERC721Freezable.sol";
 import {Wearable} from "./Wearable.sol";
 
 contract DavaV2 is
@@ -62,6 +62,22 @@ contract DavaV2 is
 
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
+    }
+
+    function freeze(uint256 tokenId)
+        public
+        override
+        onlyRole(TRANSPORTER_MANAGER_ROLE)
+    {
+        super.freeze(tokenId);
+    }
+
+    function unfreeze(uint256 tokenId)
+        public
+        override
+        onlyRole(TRANSPORTER_MANAGER_ROLE)
+    {
+        super.unfreeze(tokenId);
     }
 
     function upgradeTo(address newImplementation)
