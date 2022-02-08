@@ -3,7 +3,7 @@ import chai from "chai";
 import { ethers } from "hardhat";
 import { TestURICompiler, TestURICompiler__factory } from "../../../types";
 import { solidity } from "ethereum-waffle";
-import { getFullUri } from "../utils/uri";
+import { getFullUri } from "../../utils/uri";
 
 chai.use(solidity);
 const { expect } = chai;

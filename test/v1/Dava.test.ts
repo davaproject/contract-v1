@@ -18,8 +18,8 @@ import {
 import { solidity } from "ethereum-waffle";
 import { constants } from "ethers";
 import { Contracts, fixtures } from "../../scripts/utils/fixtures";
-import { checkChange } from "./utils/compare";
-import { categoryId } from "./utils/part";
+import { checkChange } from "../utils/compare";
+import { categoryId } from "../utils/part";
 
 chai.use(solidity);
 const { expect } = chai;

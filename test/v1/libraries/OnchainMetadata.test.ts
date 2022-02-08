@@ -6,8 +6,8 @@ import {
   TestOnchainMetadata__factory,
 } from "../../../types";
 import { solidity } from "ethereum-waffle";
-import { rawStringToJson } from "../utils/metadata";
-import { createImage, wrapImageWihtSvg } from "../utils/image";
+import { rawStringToJson } from "../../utils/metadata";
+import { createImage, wrapImageWihtSvg } from "../../utils/image";
 
 chai.use(solidity);
 const { expect } = chai;
