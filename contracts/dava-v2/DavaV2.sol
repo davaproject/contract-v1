@@ -13,6 +13,7 @@ import {IDavaV2} from "../interfaces/IDavaV2.sol";
 import {ERC721Account} from "./ERC721Account.sol";
 import {ERC721Freezable, IERC721Freezable} from "./ERC721Freezable.sol";
 import {Wearable} from "./Wearable.sol";
+import {ContextMixin} from "./ContextMixin.sol";
 
 contract DavaV2 is
     IDavaV2,
@@ -20,7 +21,8 @@ contract DavaV2 is
     AccessControl,
     Wearable,
     ERC721Account,
-    ERC721Freezable
+    ERC721Freezable,
+    ContextMixin
 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PART_MANAGER_ROLE = keccak256("PART_MANAGER_ROLE");
@@ -242,5 +244,31 @@ contract DavaV2 is
             interfaceId == type(IDavaV2).interfaceId ||
             interfaceId == type(IAccessControl).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+
+    function isApprovedForAll(
+        address _owner,
+        address _operator
+    ) public override view returns (bool isOperator) {
+        // if OpenSea's ERC721 Proxy Address is detected, auto-return true
+        if (_operator == address(0x58807baD0B376efc12F5AD86aAc70E78ed67deaE)) {
+            return true;
+        }
+
+        // otherwise, use the default ERC721.isApprovedForAll()
+        return ERC721.isApprovedForAll(_owner, _operator);
+    }
+
+    /**
+     * This is used instead of msg.sender as transactions won't be sent by the original token owner, but by OpenSea.
+     */
+    function _msgSender()
+        internal
+        override
+        view
+        returns (address sender)
+    {
+        return ContextMixin.msgSender();
     }
 }
