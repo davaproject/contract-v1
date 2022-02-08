@@ -50,11 +50,11 @@ const config: HardhatUserConfig = {
     // },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: [`0x${process.env.PRIV_KEY}`],
+      accounts: process.env.PRIV_KEY ? [`0x${process.env.PRIV_KEY}`] : [],
     },
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_KEY,
+    apiKey: process.env.ETHERSCAN_KEY ? process.env.ETHERSCAN_KEY : '',
   },
   typechain: {
     outDir: "./types",
