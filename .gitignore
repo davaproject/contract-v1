@@ -5,7 +5,7 @@ cache
 artifacts
 
 #Typechain
-types
+/types
 dist
 
 #test
